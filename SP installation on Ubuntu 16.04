@@ -1,7 +1,7 @@
-Based on the guides by https://github.com/ConsortiumGARR/idem-tutorials
-Install software requirements
+#Based on the guides by https://github.com/ConsortiumGARR/idem-tutorials
+##Install software requirements
 1.	Become ROOT and update
-o	sudo su -
+```sudo su -```
 o	apt update && apt upgrade
 2.	Install the packages required:
 o	apt install ca-certificates vim openssl
