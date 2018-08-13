@@ -1,3 +1,4 @@
+Based on the guides by https://github.com/ConsortiumGARR/idem-tutorials
 Install software requirements
 1.	Become ROOT and update
 o	sudo su -
