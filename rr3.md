@@ -1,22 +1,24 @@
-This will guide through basic installation of HEANET's product, jagger in Ubuntu 18.04 based on https://jagger.heanet.ie/jaggerdocadmin/installation.html and Terry's https://docs.google.com/document/d/1vvSbGPoF7L1VQKwfaLeN2HMC9TPtk3jeZN8XLxNTerQ
+# Installation of Jagger Tool in Ubuntu 18.04
+
+This will guide through basic installation of HEANET's product, jagger in Ubuntu 18.04 based on https://jagger.heanet.ie/jaggerdocadmin/installation.html and @trsau https://docs.google.com/document/d/1vvSbGPoF7L1VQKwfaLeN2HMC9TPtk3jeZN8XLxNTerQ
 
 This guide assumes you have pre installed Ubuntu 18.04 server with default configurations and have a public IP connectivity including DNS setup.
 
-All Commands will be run as the root user. You may use sudo su to become root.
+All Commands will be run as the root user. You may use `sudo su` to become root.
 
-Install Apache
+### Install Apache
 
-apt install apache2
+`apt install apache2`
 
-Install Mysql server
+### Install Mysql server
 
-apt install mysql-server
+`apt install mysql-server`
 
-Securing mysql
+### Securing mysql
 
-mysql_secure_installation
+`mysql_secure_installation`
 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+```
 Securing the MySQL server deployment.
 
 Connecting to MySQL using a blank password.
@@ -80,78 +82,94 @@ Reload privilege tables now? (Press y|Y for Yes, any other key for No) : y
 Success.
 
 All done!
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+```
 
-Install PHP
 
-apt install php libapache2-mod-php
+### Install PHP
+
+`apt install php libapache2-mod-php`
 
 edit php settings as
 
-vim /etc/php/7.X/apache2/php.ini
-
+`vim /etc/php/7.X/apache2/php.ini`
+```
 date.timezone = Asia/Colombo
 memory_limit = 256M
 max_execution_time = 60
+```
+`vim /etc/php/7.2/cli/php.ini`
 
-vim /etc/php/7.2/cli/php.ini
-
-date.timezone = Asia/Colombo
+```date.timezone = Asia/Colombo
 max_execution_time = 60
+```
 
-Enable apache modules
+#### Enable apache modules
 
+```
 a2enmod rewrite
 a2enmod unique_id
+```
 
-Install php dependancies
+### Install php dependancies
 
+```
 apt install php-apc
 apt install php-mysql
 apt install php-xml
- 
+apt install php-memcached
+apt install php-amqplib
+service apache2 restart
+```
 
 follow steps in https://gist.github.com/arzzen/1209aa4a430bd95db3090a3399e6c35f to install php mcrypt
 
-apt install php-memcached
-apt install php-amqplib
 
-Install composer
 
+
+### Install composer
+
+```
 curl -sS https://getcomposer.org/installer | php
 cp composer.phar /usr/local/bin/composer
+```
 
-Install memcached 
+### Install memcached 
 
-apt-get install memcached
+`apt-get install memcached`
 
-Install Gearman
+### Install Gearman
 
+```
 apt-get install gearman-job-server
 apt-get install php-gearman
+```
 
-service apache2 restart
 
-Get CodeIgniter
 
+### Get CodeIgniter
+
+```
 cd /opt
 wget https://github.com/bcit-ci/CodeIgniter/archive/3.1.9.zip
 apt install unzip
-
 unzip 3.1.9.zip
 mv CodeIgniter-3.1.9 codeigniter
+```
 
-Install Jagger
+### Install Jagger
 
+```
 git clone https://github.com/Edugate/Jagger /opt/rr3
-cd /opt/rr3
-
 cd /opt/rr3/application
+
 composer install
-Note: Ignore the warning about running composer as root/super user!
+```
+> Note: Ignore the warning about running composer as root/super user!
 
-cp /opt/codeigniter/index.php /opt/rr3/
+`cp /opt/codeigniter/index.php /opt/rr3/`
 
+#### Configure Apache Virtual Host
+```
 cd /etc/apache2/sites-available/
 
 a2dissite 000-default.conf
@@ -159,9 +177,12 @@ a2dissite 000-default.conf
 systemctl reload apache2
 
 cp 000-default.conf rr3.conf
+```
+Edit `rr3.conf` with following
 
-vim rr3.conf
+`vim rr3.conf`
 
+```
 <VirtualHost *:80>
  
         ServerName YOUR-DOMAIN
@@ -170,7 +191,6 @@ vim rr3.conf
         Alias /rr3 /opt/rr3
 <Directory /opt/rr3>
 
-        #  you may need to uncomment next line
           Require all granted
 
           RewriteEngine On
@@ -187,68 +207,78 @@ vim rr3.conf
         CustomLog ${APACHE_LOG_DIR}/access.log combined
 
 </VirtualHost>
+```
+Enable rr3 site by, `a2ensite rr3` and restart Apache `systemctl reload apache2`
 
+### Database Creation 
 
-a2ensite rr3
+Log in to MYSQL as root
 
-systemctl reload apache2
+`mysql -u root -p`
 
-
-mysql -u root -p
-
+```sql
 create database rr3 CHARACTER SET utf8 COLLATE utf8_general_ci;
 grant all on rr3.* to rr3user@'localhost' identified by 'rr3@PasS';
 flush privileges;
+```
+### Install RR3
 
-
-exit
-
+```
 cd /opt/rr3
 
 ./install.sh
-
-
+```
+Next, copy the default configurations as samples
+```
 cd application/config
 cp config-default.php config.php
 cp config_rr-default.php config_rr.php
 cp database-default.php database.php
 cp email-default.php email.php
 cp memcached-default.php memcached.php
-
-
+```
+Give permission to Apache User `www-data` as following
+```
 chgrp www-data /opt/rr3/application/models/Proxies
 chmod 755 /opt/rr3/application/models/Proxies
 chgrp www-data /opt/rr3/application/cache
 chmod 755 /opt/rr3/application/cache
+```
 
-Modify configs
+### Modify configurations
 
+#### config.php
 
-vim config.php
+`vim config.php`
+```
 $config['base_url']     = 'https://YOUR-DOMAIN/rr3/';
 $config['log_path'] = '/var/log/rr3/';
+```
 
 You must also create this directory and make it writable by the Apache user www-data
 
+```
 mkdir /var/log/rr3
 chown www-data:www-data /var/log/rr3
 chmod 750 /var/log/rr3
+```
 
 get a copy of following random output and put it back on config.php
 
-tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd  bs=32 count=1 2>/dev/null;echo
+`tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd  bs=32 count=1 2>/dev/null;echo`
 
 as
 
-$config['encryption_key'] = '8mixahy22evqp4k6wbzce16oglg1zlyr';
+`$config['encryption_key'] = '8mixahy22evqp4k6wbzce16oglg1zlyr';`
 
+#### config_rr.php
 
-vim config_rr.php
+`vim config_rr.php`
 
 
 rr_setup_allowed - it should be always be set to FALSE. TRUE only when setup is initialized
 
-$config['rr_setup_allowed'] = TRUE;
+`$config['rr_setup_allowed'] = TRUE;`
 
 Note: This will be changed back to FALSE later in the setup.
 
@@ -256,26 +286,24 @@ site_logo - set filename to be used as main logo in top-left corner. File should
 
 Note: The default logo is 515 pixels wide and 146 pixels high. Your own site logo should be about the same size.
 
-$config['site_logo'] = 'your_logo.png';
+`$config['site_logo'] = 'your_logo.png';`
 
 
 syncpass - please generate strong key. It’s used by synchronization - interfederation tool
 
-tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo
+`tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo`
 
 then assign generated value to attr like:
 
-$config['syncpass'] = 'qp7zwgm6vqzptb87uoe7zzfiq1gx1oa6';
+`$config['syncpass'] = 'qp7zwgm6vqzptb87uoe7zzfiq1gx1oa6';`
 
 support_mailto - set support email. For example this email is displayed as contact mail.
-$config['support_mailto'] = 'support@example.com';
+`$config['support_mailto'] = 'support@example.com';`
 
 
-nameids - array of allowed NameID in JAGGER
+nameids - array of allowed NameID in JAGGER remove it from config
 
-Warning: deprecated - you can remove it from config
-
-
+/*
 $config['nameids'] = array(
      'urn:mace:shibboleth:1.0:nameIdentifier' => 'urn:mace:shibboleth:1.0:nameIdentifier',
      'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress' => 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
@@ -283,68 +311,67 @@ $config['nameids'] = array(
      'urn:oasis:names:tc:SAML:2.0:nameid-format:transient' => 'urn:oasis:names:tc:SAML:2.0:nameid-format:transient',
      'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent' => 'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent',
              );
+*/
 
 Note: The above config has been commented out!
 
 
 
-email.php
+#### email.php
 
-connection details
+```
 $config['protocol'] = 'smtp';
 $config['smtp_host'] = "SMTP_HOST";
 $config['smtp_port'] = 25;
 $config['smtp_user'] = 'USER';
 $config['smtp_pass'] = 'PASS';
 $config['smtp_crypto'] = 'tls';
+```
 
-
-database.php
-
+#### database.php
+```
 $db['default']['hostname'] = '127.0.0.1';
 $db['default']['username'] = 'rr3user';
 $db['default']['password'] = 'rr3@PasS';
 $db['default']['database'] = 'rr3';
 $db['default']['dsn']      = 'mysql:host=127.0.0.1;port=3306;dbname=rr3';
+```
 
-
-
-
-Database - populate tables
+### Database - populate tables
 
 To populate tables we are going to use doctrine tool.
 
-cd /opt/rr3/application
+`cd /opt/rr3/application`
 
 
-./doctrine orm:schema-tool:create
+`./doctrine orm:schema-tool:create`
 
 If you going to run application in production mode then you also need to regenerate proxies:
 
 
-./doctrine orm:generate-proxies
+`./doctrine orm:generate-proxies`
 
 and verify owner of application/models/Proxies/* - apache user should be owner
 
 or 
 
-chown -R www-data application/models/Proxies/
+`chown -R www-data application/models/Proxies/`
 
 In the future after every update you will need to run
 
-
+```bash
 ./doctrine orm:schema-tool:update --force
 ./doctrine orm:generate-proxies
 
+```
+### Install Letsencypt and enable https
 
-
-
-Letsencypt
-
+```
 add-apt-repository ppa:certbot/certbot
 apt install python-certbot-apache
 certbot --apache -d YOUR-DOMAIN
-
+```
+```
 Plugins selected: Authenticator apache, Installer apache
 Enter email address (used for urgent renewal and security notices) (Enter 'c' to
 cancel): thilina@learn.ac.lk
@@ -390,15 +417,15 @@ Redirecting vhost in /etc/apache2/sites-enabled/rr3.conf to ssl vhost in /etc/ap
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 Congratulations! You have successfully enabled https://YOUR-DOMAIN
 
+```
+
+Open page **https://YOUR-DOMAIN/rr3/setup** and fill the form.
 
 
-Open page https://YOUR-DOMAIN/rr3/setup and fill the form.
 
 
+Once the default user is created switch of the setup mode on `config_rr.php` by
 
 
-Once the default user is created switch of the setup mode on config_rr.php by
-
-
-$config['rr_setup_allowed'] = FALSE;
+`$config['rr_setup_allowed'] = FALSE;`
 
