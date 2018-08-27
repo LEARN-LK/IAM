@@ -111,6 +111,151 @@ apt install php-mysql
 apt install php-xml
  
 
+follow steps in https://gist.github.com/arzzen/1209aa4a430bd95db3090a3399e6c35f to install php mcrypt
+
+apt install php-memcached
+apt install php-amqplib
+
+Install composer
+
+curl -sS https://getcomposer.org/installer | php
+cp composer.phar /usr/local/bin/composer
+
+Install memcached 
+
+apt-get install memcached
+
+Install Gearman
+
+apt-get install gearman-job-server
+apt-get install php-gearman
+
+service apache2 restart
+
+Get CodeIgniter
+
+cd /opt
+wget https://github.com/bcit-ci/CodeIgniter/archive/3.1.9.zip
+apt install unzip
+
+unzip 3.1.9.zip
+mv CodeIgniter-3.1.9 codeigniter
+
+Install Jagger
+
+git clone https://github.com/Edugate/Jagger /opt/rr3
+cd /opt/rr3
+
+cd /opt/rr3/application
+composer install
+Note: Ignore the warning about running composer as root/super user!
+
+cp /opt/codeigniter/index.php /opt/rr3/
+
+cd /etc/apache2/sites-available/
+
+a2dissite 000-default.conf
+
+systemctl reload apache2
+
+cp 000-default.conf rr3.conf
+
+vim rr3.conf
+
+<VirtualHost *:80>
+ 
+        ServerName YOUR-URL
+        ServerAdmin YOUR-Email
+        DocumentRoot /opt/rr3/
+        Alias /rr3 /opt/rr3
+<Directory /opt/rr3>
+
+        #  you may need to uncomment next line
+          Require all granted
+
+#          RewriteEngine On
+#          RewriteBase /rr3
+#          RewriteCond $1 !^(Shibboleth\.sso|index\.php|logos|signedmetadata|flags|images|app|schemas|fonts|styles|images|js|robots\.txt|pub|includes)
+#          RewriteRule  ^(.*)$ /rr3/index.php?/$1 [L]
+  </Directory>
+  <Directory /opt/rr3/application>
+          Order allow,deny
+          Deny from all
+  </Directory>
+
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+</VirtualHost>
+
+
+a2ensite rr3
+
+systemctl reload apache2
+
+
+mysql -u root -p
+
+create database rr3 CHARACTER SET utf8 COLLATE utf8_general_ci;
+grant all on rr3.* to rr3user@'localhost' identified by 'rr3@PasS';
+flush privileges;
+
+
+exit
+
+cd /opt/rr3
+
+./install.sh
+
+
+cd application/config
+cp config-default.php config.php
+cp config_rr-default.php config_rr.php
+cp database-default.php database.php
+cp email-default.php email.php
+cp memcached-default.php memcached.php
+
+
+chgrp www-data /opt/rr3/application/models/Proxies
+chmod 755 /opt/rr3/application/models/Proxies
+chgrp www-data /opt/rr3/application/cache
+chmod 755 /opt/rr3/application/cache
+
+Modify configs
+
+
+vim config.php
+$config['base_url']     = 'https://rr.example.com/rr3/';
+$config['log_path'] = '/var/log/rr3/';
+
+You must also create this directory and make it writable by the Apache user www-data
+
+mkdir /var/log/rr3
+chown www-data:www-data /var/log/rr3
+chmod 750 /var/log/rr3
+
+get a copy of following random output and put it back on config.php
+
+tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd  bs=32 count=1 2>/dev/null;echo
+
+as
+
+$config['encryption_key'] = '8mixahy22evqp4k6wbzce16oglg1zlyr';
+
+
+
+
+
+
+
+
+
+
+Letsencypt
+
+add-apt-repository ppa:certbot/certbot
+apt install python-certbot-apache
+certbot --apache -d example.com
 
 
 
