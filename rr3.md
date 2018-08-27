@@ -164,7 +164,7 @@ vim rr3.conf
 
 <VirtualHost *:80>
  
-        ServerName YOUR-URL
+        ServerName YOUR-DOMAIN
         ServerAdmin YOUR-Email
         DocumentRoot /opt/rr3/
         Alias /rr3 /opt/rr3
@@ -173,10 +173,10 @@ vim rr3.conf
         #  you may need to uncomment next line
           Require all granted
 
-#          RewriteEngine On
-#          RewriteBase /rr3
-#          RewriteCond $1 !^(Shibboleth\.sso|index\.php|logos|signedmetadata|flags|images|app|schemas|fonts|styles|images|js|robots\.txt|pub|includes)
-#          RewriteRule  ^(.*)$ /rr3/index.php?/$1 [L]
+          RewriteEngine On
+          RewriteBase /rr3
+          RewriteCond $1 !^(Shibboleth\.sso|index\.php|logos|signedmetadata|flags|images|app|schemas|fonts|styles|images|js|robots\.txt|pub|includes)
+          RewriteRule  ^(.*)$ /rr3/index.php?/$1 [L]
   </Directory>
   <Directory /opt/rr3/application>
           Order allow,deny
@@ -225,7 +225,7 @@ Modify configs
 
 
 vim config.php
-$config['base_url']     = 'https://rr.example.com/rr3/';
+$config['base_url']     = 'https://YOUR-DOMAIN/rr3/';
 $config['log_path'] = '/var/log/rr3/';
 
 You must also create this directory and make it writable by the Apache user www-data
@@ -243,10 +243,98 @@ as
 $config['encryption_key'] = '8mixahy22evqp4k6wbzce16oglg1zlyr';
 
 
+vim config_rr.php
+
+
+rr_setup_allowed - it should be always be set to FALSE. TRUE only when setup is initialized
+
+$config['rr_setup_allowed'] = TRUE;
+
+Note: This will be changed back to FALSE later in the setup.
+
+site_logo - set filename to be used as main logo in top-left corner. File should be stored in /opt/rr3/images/ folder (Optional)
+
+Note: The default logo is 515 pixels wide and 146 pixels high. Your own site logo should be about the same size.
+
+$config['site_logo'] = 'your_logo.png';
+
+
+syncpass - please generate strong key. It’s used by synchronization - interfederation tool
+
+tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo
+
+then assign generated value to attr like:
+
+$config['syncpass'] = 'qp7zwgm6vqzptb87uoe7zzfiq1gx1oa6';
+
+support_mailto - set support email. For example this email is displayed as contact mail.
+$config['support_mailto'] = 'support@example.com';
+
+
+nameids - array of allowed NameID in JAGGER
+
+Warning: deprecated - you can remove it from config
+
+
+$config['nameids'] = array(
+     'urn:mace:shibboleth:1.0:nameIdentifier' => 'urn:mace:shibboleth:1.0:nameIdentifier',
+     'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress' => 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
+     'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified'=>'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified',
+     'urn:oasis:names:tc:SAML:2.0:nameid-format:transient' => 'urn:oasis:names:tc:SAML:2.0:nameid-format:transient',
+     'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent' => 'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent',
+             );
+
+Note: The above config has been commented out!
+
+
+
+email.php
+
+connection details
+$config['protocol'] = 'smtp';
+$config['smtp_host'] = "SMTP_HOST";
+$config['smtp_port'] = 25;
+$config['smtp_user'] = 'USER';
+$config['smtp_pass'] = 'PASS';
+$config['smtp_crypto'] = 'tls';
+
+
+database.php
+
+$db['default']['hostname'] = '127.0.0.1';
+$db['default']['username'] = 'rr3user';
+$db['default']['password'] = 'rr3@PasS';
+$db['default']['database'] = 'rr3';
+$db['default']['dsn']      = 'mysql:host=127.0.0.1;port=3306;dbname=rr3';
 
 
 
 
+Database - populate tables
+
+To populate tables we are going to use doctrine tool.
+
+cd /opt/rr3/application
+
+
+./doctrine orm:schema-tool:create
+
+If you going to run application in production mode then you also need to regenerate proxies:
+
+
+./doctrine orm:generate-proxies
+
+and verify owner of application/models/Proxies/* - apache user should be owner
+
+or 
+
+chown -R www-data application/models/Proxies/
+
+In the future after every update you will need to run
+
+
+./doctrine orm:schema-tool:update --force
+./doctrine orm:generate-proxies
 
 
 
@@ -255,7 +343,62 @@ Letsencypt
 
 add-apt-repository ppa:certbot/certbot
 apt install python-certbot-apache
-certbot --apache -d example.com
+certbot --apache -d YOUR-DOMAIN
+
+Plugins selected: Authenticator apache, Installer apache
+Enter email address (used for urgent renewal and security notices) (Enter 'c' to
+cancel): thilina@learn.ac.lk
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Please read the Terms of Service at
+https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf. You must
+agree in order to register with the ACME server at
+https://acme-v02.api.letsencrypt.org/directory
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(A)gree/(C)ancel: A
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Would you be willing to share your email address with the Electronic Frontier
+Foundation, a founding partner of the Let's Encrypt project and the non-profit
+organization that develops Certbot? We'd like to send you email about our work
+encrypting the web, EFF news, campaigns, and ways to support digital freedom.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: Y
+
+Obtaining a new certificate
+Performing the following challenges:
+http-01 challenge for YOUR_DOMAIN
+Waiting for verification...
+Cleaning up challenges
+Created an SSL vhost at /etc/apache2/sites-available/rr3-le-ssl.conf
+Enabled Apache socache_shmcb module
+Enabled Apache ssl module
+Deploying Certificate to VirtualHost /etc/apache2/sites-available/rr3-le-ssl.conf
+Enabling available site: /etc/apache2/sites-available/rr3-le-ssl.conf
 
 
+Please choose whether or not to redirect HTTP traffic to HTTPS, removing HTTP access.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+1: No redirect - Make no further changes to the webserver configuration.
+2: Redirect - Make all requests redirect to secure HTTPS access. Choose this for
+new sites, or if you're confident your site works on HTTPS. You can undo this
+change by editing your web server's configuration.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Select the appropriate number [1-2] then [enter] (press 'c' to cancel): 2
+Redirecting vhost in /etc/apache2/sites-enabled/rr3.conf to ssl vhost in /etc/apache2/sites-available/rr3-le-ssl.conf
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Congratulations! You have successfully enabled https://YOUR-DOMAIN
+
+
+
+Open page https://YOUR-DOMAIN/rr3/setup and fill the form.
+
+
+
+
+Once the default user is created switch of the setup mode on config_rr.php by
+
+
+$config['rr_setup_allowed'] = FALSE;
 
