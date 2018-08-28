@@ -1,22 +1,28 @@
 # Installation of Jagger Tool in Ubuntu 18.04
 
-This will guide through basic installation of HEANET's product, jagger in Ubuntu 18.04 based on https://jagger.heanet.ie/jaggerdocadmin/installation.html and @trsau https://docs.google.com/document/d/1vvSbGPoF7L1VQKwfaLeN2HMC9TPtk3jeZN8XLxNTerQ
+This will guide through basic installation of HEANET's product, jagger in Ubuntu 18.04 based on [Jagger Documentation](https://jagger.heanet.ie/jaggerdocadmin/installation.html) and Terry Smith's (@trsau) [Google Doc for Backfire project](https://docs.google.com/document/d/1vvSbGPoF7L1VQKwfaLeN2HMC9TPtk3jeZN8XLxNTerQ)
 
 This guide assumes you have pre installed Ubuntu 18.04 server with default configurations and have a public IP connectivity including DNS setup.
 
 All Commands will be run as the root user. You may use `sudo su` to become root.
 
-### Install Apache
+### 1. Install Apache
 
-`apt install apache2`
+   * `apt install apache2`
 
-### Install Mysql server
+#### Enable apache modules
 
-`apt install mysql-server`
+   * `a2enmod rewrite`
+   * `a2enmod unique_id`
+   * `service apache2 restart`
 
-### Securing mysql
+### 2. Install Mysql server
 
-`mysql_secure_installation`
+   * `apt install mysql-server`
+
+### 3. Securing mysql
+
+   * `mysql_secure_installation`
 
 ```
 Securing the MySQL server deployment.
@@ -85,104 +91,90 @@ All done!
 ```
 
 
-### Install PHP
+### 4. Install PHP
 
-`apt install php libapache2-mod-php`
+   - `apt install php libapache2-mod-php`
 
 edit php settings as
 
-`vim /etc/php/7.X/apache2/php.ini`
-```
+   * `vim /etc/php/7.X/apache2/php.ini`
+```php
 date.timezone = Asia/Colombo
 memory_limit = 256M
 max_execution_time = 60
 ```
-`vim /etc/php/7.2/cli/php.ini`
+   * `vim /etc/php/7.2/cli/php.ini`
 
-```date.timezone = Asia/Colombo
+```php
+date.timezone = Asia/Colombo
 max_execution_time = 60
 ```
 
-#### Enable apache modules
+#### Install php dependancies
 
-```
-a2enmod rewrite
-a2enmod unique_id
-```
-
-### Install php dependancies
-
-```
-apt install php-apc
-apt install php-mysql
-apt install php-xml
-apt install php-memcached
-apt install php-amqplib
-service apache2 restart
-```
-
-follow steps in https://gist.github.com/arzzen/1209aa4a430bd95db3090a3399e6c35f to install php mcrypt
+   * `apt install php-apc`
+   * `apt install php-mysql`
+   * `apt install php-xml`
+   * `apt install php-memcached`
+   * `apt install php-amqplib`
+   * `service apache2 restart`
 
 
+follow these steps to install php7.X deprecated php-mcrypt [from here](https://gist.github.com/arzzen/1209aa4a430bd95db3090a3399e6c35f)
 
 
-### Install composer
+### 5. Install composer
 
-```
-curl -sS https://getcomposer.org/installer | php
-cp composer.phar /usr/local/bin/composer
-```
-
-### Install memcached 
-
-`apt-get install memcached`
-
-### Install Gearman
-
-```
-apt-get install gearman-job-server
-apt-get install php-gearman
-```
+   * `curl -sS https://getcomposer.org/installer | php`
+   * `cp composer.phar /usr/local/bin/composer`
 
 
+### 6. Install memcached 
 
-### Get CodeIgniter
+   * `apt-get install memcached`
 
-```
-cd /opt
-wget https://github.com/bcit-ci/CodeIgniter/archive/3.1.9.zip
-apt install unzip
-unzip 3.1.9.zip
-mv CodeIgniter-3.1.9 codeigniter
-```
 
-### Install Jagger
+### 7. Install Gearman
 
-```
-git clone https://github.com/Edugate/Jagger /opt/rr3
-cd /opt/rr3/application
+   * `apt-get install gearman-job-server`
+   * `apt-get install php-gearman`
 
-composer install
-```
+
+### 8. Get CodeIgniter
+
+   * `cd /opt`
+   * `wget https://github.com/bcit-ci/CodeIgniter/archive/3.1.9.zip`
+   * `apt install unzip`
+   * `unzip 3.1.9.zip`
+   * `mv CodeIgniter-3.1.9 codeigniter`
+
+
+### 9. Download and prepare Jagger RR3
+
+   * `git clone https://github.com/Edugate/Jagger /opt/rr3`
+   * `cd /opt/rr3/application`
+   * `composer install`
+   
 > Note: Ignore the warning about running composer as root/super user!
 
-`cp /opt/codeigniter/index.php /opt/rr3/`
+   * `cp /opt/codeigniter/index.php /opt/rr3/`
 
 #### Configure Apache Virtual Host
-```
-cd /etc/apache2/sites-available/
 
-a2dissite 000-default.conf
+Disable the default configuration
+   * `cd /etc/apache2/sites-available/`
+   * `a2dissite 000-default.conf`
+   * `systemctl reload apache2`
 
-systemctl reload apache2
+Create a new conf file for RR3 as `rr3.conf`
 
-cp 000-default.conf rr3.conf
-```
+   * `cp 000-default.conf rr3.conf`
+
 Edit `rr3.conf` with following
 
-`vim rr3.conf`
+   * `vim rr3.conf`
 
-```
+```apache
 <VirtualHost *:80>
  
         ServerName YOUR-DOMAIN
@@ -208,28 +200,37 @@ Edit `rr3.conf` with following
 
 </VirtualHost>
 ```
-Enable rr3 site by, `a2ensite rr3` and restart Apache `systemctl reload apache2`
 
-### Database Creation 
+Enable rr3 site by, 
+
+   * `a2ensite rr3` 
+   
+and restart Apache 
+
+   * `systemctl reload apache2`
+
+#### Database Creation 
 
 Log in to MYSQL as root
 
-`mysql -u root -p`
+   * `mysql -u root -p`
 
 ```sql
-create database rr3 CHARACTER SET utf8 COLLATE utf8_general_ci;
-grant all on rr3.* to rr3user@'localhost' identified by 'rr3@PasS';
-flush privileges;
+CREATE DATABASE rr3 CHARACTER SET utf8 COLLATE utf8_general_ci;
+GRANT ALL ON rr3.* to rr3user@'localhost' IDENTIFIED BY 'rr3@PasS';
+FLUSH PRIVILEGES;
 ```
-### Install RR3
 
-```
+### 10. Install RR3
+
+```bash
 cd /opt/rr3
 
 ./install.sh
 ```
 Next, copy the default configurations as samples
-```
+
+```bash
 cd application/config
 cp config-default.php config.php
 cp config_rr-default.php config_rr.php
@@ -237,27 +238,29 @@ cp database-default.php database.php
 cp email-default.php email.php
 cp memcached-default.php memcached.php
 ```
+
 Give permission to Apache User `www-data` as following
-```
+
+```bash
 chgrp www-data /opt/rr3/application/models/Proxies
 chmod 755 /opt/rr3/application/models/Proxies
 chgrp www-data /opt/rr3/application/cache
 chmod 755 /opt/rr3/application/cache
 ```
 
-### Modify configurations
+#### Modify configurations
 
-#### config.php
+##### config.php
 
-`vim config.php`
-```
+   * `vim config.php`
+```php
 $config['base_url']     = 'https://YOUR-DOMAIN/rr3/';
 $config['log_path'] = '/var/log/rr3/';
 ```
 
 You must also create this directory and make it writable by the Apache user www-data
 
-```
+```bash
 mkdir /var/log/rr3
 chown www-data:www-data /var/log/rr3
 chmod 750 /var/log/rr3
@@ -269,16 +272,19 @@ get a copy of following random output and put it back on config.php
 
 as
 
-`$config['encryption_key'] = '8mixahy22evqp4k6wbzce16oglg1zlyr';`
+```php
+$config['encryption_key'] = '8mixahy22evqp4k6wbzce16oglg1zlyr';
+```
 
-#### config_rr.php
+##### config_rr.php
 
-`vim config_rr.php`
-
+   * `vim config_rr.php`
 
 rr_setup_allowed - it should be always be set to FALSE. TRUE only when setup is initialized
 
-`$config['rr_setup_allowed'] = TRUE;`
+```php
+$config['rr_setup_allowed'] = TRUE;
+```
 
 Note: This will be changed back to FALSE later in the setup.
 
@@ -286,7 +292,9 @@ site_logo - set filename to be used as main logo in top-left corner. File should
 
 Note: The default logo is 515 pixels wide and 146 pixels high. Your own site logo should be about the same size.
 
-`$config['site_logo'] = 'your_logo.png';`
+```php
+$config['site_logo'] = 'your_logo.png';
+```
 
 
 syncpass - please generate strong key. It’s used by synchronization - interfederation tool
@@ -295,14 +303,18 @@ syncpass - please generate strong key. It’s used by synchronization - interfed
 
 then assign generated value to attr like:
 
-`$config['syncpass'] = 'qp7zwgm6vqzptb87uoe7zzfiq1gx1oa6';`
+```php
+$config['syncpass'] = 'qp7zwgm6vqzptb87uoe7zzfiq1gx1oa6';
+```
 
 support_mailto - set support email. For example this email is displayed as contact mail.
-`$config['support_mailto'] = 'support@example.com';`
-
+```php
+$config['support_mailto'] = 'support@example.com';
+```
 
 nameids - array of allowed NameID in JAGGER remove it from config
 
+```php
 /*
 $config['nameids'] = array(
      'urn:mace:shibboleth:1.0:nameIdentifier' => 'urn:mace:shibboleth:1.0:nameIdentifier',
@@ -312,14 +324,15 @@ $config['nameids'] = array(
      'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent' => 'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent',
              );
 */
-
-Note: The above config has been commented out!
-
-
-
-#### email.php
-
 ```
+
+> Note: The above config has been commented out!
+
+
+
+##### email.php
+
+```php
 $config['protocol'] = 'smtp';
 $config['smtp_host'] = "SMTP_HOST";
 $config['smtp_port'] = 25;
@@ -328,8 +341,9 @@ $config['smtp_pass'] = 'PASS';
 $config['smtp_crypto'] = 'tls';
 ```
 
-#### database.php
-```
+##### database.php
+
+```php
 $db['default']['hostname'] = '127.0.0.1';
 $db['default']['username'] = 'rr3user';
 $db['default']['password'] = 'rr3@PasS';
@@ -337,14 +351,16 @@ $db['default']['database'] = 'rr3';
 $db['default']['dsn']      = 'mysql:host=127.0.0.1;port=3306;dbname=rr3';
 ```
 
-### Database - populate tables
+#### Database - populate tables
 
 To populate tables we are going to use doctrine tool.
 
 `cd /opt/rr3/application`
 
 
-`./doctrine orm:schema-tool:create`
+```bash
+./doctrine orm:schema-tool:create
+```
 
 If you going to run application in production mode then you also need to regenerate proxies:
 
@@ -366,7 +382,7 @@ In the future after every update you will need to run
 ```
 ### Install Letsencypt and enable https
 
-```
+```bash
 add-apt-repository ppa:certbot/certbot
 apt install python-certbot-apache
 certbot --apache -d YOUR-DOMAIN
@@ -374,7 +390,7 @@ certbot --apache -d YOUR-DOMAIN
 ```
 Plugins selected: Authenticator apache, Installer apache
 Enter email address (used for urgent renewal and security notices) (Enter 'c' to
-cancel): thilina@learn.ac.lk
+cancel): YOU@YOUR-DOMAIN
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 Please read the Terms of Service at
@@ -427,5 +443,7 @@ Open page **https://YOUR-DOMAIN/rr3/setup** and fill the form.
 Once the default user is created switch of the setup mode on `config_rr.php` by
 
 
-`$config['rr_setup_allowed'] = FALSE;`
+```php
+$config['rr_setup_allowed'] = FALSE;
+```
 
