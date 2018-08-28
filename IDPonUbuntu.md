@@ -319,56 +319,163 @@ If you do this installation in Lab setup please skip to implementing https with 
 
 
 
-
-## To be Continued....
-
-
-COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
-
 ### Speed up Tomcat 8 startup
 
-1. Become ROOT: 
-   * ```sudo su -```
   
-2. Find out the JARs that can be skipped from the scanning:
-   * ```cd /opt/shibboleth-idp/```
-   * ```ls webapp/WEB-INF/lib | awk '{print $1",\\"}'```
+21. Find out the JARs that can be skipped from the scanning:
+    * ```cd /opt/shibboleth-idp/```
+    * ```ls webapp/WEB-INF/lib | awk '{print $1",\\"}'```
   
-3. Insert the output list into ```/opt/tomcat/conf/catalina.properties``` at the tail of ```tomcat.util.scan.StandardJarScanFilter.jarsToSkip```
+    Insert the output list into ```/etc/tomcat8/catalina.properties``` at the tail of  ```tomcat.util.scan.StandardJarScanFilter.jarsToSkip```
+    Make sure about the  ```,\``` symbols
+   
+    Restart Tomcat 8:
+    * ```service tomcat8 restart```
+  
 
-4. Restart Tomcat 8:
-   * ```service tomcat8 restart```
-  
 ### Configure Shibboleth Identity Provider v3.2.1 to release the persistent-id (Stored mode)
 
-1. Become ROOT of the machine: 
-   * ```sudo su -```
-  
-2. Test IdP by opening a terminal and running these commands:
+
+22. Test IdP by opening a terminal and running these commands:
    * ```cd /opt/shibboleth-idp/bin```
    * ```./status.sh``` (You should see some informations about the IdP installed)
 
-3. Install **MySQL Connector Java** and other useful libraries used by Tomcat for MySQL DB (if you don't have them already):
-   * ```apt-get istall mysql-server libmysql-java libcommons-dbcp-java libcommons-pool-java```
+23. Install **MySQL Connector Java** and other useful libraries used by Tomcat for MySQL DB (if you don't have them already):
+   * ```apt-get install mysql-server libmysql-java libcommons-dbcp-java libcommons-pool-java```
    * ```cd /usr/share/tomcat8/lib/```
    * ```ln -s ../../java/mysql.jar mysql-connector-java.jar```
    * ```ln -s ../../java/commons-pool.jar commons-pool.jar```
    * ```ln -s ../../java/commons-dbcp.jar commons-dbcp.jar```
    * ```ln -s ../../java/tomcat-jbcp.jar tomcat-jbcp.jar```
+   Ignore if you get errors for some of the ```ln``` commands as the files might be already there.
 
-4. Rebuild the **idp.war** of Shibboleth with the new libraries:
+24. Rebuild the **idp.war** of Shibboleth with the new libraries:
    * ```cd /opt/shibboleth-idp/ ; ./bin/build.sh```
+   You may need to press enter on `Installation Directory: [/opt/shibboleth-idp]`
 
-5. Create and prepare the "**shibboleth**" MySQL DB to host the values of the several **persistent-id** and **StorageRecords** MySQL DB to host other useful information about user consent:
-   * Modify the [shibboleth-db.sql](../utils/shibboleth-db.sql) by changing the *username* and *password* of the user that has write access to the "**shibboleth**" DB.
-   * Import the SQL modified to your MySQL Server:
-     ```mysql -u root -p##PASSWORD-DB## < ./shibboleth-db.sql```
+25. Create and prepare the "**shibboleth**" MySQL DB to host the values of the several **persistent-id** and **StorageRecords** MySQL DB to host other useful information about user consent:
+
+    * `mysql_secure_installation`
+
+
+```
+Securing the MySQL server deployment.
+
+Connecting to MySQL using a blank password.
+
+VALIDATE PASSWORD PLUGIN can be used to test passwords
+and improve security. It checks the strength of password
+and allows the users to set only those passwords which are
+secure enough. Would you like to setup VALIDATE PASSWORD plugin?
+
+Press y|Y for Yes, any other key for No: y
+
+There are three levels of password validation policy:
+
+LOW    Length >= 8
+MEDIUM Length >= 8, numeric, mixed case, and special characters
+STRONG Length >= 8, numeric, mixed case, special characters and dictionary file
+
+Please enter 0 = LOW, 1 = MEDIUM and 2 = STRONG: 1
+Please set the password for root here.
+
+New password:
+
+Re-enter new password:
+
+Estimated strength of the password: 50
+Do you wish to continue with the password provided?(Press y|Y for Yes, any other key for No) : y
+By default, a MySQL installation has an anonymous user,
+allowing anyone to log into MySQL without having to have
+a user account created for them. This is intended only for
+testing, and to make the installation go a bit smoother.
+You should remove them before moving into a production
+environment.
+
+Remove anonymous users? (Press y|Y for Yes, any other key for No) : y
+Success.
+
+Normally, root should only be allowed to connect from
+'localhost'. This ensures that someone cannot guess at
+the root password from the network.
+
+Disallow root login remotely? (Press y|Y for Yes, any other key for No) : y
+Success.
+
+By default, MySQL comes with a database named 'test' that
+anyone can access. This is also intended only for testing,
+and should be removed before moving into a production
+environment.
+
+
+Remove test database and access to it? (Press y|Y for Yes, any other key for No) : y
+ - Dropping test database...
+Success.
+
+ - Removing privileges on test database...
+Success.
+
+Reloading the privilege tables will ensure that all changes
+made so far will take effect immediately.
+
+Reload privilege tables now? (Press y|Y for Yes, any other key for No) : y
+Success.
+
+All done!
+```
+
+   * log in to your MySQL Server:
+     ```mysql -u root -p```
+    
+```sql
+    SET NAMES 'utf8';
+
+    SET CHARACTER SET utf8;
+
+    CREATE DATABASE IF NOT EXISTS shibboleth CHARACTER SET=utf8;
+
+    GRANT ALL PRIVILEGES ON shibboleth.* TO root@localhost IDENTIFIED BY '##ROOT-DB-PASSWORD##';
+    GRANT ALL PRIVILEGES ON shibboleth.* TO ##USERNAME##@localhost IDENTIFIED BY '##PASSWORD##';
+
+    FLUSH PRIVILEGES;
+
+    USE shibboleth;
+
+    CREATE TABLE IF NOT EXISTS shibpid
+    (
+    localEntity VARCHAR(255) NOT NULL,
+    peerEntity VARCHAR(255) NOT NULL,
+    persistentId VARCHAR(50) NOT NULL,
+    principalName VARCHAR(50) NOT NULL,
+    localId VARCHAR(50) NOT NULL,
+    peerProvidedId VARCHAR(50) NULL,
+    creationDate TIMESTAMP NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+    deactivationDate TIMESTAMP NULL default NULL,
+    PRIMARY KEY (localEntity, peerEntity, persistentId)
+    );
+
+    CREATE TABLE IF NOT EXISTS StorageRecords
+    (
+    context VARCHAR(255) NOT NULL,
+    id VARCHAR(255) NOT NULL,
+    expires BIGINT(20) DEFAULT NULL,
+    value LONGTEXT NOT NULL,
+    version BIGINT(20) NOT NULL,
+    PRIMARY KEY (context, id)
+    );
+
+    quit
+```
+     
+     
    * Restart mysql service:
      ```service mysql restart```
 
-6. Enable the generation of the ```persistent-id``` (this replace the deprecated attribute *eduPersonTargetedID*)
-   * ```vim /opt/shibboleth-idp/conf/saml-nameid.properties```
-     (the *sourceAttribute* MUST BE an attribute, or a list of comma-separated attributes, that uniquely identify the subject of the generated ```persistent-id```. It MUST BE: **Stable**, **Permanent** and **Not-reassignable**)
+26. Enable the generation of the ```persistent-id``` (this replace the deprecated attribute *eduPersonTargetedID*)
+   
+    * ```vim /opt/shibboleth-idp/conf/saml-nameid.properties```
+   
+   (the *sourceAttribute* MUST BE an attribute, or a list of comma-separated attributes, that uniquely identify the subject of the generated ```persistent-id```. It MUST BE: **Stable**, **Permanent** and **Not-reassignable**)
 
      ```xml
      idp.persistentId.sourceAttribute = uid
@@ -384,17 +491,23 @@ COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
 
    * Enable the **SAML2PersistentGenerator**:
      * ```vim /opt/shibboleth-idp/conf/saml-nameid.xml```
-       * Remove the comment from the line containing:
-
-         ```xml
-         <ref bean="shibboleth.SAML2PersistentGenerator" />
-         ```
+     
+     Remove the comment from the line containing:
+    
+     ```xml
+     <ref bean="shibboleth.SAML2PersistentGenerator" />
+     ```
 
      * ```vim /opt/shibboleth-idp/conf/c14n/subject-c14n.xml```
-       * Remove the comment to the bean called "**c14n/SAML2Persistent**".
-
-7. Enable **JPAStorageService** for the **StorageService** of the user consent:
-   * ```vim /opt/shibboleth-idp/conf/global.xml``` and add this piece of code to the tail:
+     
+     Remove the comment to the bean called "**c14n/SAML2Persistent**".
+       
+     ```xml
+     <ref bean="c14n/SAML2Persistent" />
+     ```
+       
+27. Enable **JPAStorageService** for the **StorageService** of the user consent:
+   * ```vim /opt/shibboleth-idp/conf/global.xml``` and add this piece of code to the tail before the ending \</beans\>:
 
      ```xml
      <!-- A DataSource bean suitable for use in the idp.persistentId.dataSource property. -->
@@ -441,6 +554,14 @@ COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
        ```
 
        (This will indicate to IdP to store the data collected by User Consent into the "**StorageRecords**" table)
+
+  
+  ## To be Continued....
+
+
+COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
+
+
 
 8. Connect the openLDAP to the IdP to allow the authentication of the users:
    * ```vim /opt/shibboleth-idp/conf/ldap.properties```
