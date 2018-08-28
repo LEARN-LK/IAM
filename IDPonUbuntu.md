@@ -1,8 +1,8 @@
 # Shibboleth IdP v3.3.2 on Ubuntu Linux LTS 18.04
 
-Based on [IDEM-TUTORIALS](https://github.com/ConsortiumGARR/idem-tutorials/blob/master/idem-fedops/HOWTO-Shibboleth/Identity%20Provider/Ubuntu/HOWTO%20Install%20and%20Configure%20a%20Shibboleth%20IdP%20v3.2.1%20on%20Ubuntu%20Linux%20LTS%2016.04%20with%20Apache2%20%2B%20Tomcat8.md)
+Based on [IDEM-TUTORIALS](https://github.com/ConsortiumGARR/idem-tutorials/blob/master/idem-fedops/HOWTO-Shibboleth/Identity%20Provider/Ubuntu/HOWTO%20Install%20and%20Configure%20a%20Shibboleth%20IdP%20v3.2.1%20on%20Ubuntu%20Linux%20LTS%2016.04%20with%20Apache2%20%2B%20Tomcat8.md) by Marco Malavolti (marco.malavolti@garr.it)
 
-Installation assumes you have already install Ubuntu Server 18.04 with default configuration and has a public IP connectivity with DNS setup
+Installation assumes you have already installed Ubuntu Server 18.04 with default configuration and has a public IP connectivity with DNS setup
 
 Lets Assume your server hostname as **idp.YOUR-DOMAIN**
 
@@ -57,7 +57,8 @@ All commands are to be run as root and you may use `sudo su` to become root
 
 6. Generate Passwords for later use in the installation
    * ```tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo```
-   > Note: You will need two password string, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION###
+   
+> Note: You will need two password string, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION###
    
 7. Run the installer ```install.sh``` to install Shibboleth Identity Provider v3.3.2:
    * ```./bin/install.sh```
@@ -79,30 +80,123 @@ All commands are to be run as root and you may use `sudo su` to become root
   
    From this point the variable **idp.home** refers to the directory: ```/opt/shibboleth-idp```
 
-4. Import the JST libraries to visualize the IdP ```status``` page:
+8. Import the JST libraries to visualize the IdP ```status``` page:
    * ```cd /opt/shibboleth-idp/edit-webapp/WEB-INF/lib```
    * ```wget https://build.shibboleth.net/nexus/service/local/repositories/thirdparty/content/javax/servlet/jstl/1.2/jstl-1.2.jar```
    * ```cd /opt/shibboleth-idp/bin ; ./build.sh -Didp.target.dir=/opt/shibboleth-idp```
 
-5. Change the owner to enable **tomcat8** user to access on the following directories:
+9. Change the owner to enable **tomcat8** user to access on the following directories:
    * ```chown -R tomcat8 /opt/shibboleth-idp/logs/```
    * ```chown -R tomcat8 /opt/shibboleth-idp/metadata/```
    * ```chown -R tomcat8 /opt/shibboleth-idp/credentials/```
    * ```chown -R tomcat8 /opt/shibboleth-idp/conf/```
 
-## Configuration Instructions
 
-### Configure SSL on Apache2 (Jetty front-end)
+### Configure SSL on Apache2 with Letsencrypt.
+If you do this installation in Lab setup please skip to implementing https with self-signed certificates as described in **step 13**.
 
-1. Modify the file ```/etc/apache2/sites-available/default-ssl.conf``` as follows:
+10. Disable default apache configuration:
+   * ```a2dissite 000-default```
+   
+11. Create a new configuration file as `idp.conf` with the following:
+   * ```vim /etc/apache2/site-available/idp.conf```
+  
+   ```apache
+   <VirtualHost *:80>
+     ServerName idp.YOUR-DOMAIN
+     ServerAdmin admin@YOUR-DOMAIN
+     DocumentRoot /var/www/html
+   </VirtualHost>
+   ```
+   
+   Enable Apache2 modules:
+   * ```a2enmod proxy_http ssl headers alias include negotiation```
+   
+   Restart the Apache service:
+   * ```service apache2 restart```
+
+12. Install Letsencrypt and enable HTTPS:
+
+   * ```add-apt-repository ppa:certbot/certbot```
+   * ```apt install python-certbot-apache```
+   * ```certbot --apache -d idp.YOUR-DOMAIN```
+   
+   ```
+   Plugins selected: Authenticator apache, Installer apache
+   Enter email address (used for urgent renewal and security notices) (Enter 'c' to
+   cancel): YOU@YOUR-DOMAIN
+
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   Please read the Terms of Service at
+   https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf. You must
+   agree in order to register with the ACME server at
+   https://acme-v02.api.letsencrypt.org/directory
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   (A)gree/(C)ancel: A
+
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   Would you be willing to share your email address with the Electronic Frontier
+   Foundation, a founding partner of the Let's Encrypt project and the non-profit
+   organization that develops Certbot? We'd like to send you email about our work
+   encrypting the web, EFF news, campaigns, and ways to support digital freedom.
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   (Y)es/(N)o: Y
+   
+   Obtaining a new certificate
+   Performing the following challenges:
+   http-01 challenge for idp.YOUR-DOMAIN
+   Waiting for verification...
+   Cleaning up challenges
+   Created an SSL vhost at /etc/apache2/sites-available/idp-le-ssl.conf
+   Enabled Apache socache_shmcb module
+   Enabled Apache ssl module
+   Deploying Certificate to VirtualHost /etc/apache2/sites-available/idp-le-ssl.conf
+   Enabling available site: /etc/apache2/sites-available/idp-le-ssl.conf
+   
+   
+   Please choose whether or not to redirect HTTP traffic to HTTPS, removing HTTP access.
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   1: No redirect - Make no further changes to the webserver configuration.
+   2: Redirect - Make all requests redirect to secure HTTPS access. Choose this for
+   new sites, or if you're confident your site works on HTTPS. You can undo this
+   change by editing your web server's configuration.
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   Select the appropriate number [1-2] then [enter] (press 'c' to cancel): 2
+   Redirecting vhost in /etc/apache2/sites-enabled/rr3.conf to ssl vhost in /etc/apache2/sites-available/rr3-le-ssl.conf
+   
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   Congratulations! You have successfully enabled https://idp.YOUR-DOMAIN
+
+   ```
+  
+
+
+13. (OPTIONAL) If you haven't follow the letsencrypt method Create a Certificate and a Key self-signed for HTTPS
+   * ```mkdir /root/certificates```
+   * ```openssl req -x509 -newkey rsa:4096 -keyout /root/certificates/idp-key-server.key -out /root/certificates/idp-cert-server.crt -nodes -days 1095```
+   If you purchased SSL certificates from a Public CA, move the Certificate and the Key file for HTTPS server to ```/root/certificates```: 
+   
+   * ```mv /location-to-crts/idp-cert-server.crt /root/certificates```
+   * ```mv /location-to-crts/idp-key-server.key /root/certificates```
+   * ```mv /location-to-crts/PublicCA.crt /root/certificates```
+   
+   Then,
+   
+   * ```chmod 400 /root/certificates/idp-key-server.key```
+   * ```chmod 644 /root/certificates/idp-cert-server.crt```
+   * ```chmod 644 /root/certificates/PublicCA.crt```
+
+
+   Create the file ```/etc/apache2/sites-available/idp-ssl.conf``` as follows:
 
    ```apache
    <IfModule mod_ssl.c>
       SSLStaplingCache        shmcb:/var/run/ocsp(128000)
       <VirtualHost _default_:443>
-        ServerName idp.example.org:443
+        ServerName idp.YOUR-DOMAIN:443
         ServerAdmin admin@example.org
         DocumentRoot /var/www/html
+       
         ...
         SSLEngine On
         
@@ -124,72 +218,30 @@ All commands are to be run as root and you may use `sudo su` to become root
         ...
         SSLCertificateFile /root/certificates/idp-cert-server.crt
         SSLCertificateKeyFile /root/certificates/idp-key-server.key
-        SSLCertificateChainFile /root/certificates/DigiCertCA.pem
+        SSLCertificateChainFile /root/certificates/publicCA.crt
         ...
       </VirtualHost>
    </IfModule>
    ```
-
-2. Enable **proxy_http**, **SSL** and **headers** Apache2 modules:
+   Enable **proxy_http**, **SSL** and **headers** Apache2 modules:
    * ```a2enmod proxy_http ssl headers alias include negotiation```
-   * ```a2ensite default-ssl.conf```
+   * ```a2ensite idp-ssl.conf```
    * ```service apache2 restart```
 
-
-4. (OPTIONAL) Create a Certificate and a Key self-signed for HTTPS if you don't have certificates from a public CA.
-   * ```openssl req -x509 -newkey rsa:4096 -keyout /root/certificates/idp-key-server.key -out /root/certificates/idp-cert-server.crt -nodes -days 1095```
-   Move the Certificate and the Key file for HTTPS server from ```/tmp/``` to ```/root/certificates```:
-   * ```mkdir /root/certificates```
-   * ```mv /tmp/idp-cert-server.crt /root/certificates```
-   * ```mv /tmp/idp-key-server.key /root/certificates```
-   * ```mv /tmp/DigiCertCA.crt /root/certificates```
-   * ```chmod 400 /root/certificates/idp-key-server.key```
-   * ```chmod 644 /root/certificates/idp-cert-server.crt```
-   * ```chmod 644 /root/certificates/DigiCertCA.crt```
-
-
-
-
-
-
-
-3. Configure Apache2 to open port **80** only for localhost:
-   * ```vim /etc/apache2/ports.conf```
-
-     ```apache
-     # If you just change the port or add more ports here, you will likely also
-     # have to change the VirtualHost statement in
-     # /etc/apache2/sites-enabled/000-default.conf
-
-     Listen 127.0.0.1:80
- 
-     <IfModule ssl_module>
-       Listen 443
-     </IfModule>
-    
-     <IfModule mod_gnutls.c>
-       Listen 443
-     </IfModule>
-     ```
-5. Configure Apache2 to redirect all on HTTPS:
+   Configure Apache2 to redirect all on HTTPS:
    * ```vim /etc/apache2/sites-enabled/000-default.conf```
    
    ```apache
    <VirtualHost *:80>
-        ServerName "idp.example.org"
-        Redirect "/" "https://idp.example.org/"
+        ServerName "idp.YOUR-DOMAIN"
+        Redirect "/" "https://idp.YOUR-DOMAIN/"
    </VirtualHost>
-   ```
-  
-6. Verify the strength of your IdP's machine on:
-   * [**https://www.ssllabs.com/ssltest/analyze.html**](https://www.ssllabs.com/ssltest/analyze.html)
+   ``` 
 
 ### Configure Apache Tomcat 8
 
-1. Become ROOT: 
-   * ```sudo su -```
 
-2. Change ```server.xml```:
+14. Modify ```server.xml```:
    * ```vim /etc/tomcat8/server.xml```
   
      Comment out the Connector 8080 (HTTP):
@@ -220,7 +272,7 @@ All commands are to be run as root and you may use `sudo su` to become root
      Check the integrity of XML files just edited with:
      ```xmlwf -e UTF-8 /etc/tomcat8/server.xml```
 
-3. Create and change the file ```idp.xml```:
+15. Create and change the file ```idp.xml```:
    * ```sudo vim /etc/tomcat8/Catalina/localhost/idp.xml```
 
      ```apache
@@ -230,8 +282,8 @@ All commands are to be run as root and you may use `sudo su` to become root
               swallowOutput="true"/>
      ```
 
-4. Create the Apache2 configuration file for IdP:
-   * ```vim /etc/apache2/sites-available/idp.conf```
+16. Create the Apache2 configuration file for IdP:
+   * ```vim /etc/apache2/sites-available/idp-proxy.conf```
   
      ```apache
      <IfModule mod_proxy.c>
@@ -247,24 +299,32 @@ All commands are to be run as root and you may use `sudo su` to become root
      </IfModule>
      ```
 
-5. Enable **proxy_ajp** apache2 module and the new IdP site:
+17. Enable **proxy_ajp** apache2 module and the new IdP site:
    * ```a2enmod proxy_ajp```
-   * ```a2ensite idp.conf```
+   * ```a2ensite idp-proxy.conf```
    * ```service apache2 restart```
   
-6. Modify **context.xml** to prevent error of *lack of persistence of the session objects* created by the IdP :
+18. Modify **context.xml** to prevent error of *lack of persistence of the session objects* created by the IdP :
    * ```vim /etc/tomcat8/context.xml```
 
      and remove the comment from:
 
      ```<Manager pathname="" />```
     
-7. Restart Tomcat8:
+19. Restart Tomcat8:
    * ```service tomcat8 restart```
 
-8. Verify if the IdP works by opening this page on your browser:
-   * ```https://idp.example.org/idp/shibboleth``` (you should see the IdP metadata)
-  
+20. Verify if the IdP works by opening this page on your browser:
+   * ```https://idp.YOUR-DOMAIN/idp/shibboleth``` (you should see the IdP metadata)
+
+
+
+
+## To be Continued....
+
+
+COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
+
 ### Speed up Tomcat 8 startup
 
 1. Become ROOT: 
