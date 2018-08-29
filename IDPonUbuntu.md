@@ -555,18 +555,13 @@ All done!
 
        (This will indicate to IdP to store the data collected by User Consent into the "**StorageRecords**" table)
 
-  
-  ## To be Continued....
 
+28. Connect the openLDAP to the IdP to allow the authentication of the users:
+    * use ```openssl x509 -outform der -in /etc/ssl/certs/ldap_server.pem -out /opt/shibboleth-idp/credentials/ldap_server.crt``` to load the ldap certificate.
+    
+    If you host ldap in a seperate machine, copy the ldap_server.crt to  ```/opt/shibboleth-idp/credentials```
+    * ```vim /opt/shibboleth-idp/conf/ldap.properties```
 
-COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
-
-
-
-8. Connect the openLDAP to the IdP to allow the authentication of the users:
-   * ```vim /opt/shibboleth-idp/conf/ldap.properties```
-
-     (with **TLS** solutions we consider to have the LDAP certificate into ```/opt/shibboleth-idp/credentials```).
 
      * Solution 1: LDAP + STARTTLS:
 
@@ -624,12 +619,12 @@ COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
        ```
 
        **UTILITY FOR OPENLDAP ADMINISTRATOR:**
-         * ```ldapsearch -H ldap:// -x -b "dc=example,dc=it" -LLL dn```
+           * ```ldapsearch -H ldap:// -x -b "dc=example,dc=it" -LLL dn```
            * the baseDN ==> ```ou=people, dc=example,dc=org``` (branch containing the registered users)
            * the bindDN ==> ```cn=admin,dc=example,dc=org``` (distinguished name for the user that can made queries on the LDAP)
 
 
-9. Enrich IDP logs with the authentication error occurred on LDAP:
+29. Enrich IDP logs with the authentication error occurred on LDAP:
    * ```vim /opt/shibboleth-idp/conf/logback.xml```
 
      ```xml
@@ -640,9 +635,9 @@ COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
      <logger name="org.ldaptive.auth.Authenticator" level="INFO" />
      ```
 
-10. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-v3-idem.xml** provided by IDEM GARR AAI:
-    * Download the attribute resolver provided by IDEM GARR AAI:
-      ```wget http://www.garr.it/idem-conf/attribute-resolver-v3-idem.xml -O /opt/shibboleth-idp/conf/attribute-resolver-v3-idem.xml```
+30. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-v1-LEARN.xml** provided by LEARN:
+    * Download the attribute resolver provided by LEARN:
+      ```wget https://fr-training.ac.lk/attribute-resolver-v1-LEARN.xml -O /opt/shibboleth-idp/conf/attribute-resolver-v1-LEARN.xml```
 
     * Modify ```services.xml``` file:
       ```vim /opt/shibboleth-idp/conf/services.xml```
@@ -654,22 +649,16 @@ COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
       must become:
 
       ```xml
-      <value>%{idp.home}/conf/attribute-resolver-v3-idem.xml</value>
+      <value>%{idp.home}/conf/attribute-resolver-v1-LEARN.xml</value>
       ```
 
     * Configure the LDAP Data Connector to be compliant to the values put on ```ldap.properties```. (See above suggestions)
 
-11. Translate the IdP messages in your language:
-    * Get the files translated in your language from [Shibboleth page](https://wiki.shibboleth.net/confluence/display/IDP30/MessagesTranslation) for:
-    * **login page** (authn-messages_it.properties)
-    * **user consent/terms of use page** (consent-messages_it.properties)
-    * **error pages** (error-messages_it.properties)
-    * Put all the downloded files into ```/opt/shibboleth-idp/messages``` directory
     * Restart Tomcat8: 
       ```service tomcat8 restart```
 
-12. Enable the SAML2 support by changing the ```idp-metadata.xml``` and disabling the SAML v1.x deprecated support:
-    * ```vim /opt/shibboleth-idp/metadata.xml```
+31. Enable the SAML2 support by changing the ```idp-metadata.xml``` and disabling the SAML v1.x deprecated support:
+    * ```vim /opt/shibboleth-idp/metadata/metadata.xml```
       ```bash
       <IDPSSODescriptor> SECTION:
         – From the list of "protocolSupportEnumeration" remove:
@@ -677,7 +666,7 @@ COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
           - urn:mace:shibboleth:1.0
 
         – Remove the endpoint:
-          <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.example.org:8443/idp/profile/SAML1/SOAP/ArtifactResolution" index="1"/>
+          <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.YOUR-DOMAIN:8443/idp/profile/SAML1/SOAP/ArtifactResolution" index="1"/>
           (and modify the index value of the next one to “1”)
 
         – Remove the endpoint:
@@ -690,7 +679,7 @@ COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
           (because the IdP installed with this guide releases persistent SAML NameIDs)
 
         - Remove the endpoint: 
-          <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://idp.example.org/idp/profile/Shibboleth/SSO"/>        
+          <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://idp.YOUR-DOMAIN/idp/profile/Shibboleth/SSO"/>        
         - Remove all ":8443" from the existing URL (such port is not used anymore)
 
       <AttributeAuthorityDescriptor> Section:
@@ -700,29 +689,29 @@ COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
           - urn:oasis:names:tc:SAML:2.0:protocol
 
         - Remove the comment from:
-          <AttributeService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://idp.mi.garr.it/idp/profile/SAML2/SOAP/AttributeQuery"/>
+          <AttributeService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://idp.YOUR-DOMAIN/idp/profile/SAML2/SOAP/AttributeQuery"/>
         - Remove the endpoint: 
-          <AttributeService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.example.org:8443/idp/profile/SAML1/SOAP/AttributeQuery"/>
+          <AttributeService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.YOUR-DOMAIN:8443/idp/profile/SAML1/SOAP/AttributeQuery"/>
 
         - Remove all ":8443" from the existing URL (such port is not used anymore)
       ```
 
-13. Obtain your IdP metadata here:
-    *  ```https://idp.example.org/idp/shibboleth```
+32. Obtain your IdP metadata here:
+    *  ```https://idp.YOUR-DOMAIN/idp/shibboleth```
 
-14. Register you IdP on IDEM Entity Registry:
-    * ```https://registry.idem.garr.it/```
+33. Register you IdP on the test Federation:
+    * ```https://fr-training.ac.lk/```
 
-15. Configure the IdP to retrieve the Federation Metadata:
+34. Configure the IdP to retrieve the Federation Metadata:
     * ```cd /opt/shibboleth-idp/conf```
     * ```vim metadata-providers.xml```
 
       ```xml
       <MetadataProvider
-            id="URLMD-IDEM-Federation"
+            id="HTTPMD-LEARN-Federation"
             xsi:type="FileBackedHTTPMetadataProvider"
-            backingFile="%{idp.home}/metadata/idem-test-metadata-sha256.xml"
-            metadataURL="http://www.garr.it/idem-metadata/idem-test-metadata-sha256.xml">
+            backingFile="%{idp.home}/metadata/test-metadata.xml"
+            metadataURL="http://fr-training.ac.lk/rr3/metadata/federation/FR-training/metadata.xml">
 
             <!--
                 Verify the signature on the root element of the metadata aggregate
@@ -744,20 +733,26 @@ COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
       ```
 
     * Retrive the Federation Certificate used to verify its signed metadata:
-      *  ```wget https://www.idem.garr.it/documenti/doc_download/321-idem-metadata-signer-2019 -O /opt/shibboleth-idp/metadata/federation-cert.pem```
+    *  ```wget https://fr-training.ac.lk/metadata-signer -O /opt/shibboleth-idp/metadata/federation-cert.pem```
 
-    * Check the validity:
-      *  ```cd /opt/shibboleth-idp/metadata```
-      *  ```openssl x509 -in federation-cert.pem -fingerprint -sha1 -noout``` 
-       
-         (sha1: 2F:F8:24:78:6A:A9:2D:91:29:19:2F:7B:33:33:FF:59:45:C1:7C:C8)
-      *  ```openssl x509 -in federation-cert.pem -fingerprint -md5 -noout```
-
-         (md5: AA:A7:CD:41:2D:3E:B7:F6:02:8A:D3:62:CD:21:F7:DE)
+    
   
-16. Reload service with id ```shibboleth.MetadataResolverService``` to retrieve the Federation Metadata:
+35. Reload service with id ```shibboleth.MetadataResolverService``` to retrieve the Federation Metadata:
     *  ```cd /opt/shibboleth-idp/bin```
     *  ```./reload-service.sh -id shibboleth.MetadataResolverService```
+
+
+
+
+
+
+  
+  ## To be Continued....
+
+
+COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
+
+
 
 17. The day after the IDEM Federation Operators approval your entity on IDEM Entity Registry, check if you can login with your IdP on the following services:
     * https://sp-test.garr.it/secure   (Service Provider provided for testing the IDEM Test Federation)
@@ -839,7 +834,13 @@ COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
          <ref bean="CodeOfConduct"/>
       </util:list>
       ```
-
+      
+31. Customizr IdP messages in your language:
+    * Get the files translated in your language from [Shibboleth page](https://wiki.shibboleth.net/confluence/display/IDP30/MessagesTranslation) for:
+    * **login page** (authn-messages_it.properties)
+    * **user consent/terms of use page** (consent-messages_it.properties)
+    * **error pages** (error-messages_it.properties)
+    * Put all the downloded files into ```/opt/shibboleth-idp/messages``` directory
 3. Reload service with id ```shibboleth.AttributeFilterService``` to refresh the Attribute Filter followed by the IdP:
    *  ```cd /opt/shibboleth-idp/bin```
    *  ```./reload-service.sh -id shibboleth.AttributeFilterService```
