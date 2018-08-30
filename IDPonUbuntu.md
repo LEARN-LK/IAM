@@ -701,6 +701,7 @@ All done!
 
 33. Register you IdP on the test Federation:
     * ```https://fr-training.ac.lk/```
+    > For production enviornments please use `https://fr.ac.lk`, Also make sure to remove `-training` from all urls.
 
 34. Configure the IdP to retrieve the Federation Metadata:
     * ```cd /opt/shibboleth-idp/conf```
@@ -712,7 +713,6 @@ All done!
             xsi:type="FileBackedHTTPMetadataProvider"
             backingFile="%{idp.home}/metadata/test-metadata.xml"
             metadataURL="http://fr-training.ac.lk/rr3/metadata/federation/FR-training/metadata.xml">
-
             <!--
                 Verify the signature on the root element of the metadata aggregate
                 using a trusted metadata signing certificate.
@@ -743,104 +743,7 @@ All done!
 
 
 
+36. The day after the Federation Operators approval you, check if you can login with your IdP on the following services:
+    * https://sp-training.ac.lk/secure   (Service Provider provided for testing the LEARN Training Federation)
+    * https://sp-test.learn.ac.lk/secure (Service Provider provided for testing the LEARN Production Federation)
 
-
-
-  
-  ## To be Continued....
-
-
-COPY FROM ORIGINAL DOCUMENT BY Marco Malavolti (marco.malavolti@garr.it)
-
-
-
-17. The day after the IDEM Federation Operators approval your entity on IDEM Entity Registry, check if you can login with your IdP on the following services:
-    * https://sp-test.garr.it/secure   (Service Provider provided for testing the IDEM Test Federation)
-    * https://sp24-test.garr.it/secure (Service Provider provided for testing the IDEM Test Federation and IDEM Production Federation)
-
-### Configure Attribute Filters to release the mandatory attributes to the default IDEM Resources:
-
-1. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
-   * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown tomcat8 /opt/shibboleth-idp/tmp/httpClientCache```
-
-2. Modify your ```services.xml```:
-   * ```vim /opt/shibboleth-idp/conf/services.xml```
-
-     ```xml
-     <bean id="IDEM-Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-           c:client-ref="shibboleth.FileCachingHttpClient"
-           c:url="http://www.garr.it/idem-conf/attribute-filter-v3-idem.xml"
-           c:backingFile="%{idp.home}/conf/attribute-filter-v3-idem.xml"/>
-
-     <util:list id ="shibboleth.AttributeFilterResources">
-         <value>%{idp.home}/conf/attribute-filter.xml</value>
-         <ref bean="IDEM-Default-Filter"/>
-      </util:list>
-      ```
-
-3. Reload service with id ```shibboleth.AttributeFilterService``` to refresh the Attribute Filter followed by the IdP:
-   *  ```cd /opt/shibboleth-idp/bin```
-   *  ```./reload-service.sh -id shibboleth.AttributeFilterService```
-
-### Configure Attribute Filters to release the mandatory attributes to the IDEM Production Resources:
-
-1. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
-   * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown tomcat8 /opt/shibboleth-idp/tmp/httpClientCache```
-
-2. Modify your ```services.xml```:
-   * ```vim /opt/shibboleth-idp/conf/services.xml```
-
-     ```xml
-     <bean id="IDEM-Production-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-           c:client-ref="shibboleth.FileCachingHttpClient"
-           c:url="http://www.garr.it/idem-conf/attribute-filter-v3-required.xml"
-           c:backingFile="%{idp.home}/conf/attribute-filter-v3-required.xml"/>
-     ...
-     <util:list id ="shibboleth.AttributeFilterResources">
-         <value>%{idp.home}/conf/attribute-filter.xml</value>
-         <ref bean="IDEM-Default-Filter"/>
-         <ref bean="IDEM-Production-Filter"/>
-     </util:list>
-     ```
-
-3. Reload service with id ```shibboleth.AttributeFilterService``` to refresh the Attribute Filter followed by the IdP:
-   *  ```cd /opt/shibboleth-idp/bin```
-   *  ```./reload-service.sh -id shibboleth.AttributeFilterService```
-
-### Configure Attribute Filters for Research and Scholarship and Data Protection Code of Conduct Entity Category
-
-1. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
-   * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown tomcat8 /opt/shibboleth-idp/tmp/httpClientCache```
-
-2. Modify your ```services.xml```:
-   * ```vim /opt/shibboleth-idp/conf/services.xml```
-
-     ```xml
-     <bean id="ResearchAndScholarship" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-           c:client-ref="shibboleth.FileCachingHttpClient"
-           c:url="http://www.garr.it/idem-conf/attribute-filter-v3-rs.xml"
-           c:backingFile="%{idp.home}/conf/attribute-filter-v3-rs.xml"/>
-
-     <bean id="CodeOfConduct" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-           c:client-ref="shibboleth.FileCachingHttpClient"
-           c:url="http://www.garr.it/idem-conf/attribute-filter-v3-coco.xml"
-           c:backingFile="%{idp.home}/conf/attribute-filter-v3-coco.xml"/>
-
-     <util:list id ="shibboleth.AttributeFilterResources">
-         <value>%{idp.home}/conf/attribute-filter.xml</value>
-         <ref bean="IDEM-Default-Filter"/>
-         <ref bean="IDEM-Production-Filter"/>
-         <ref bean="ResearchAndScholarship"/>
-         <ref bean="CodeOfConduct"/>
-      </util:list>
-      ```
-      
-31. Customizr IdP messages in your language:
-    * Get the files translated in your language from [Shibboleth page](https://wiki.shibboleth.net/confluence/display/IDP30/MessagesTranslation) for:
-    * **login page** (authn-messages_it.properties)
-    * **user consent/terms of use page** (consent-messages_it.properties)
-    * **error pages** (error-messages_it.properties)
-    * Put all the downloded files into ```/opt/shibboleth-idp/messages``` directory
-3. Reload service with id ```shibboleth.AttributeFilterService``` to refresh the Attribute Filter followed by the IdP:
-   *  ```cd /opt/shibboleth-idp/bin```
-   *  ```./reload-service.sh -id shibboleth.AttributeFilterService```
