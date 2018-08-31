@@ -251,3 +251,14 @@ Load it using:
 ```bash
 ldapadd -Y EXTERNAL -H ldapi:/// -f eduperson-201602.ldif
 ```
+
+Also Lets load The SChema for Academia, SCHAC.
+Get the schema downloaded from [SCHAC.ldif](./schac-20150413.ldif)
+
+Or the latest from `https://wiki.refeds.org/display/STAN/SCHAC+Releases`
+
+Load it using:
+
+```bash
+ldapadd -Y EXTERNAL -H ldapi:/// -f schac-20150413.ldif
+```
