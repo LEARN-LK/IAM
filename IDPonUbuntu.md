@@ -551,6 +551,10 @@ All done!
        idp.consent.StorageService = shibboleth.JPAStorageService
        idp.replayCache.StorageService = shibboleth.JPAStorageService
        idp.artifact.StorageService = shibboleth.JPAStorageService
+       # Track information about SPs logged into
+       idp.session.trackSPSessions = true
+       # Support lookup by SP for SAML logout
+       idp.session.secondaryServiceIndex = true
        ```
 
        (This will indicate to IdP to store the data collected by User Consent into the "**StorageRecords**" table)
@@ -576,6 +580,7 @@ All done!
        idp.authn.LDAP.userFilter = (uid={user})
        idp.authn.LDAP.bindDN = cn=admin,dc=example,dc=org
        idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
+       idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates:undefined}
        ```
 
      * Solution 2: LDAP + TLS:
@@ -591,6 +596,7 @@ All done!
        idp.authn.LDAP.userFilter = (uid={user})
        idp.authn.LDAP.bindDN = cn=admin,dc=example,dc=org
        idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
+       idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates:undefined}
        ```
 
      * Solution 3: plain LDAP
@@ -681,6 +687,14 @@ All done!
         - Remove the endpoint: 
           <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://idp.YOUR-DOMAIN/idp/profile/Shibboleth/SSO"/>        
         - Remove all ":8443" from the existing URL (such port is not used anymore)
+        
+        - Uncomment SingleLogoutService:
+        
+          <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://identity.thilinapathirana.xyz/idp/profile/SAML2/Redirect/SLO"/>
+          <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://identity.thilinapathirana.xyz/idp/profile/SAML2/POST/SLO"/>
+          <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST-SimpleSign" Location="https://identity.thilinapathirana.xyz/idp/profile/SAML2/POST-SimpleSign/SLO"/>
+          <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://identity.thilinapathirana.xyz/idp/profile/SAML2/SOAP/SLO"/>
+
 
       <AttributeAuthorityDescriptor> Section:
         – From the list "protocolSupportEnumeration" replace the value of:
@@ -746,4 +760,5 @@ All done!
 36. The day after the Federation Operators approval you, check if you can login with your IdP on the following services:
     * https://sp-training.ac.lk/secure   (Service Provider provided for testing the LEARN Training Federation)
     * https://sp-test.learn.ac.lk/secure (Service Provider provided for testing the LEARN Production Federation)
+
 
