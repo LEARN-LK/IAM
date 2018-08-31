@@ -762,3 +762,48 @@ All done!
     * https://sp-test.learn.ac.lk/secure (Service Provider provided for testing the LEARN Production Federation)
 
 
+### Configure Attribute Filters to release the mandatory attributes to the default IDEM Resources:
+
+37. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
+    * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown tomcat8 /opt/shibboleth-idp/tmp/httpClientCache```
+
+38. Modify your ```services.xml```:
+    * ```vim /opt/shibboleth-idp/conf/services.xml```
+
+      ```xml
+      <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
+            c:client-ref="shibboleth.FileCachingHttpClient"
+            c:url="https://fr-training.ac.lk/attribute-filter-LEARN-Default.xml"
+            c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-Default.xml"/>
+      <bean id="Production-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
+            c:client-ref="shibboleth.FileCachingHttpClient"
+            c:url="https://fr-training.ac.lk/attribute-filter-LEARN-Production.xml"
+            c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-Production.xml"/>
+      ...
+
+      <util:list id ="shibboleth.AttributeFilterResources">
+         <value>%{idp.home}/conf/attribute-filter.xml</value>
+         <ref bean="Default-Filter"/>
+         <ref bean="Production-Filter"/>
+       </util:list>
+      ```
+
+39. Reload service with id ```shibboleth.AttributeFilterService``` to refresh the Attribute Filter followed by the IdP:
+    *  ```cd /opt/shibboleth-idp/bin```
+    *  ```./reload-service.sh -id shibboleth.AttributeFilterService```
+
+
+
+### Appendix: Useful logs to find problems
+
+1. Tomcat 8 Logs:
+   * ```cd /var/log/tomcat8```
+   * ```vim catalina.out```
+
+2. Shibboleth IdP Logs:
+   * ```cd /opt/shibboleth-idp/logs```
+   * **Audit Log:** ```vim idp-audit.log```
+   * **Consent Log:** ```vim idp-consent-audit.log```
+   * **Warn Log:** ```vim idp-warn.log```
+   * **Process Log:** ```vim idp-process.log```
+
