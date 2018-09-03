@@ -276,7 +276,7 @@ Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
 
 ### Configure an example federated resouce "secure"
 
-1. Create the Apache2 configuration for the application: 
+17. Create the Apache2 configuration for the application: 
    * ```sudo su -```
 
    * ```vim /etc/apache2/site-available/secure.conf```
@@ -291,7 +291,7 @@ Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
      </Location>
      ```
 
-2. Create the "```secure```" application into the DocumentRoot:
+18. Create the "```secure```" application into the DocumentRoot:
    * ```mkdir /var/www/html/secure```
 
    * ```vim /var/www/html/secure/index.php```
@@ -324,13 +324,22 @@ Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
      </html>
      ```
 
-3. Install needed packages:
+19. Install needed packages:
    * ```apt istall libapache2-mod-php```
 
    * ```systemctl restart apache2.service```
 
 
 ### Enable Attribute Support on Shibboleth SP
-1. Enable attribute by remove comment from the related content into "```/etc/shibboleth/attribute-map.xml```"
-2. Disable First deprecated/incorrect version of ```persistent-id``` from ```attribute-map.xml```
+20. Enable attribute by remove comment from the related content into "```/etc/shibboleth/attribute-map.xml```"
+    Disable First deprecated/incorrect version of ```persistent-id``` from ```attribute-map.xml```
+    
+### Enable Single Logout
 
+21. Change <Logout> element in /etc/shibboleth/shibboleth2.xml. They get passed as attributes to the SAML2 LogoutInitiator that gets created by the Logout element.  The fully unfolded configuration with settings identical to default is:
+```xml
+<Logout asynchronous="true" outgoingBindings="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST urn:oasis:names:tc:SAML:2.0:bindings:SOAP">
+  SAML2 Local
+</Logout>
+```
+Setting asynchronous="false" would make the flow return back to the SP (this otherwise only happens for the SOAP binding which cannot be done asynchronously).
