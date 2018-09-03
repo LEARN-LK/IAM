@@ -343,3 +343,8 @@ Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
 </Logout>
 ```
 Setting asynchronous="false" would make the flow return back to the SP (this otherwise only happens for the SOAP binding which cannot be done asynchronously).
+
+
+To initiate, create a button or link to go to a URL on the SP of the form: https://sp.example.org/Shibboleth.sso/Logout
+
+The SLO would use an asynchronous message to the IdP and the flow would end at the IdP Logout page.  The user would be returned to the return URL only if the SLO is done in synchronous mode and the flow returns back to the SP.  To set the return URL, pass it in the return parameter as a query string to the Logout initiator - e.g.: https://sp.example.org/Shibboleth.sso/Logout?return=https://sp.example.org/logout-completed.html
