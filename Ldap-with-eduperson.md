@@ -262,3 +262,91 @@ Load it using:
 ```bash
 ldapadd -Y EXTERNAL -H ldapi:/// -f schac-20150413.ldif
 ```
+
+### Create User Structure
+
+Depending on your Institute's Requirement, you may create grouop as follows:
+
+```
+dn: ou=People,dc=YOUR-DOMAIN,dc=ac,dc=lk
+objectClass: organizationalUnit
+objectClass: top
+ou: People
+ 
+dn: ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
+objectClass: organizationalUnit
+objectClass: top
+ou: Group
+description: All groups
+
+# System Admin Staff Group
+dn:cn=adm,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
+cn:adm
+description:System Admin Staff
+gidNumber:1500
+objectClass:posixGroup
+objectClass:top
+
+# Acadamic staff Group
+dn:cn=acd,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
+cn:acd
+description:Acadamic Staff
+gidNumber:2000
+objectClass:posixGroup
+objectClass:top
+
+# Students Group
+dn:cn=student,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
+cn:student
+description:Students
+gidNumber:5000
+objectClass:posixGroup
+objectClass:top
+
+# servers OU
+dn:ou=servers,dc=YOUR-DOMAIN,dc=ac,dc=lk
+description:servers
+objectClass:top
+objectClass:organizationalUnit
+ou:servers
+
+# idp servers
+dn:cn=idp,ou=servers,dc=YOUR-DOMAIN,dc=ac,dc=lk
+cn:idp
+description:Identity Server
+ipHostNumber: 3ffe:ffff:ffff::9
+objectClass:top
+objectClass:device
+objectClass:ipHost
+objectClass:simpleSecurityObject
+userPassword:{crypt}idpldap
+
+
+# test User
+
+dn:uid=testme,ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
+cn:Test Me
+uid:testme
+uidNumber:1001
+gidNumber:1000
+givenName:Test Me
+homeDirectory:/dev/null
+homePhone:none
+objectClass:person
+objectClass:organizationalPerson
+objectClass:inetOrgPerson
+objectClass: eduPerson
+objectClass:posixAccount
+objectClass:top
+objectClass:shadowAccount
+sn:Test
+mobile:+94791234567
+userPassword:testme
+mail: testme@YOUR_DOMAIN
+eduPersonPrincipalName: testme@YOUR_DOMAIN
+
+```
+
+Save the above as a ldif file and add it to your directory as
+
+`ldapadd -H ldap:// -x -D "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk" -W -Z -f path_to_file.ldif`
