@@ -794,6 +794,90 @@ All done!
 
 
 
+### Customization and Branding
+
+The default install of the IdP login screen will display the Shibbolethlogo, a default prompt for username and password, and text saying that this screen should be customized. It is recommand to customize this page to have the proper institution logo and name. To give a consistent professional look, institution may customize the graphics to match the style of their,
+
+- login pages
+- onsent pages
+- logout pages
+- error pages 
+
+Those pages are created as Velocity template under `/opt/shibboleth-idp/views`
+
+Therefore, it is recommended to customize the Velocity pages, adding supplementary images and CSS files as needed
+
+Also the Velocity templates can be configured through message properties defined in message property files on  `/opt/shibboleth-idp/system/messages/messages.properties`  **which should NOT be modified**  because of that,  any customizations should be inserted into `/opt/shibboleth-idp/messages/messages.properties`
+
+least configurations:
+
+`idp.title` - HTML TITLE to use across all of the IdP page templates.  We recommend settings this to something like University of Example Login Service
+
+`idp.logo` - relative path to the logo to render on the templates.  E.g., /images/logo.jpg.
+The logo image has to be installed into /opt/shibboleth-idp/edit-webapp/images and the web application WAR file has to be rebuilt with /opt/shibboleth-idp/bin/build.sh
+
+`idp.logo.alt-text` - the ALT text for your logo.  Should be changed from the default value (where the text asks for the logo to be replaced).
+
+`idp.footer` - footer that displays on (almost) all pages.
+
+`root.footer` - footer that displays on some error pages.
+
+Eg:
+
+```java
+idp.title = University of Example Login Service
+idp.logo = /images/logo.jpg
+idp.logo.alt-text = University of Example logo
+idp.footer = Copyright University of Example
+root.footer = Copyright University of Example
+```
+Depending on branding requirements, it may be sufficient to edit the CSS files in /opt/shibboleth-idp/edit-webapp/css, or it may be necessary to start editing the template pages.
+
+Please note that the login page and most other pages use /opt/shibboleth-idp/edit-webapp/css/main.css, the consent module uses /opt/shibboleth-idp/edit-webapp/css/consent.css with different element names.
+
+
+Besides the logo, the login page (and several other pages) display a toolbox on the right with placeholders for links to password-reset and help-desk pages, these can be customized by adding following to the `/opt/shibboleth-idp/messages/messages.properties`
+
+```java
+idp.url.password.reset = http://helpdesk.YOUR-DOMAIN/ChangePassword/
+idp.url.helpdesk = http://help.YOUR-DOMAIN/
+```
+
+Alternatively, it is also possible to hide the whole toolbox (the whole <div class="column two"> element) from all of the relevant pages (essentially, login.vm and all (three) logout pages: logout.vm, logout-complete.vm and logout.propagate).  This can be easily done by adding the following CSS snippet into /opt/shibboleth-idp/edit-webapp/css/main.css:
+
+```css
+.column.two {
+    display: none;
+}
+```
+
+For your simplisity in developing, temporary add the following to Apache idp.conf file ( /etc/apache2/sites-available/idp.conf ) to server the requests directly by Apache (avoiding going through Tomcat and thus avoiding having to rebuild the WAR file after every change):insert the following right above the ***ProxyPass /idp*** directive:
+
+```apache
+ProxyPass /idp/images !
+ProxyPass /idp/css !
+Alias /idp/images /opt/shibboleth-idp/edit-webapp/images
+Alias /idp/css /opt/shibboleth-idp/edit-webapp/css
+```
+
+And, as default permissions on Apache 2.4 are more restrictive, grant also explicitly access to the /opt/shibboleth-idp/edit-webapp directory: insert this at the very top of /etc/httpd/conf.d/idp.conf:
+
+```apache
+<Directory /opt/shibboleth-idp/edit-webapp>
+   Require all granted
+</Directory>
+```
+When done with changes to the images and css directories, remember to rebuild the WAR file and restart Tomcat:
+
+```bash
+/opt/shibboleth-idp/bin/build.sh
+service tomcat restart
+```
+
+Then remove the temporary additions on idp.conf and restart the apache service.
+
+
+
 ### Appendix: Useful logs to find problems
 
 1. Tomcat 8 Logs:
