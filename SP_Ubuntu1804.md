@@ -273,6 +273,7 @@ Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
 16. Register you SP on LEARN test federation:
    * Go to ```https://fr-training.ac.lk/rr3/providers/sp_registration``` and continue registration with pasting the content of your metadata file 
 
+You may have to answer several questions decsribing your service to the federation provider.
 
 ### Configure an example federated resouce "secure"
 
@@ -325,14 +326,15 @@ Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
      ```
 
 19. Install needed packages:
-   * ```apt istall libapache2-mod-php```
+   
+   * ```a2ensite secure```
 
    * ```systemctl restart apache2.service```
 
 
 ### Enable Attribute Support on Shibboleth SP
 20. Enable attribute by remove comment from the related content into "```/etc/shibboleth/attribute-map.xml```"
-    Disable First deprecated/incorrect version of ```persistent-id``` from ```attribute-map.xml```
+    Disable First deprecated/incorrect version of ```persistent-id``` from ```attribute-map.xml```. Also you may enable any attribute map as per your requirement.
     
 ### Enable Single Logout
 
