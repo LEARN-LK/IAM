@@ -328,12 +328,14 @@ You may have to answer several questions decsribing your service to the federati
 19. Install needed packages:
    
    * ```a2ensite secure```
-
-   * ```systemctl restart apache2.service```
+  
+   * ```systemctl restart shibd```
+   
+   * ```systemctl restart apache2```
 
 
 ### Enable Attribute Support on Shibboleth SP
-20. Enable attribute by remove comment from the related content into "```/etc/shibboleth/attribute-map.xml```"
+20. Enable attribute by remove comment from the related content into ```/etc/shibboleth/attribute-map.xml```
     Disable First deprecated/incorrect version of ```persistent-id``` from ```attribute-map.xml```. Also you may enable any attribute map as per your requirement.
     
 ### Enable Single Logout
