@@ -1,12 +1,24 @@
-*** Installation of Eduroam IRS with Freeradius on Ubuntu18.04 ***
+# Installation of Eduroam IRS with Freeradius on Ubuntu18.04
 
-source list
+It is assumed that this installation will be carried on a default ubuntu 18.04 server.
+
+Modify the apt source list as per the source list from (`/etc/apt/source.list`)
 https://gist.github.com/jackw1111/d31140946901fab417131ff4d9ae92e3
 
 
+### Install Packages
+
+You need to become root by `sudo su` and proceed. 
+
+```
 apt-get install freeradius freeradius-utils
 
-sudo apt-get install git libssl-dev devscripts pkg-config libnl-3-dev libnl-genl-3-dev
+apt-get install git libssl-dev devscripts pkg-config libnl-3-dev libnl-genl-3-dev
+```
+
+Build eapol tool
+
+```
 
 git clone --depth 1 --no-single-branch https://github.com/FreeRADIUS/freeradius-server.git
 
@@ -16,59 +28,74 @@ cd freeradius-server/scripts/travis/
 
 cp ./eapol_test/eapol_test /usr/local/bin/
 
+```
 
-eapol_test should work now...
+command `eapol_test` should work now...
 
 
-vim /etc/freeradius/3.0/users. enable bob and test realm user
+ Next, `vim /etc/freeradius/3.0/users`  and modify to enable bob and test realm user
 
+```
 #
 bob     Cleartext-Password := "hello"
         Reply-Message := "Hello, %{User-Name}"
 #
-thili@eduroamtest.ac.lk         Cleartext-Password := "hello"
+thili@YOUR-DOMAIN         Cleartext-Password := "hello"
 ####
-
-
+```
+After the user modification following radtests should succeed.
+```
 radtest -t mschap -x bob hello 127.0.0.1:1812 10000 testing123
-radtest -t mschap -x thili@eduroamtest.ac.lk  hello 127.0.0.1:1812 10000 testing123
+radtest -t mschap -x thili@YOUR-DOMAIN  hello 127.0.0.1:1812 10000 testing123
+```
 
-should work
+### Install rad_eap_test
 
-Install rad_eap_test
-$ sudo su -
+```
+cd ~
 
-$ wget http://www.eduroam.cz/rad_eap_test/rad_eap_test-0.26.tar.bz2
+wget http://www.eduroam.cz/rad_eap_test/rad_eap_test-0.26.tar.bz2
 
-$ tar -xvf rad_eap_test-0.26.tar.bz2
+tar -xvf rad_eap_test-0.26.tar.bz2
 
-$ cd rad_eap_test-0.26
+cd rad_eap_test-0.26
+```
 
-$ vi rad_eap_test
+edit  `rad_eap_test` and Update the path to eapol test
 
-# Update the path to eapol test
-
+```
 EAPOL_PROG=eapol_test
+```
 
-[esc] and [:wq!] and [enter]
+and 
+```
+cp rad_eap_test /usr/local/bin
+```
 
-$ cp rad_eap_test /usr/local/bin
-
-
-
-
+After the user modification following tests should succeed.
+```
 rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u bob -p hello -m WPA-EAP -e PEAP
 rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u thili@eduroamtest.ac.lk -p hello -m WPA-EAP -e PEAP
+```
+You will recieve, 
+```
 access-accept; 0
+```
+### Freeradius Settings
 
-should work
-
-
+Go to install location and do the changes.
+```
 cd /etc/freeradius/3.0/
 mv mods-config/attr_filter/pre-proxy mods-config/attr_filter/pre-proxy.orig
-vi mods-config/attr_filter/pre-proxy
-with content 
+mv mods-config/attr_filter/post-proxy mods-config/attr_filter/post-proxy.orig
+```
+Create a new file for `pre-proxy` with following content:
 
+```
+vi mods-config/attr_filter/pre-proxy
+```
+ 
+```
 DEFAULT
         User-Name =* ANY,
         EAP-Message =* ANY,
@@ -82,15 +109,14 @@ DEFAULT
         Operator-Name =* ANY,
         Class =* ANY,
         Chargeable-User-Identity =* ANY
+```
 
-#################################################
-
-
-
-mv mods-config/attr_filter/post-proxy mods-config/attr_filter/post-proxy.orig
+Create a new file for `post-proxy` with following content:
+```
 vi mods-config/attr_filter/post-proxy
-with content 
+```
 
+```
 DEFAULT
         Framed-IP-Address == 255.255.255.254,
         Framed-IP-Netmask == 255.255.255.255,
@@ -112,14 +138,14 @@ DEFAULT
         User-Name =* ANY,
         Class =* ANY,
         Chargeable-User-Identity =* ANY
-#################################################
+```
 
 
 mv mods-available/eap mods-available/eap.orig
 
 vi mods-available/eap
 #################################################
-
+```
 
 eap {
                 default_eap_type = peap     # change to your organisation's preferred eap type (tls, ttls, peap, mschapv2)
@@ -160,22 +186,22 @@ eap {
                 }
  
         }
-
+```
 #################################################
 
 vi mods-available/linelog
 
-above ***Access-Accept = "Accepted user: %{User-Name}"****
-
+above `Access-Accept = "Accepted user: %{User-Name}"`
+```
 Access-Request = "\"%S\",\"%{reply:Packet-Type}\",\"%{reply:Chargeable-User-Identity}\",\"%{Operator-Name}\",\"%{Packet-Src-IP-Address}\",\"%{NAS-IP-Address}\",\"%{Client-Shortname}\",\"%{User-Name}\""
-
+```
 
 #################################################
 Mob=dify vi policy.d/cui
-
+```
 cui_hash_key = "bssjdbckdbcbhrsdhhsdc"
 cui_require_operator_name = "yes"
-
+```
 ##################################################
 
 cd /etc/freeradius/3.0/certs/
@@ -193,7 +219,7 @@ service freeradius restart
 ##################################################
 
 vim sites-available/eduroam with,
-
+```
 server eduroam {
   
         authorize {
@@ -246,12 +272,11 @@ server eduroam {
                 attr_filter.post-proxy      # strips unwanted attributes off of the reply, prior to sending it back to the Access Points (VLAN attributes in particular)
         }
 }
-
-##################################################
+```
 
 
 vim sites-available/eduroam-inner-tunnel with,
-
+```
 server eduroam-inner-tunnel {
  
 authorize {
@@ -282,16 +307,14 @@ post-auth {
 }
 }      
 
+```
 
-
-##################################################
+Modify proxy.conf
 
 mv proxy.conf proxy.conf.orig
-
-
 vi proxy.conf
 
-
+```
 proxy server {
         default_fallback        = no
 }
@@ -329,13 +352,13 @@ realm "~.+$" {
 realm eduroamtest.ac.lk {
         nostrip
 }
-
+```
 
 ##################################################
 
 
 vi clients.conf add to the end
-
+```
 client FLR1 {
 	ipaddr          = 192.248.1.180
 	secret          = FLR_EDUROAM_SECRET
@@ -357,9 +380,13 @@ client FLR2 {
     virtual_server = eduroam
 }
 
-
+```
 need to add all clients directly connecting to the radius, such as AP's controllers...
 
-
+```
+cd sites-enable
+rm default
+rm inner-tunnel
 ln -s ../sites-available/eduroam-inner-tunnel eduroam-inner-tunnel
 ln -s ../sites-available/eduroam eduroam
+```
