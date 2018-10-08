@@ -1,6 +1,6 @@
 # Installation of Eduroam IRS with Freeradius on Ubuntu18.04
 
-It is assumed that this installation will be carried on a default ubuntu 18.04 server.
+It is assumed that this installation will be carried on a fresh installation of ubuntu 18.04 server.
 
 Modify the apt source list (`/etc/apt/sources.list`) as per the source list from
 https://gist.github.com/jackw1111/d31140946901fab417131ff4d9ae92e3
@@ -238,6 +238,7 @@ service freeradius restart
 Create virtual server for eduroam as
 
 ```
+cd /etc/freeradius/3.0/
 vim sites-available/eduroam
 ```
 ```
@@ -460,7 +461,9 @@ post-proxy {
 
 ```
 
-Modify proxy.conf
+Now you should contact your National Roaming Operator and get your shared keys.
+
+Then modify proxy.conf
 
 ```
 mv proxy.conf proxy.conf.orig
@@ -602,9 +605,9 @@ rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u user@YOUR-DOMAIN -p user_pas
 Log Path: `/var/logs/freeradius/`
 
 Debug mode: 
-	* In a new console, stop freeradius service `service freeradius stop`
-	* Start in debug mode `freeradius -X`
-	* To stop debug mode, use CTRL+c
+* In a new console, stop freeradius service `service freeradius stop`
+* Start in debug mode `freeradius -X`
+* To stop debug mode, use CTRL+c
 	
 
 
