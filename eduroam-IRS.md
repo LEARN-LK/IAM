@@ -201,10 +201,11 @@ Modify the linelog module as follows,
 ```
 vi mods-available/linelog
 ```
-Add the following above the line containing `Access-Accept = "Accepted user: %{User-Name}"`
+MOdify the following lines containing `Access-Accept` and `Access-Reject`
 
 ```
-Access-Request = "\"%S\",\"%{reply:Packet-Type}\",\"%{reply:Chargeable-User-Identity}\",\"%{Operator-Name}\",\"%{Packet-Src-IP-Address}\",\"%{NAS-IP-Address}\",\"%{Client-Shortname}\",\"%{User-Name}\""
+Access-Accept = "eduroam-auth#ORG=%{request:Realm}#USER=%{User-Name}#CSI=%{%{Calling-Station-Id}:-Unknown Caller Id}#NAS=%{%{Called-Station-Id}:-Unknown Access Point}#CUI=%{%{reply:Chargeable-User-Identity}:-Unknown}#MSG=%{%{EAP-Message}:-No EAP Message}#RESULT=OK#" 
+        Access-Reject = "eduroam-auth#ORG=%{request:Realm}#USER=%{User-Name}#CSI=%{%{Calling-Station-Id}:-Unknown Caller Id}#NAS=%{%{Called-Station-Id}:-Unknown Access Point}#CUI=%{%{reply:Chargeable-User-Identity}:-Unknown}#MSG=%{%{reply:Reply-Message}:-No Failure Reason}#RESULT=FAIL#"
 ```
 
 Modify the cui policy as follows,
@@ -246,6 +247,7 @@ vim sites-available/eduroam
 #
 ######################################################################
 
+
 server eduroam {
 
 listen {
@@ -267,6 +269,7 @@ listen {
 	}
 }
 
+
 listen {
 	type = auth
 	ipv6addr = ::
@@ -283,6 +286,7 @@ listen {
 	port = 0
 	type = acct
 	limit {
+
 	}
 }
 
@@ -290,25 +294,23 @@ listen {
 authorize {
 
 	preprocess
+	filter_username
+        if (("%{client:shortname}" != "FLR1")||("%{client:shortname}" != "FLR2")) {
+                   update request {
+                           Operator-Name := "1YOUR-DOMAIN"
+                            # the literal number "1" above is an important prefix! Do not change it!
+         }
+        }
 	operator-name
 	cui
 	auth_log
-	chap
-	mschap
-#	digest
 	suffix
 	eap {
 		ok = return
 	}
 	files
-#	-sql
-	-ldap
 
-#	expiration
-#	logintime
-
-#	pap
-
+#	-ldap
 
 }
 
@@ -316,19 +318,6 @@ authorize {
 
 authenticate {
 
-	Auth-Type PAP {
-		pap
-	}
-	Auth-Type CHAP {
-		chap
-	}
-
-	Auth-Type MS-CHAP {
-		mschap
-	}
-
-
-	digest
 	eap
 
 
@@ -336,30 +325,14 @@ authenticate {
 
 
 preacct {
-	preprocess
-
-	acct_unique
-
-
 	suffix
-
-	files
+	
 }
 
 
 accounting {
-	detail
-	unix
-
-	-sql
-	exec
-	attr_filter.accounting_response
-
 
 }
-
-
-
 
 session {
 }
@@ -371,22 +344,106 @@ post-auth {
 		&reply: += &session-state:
 	}
 
-
-	-sql
-
-	exec
-
-
+	reply_log
+	linelog
 	remove_reply_message_if_eap
-
 	Post-Auth-Type REJECT {
+		reply_log
+		linelog
+	}
+}
 
-		-sql
+
+pre-proxy {
+
+        # if you want detailed logging
+	cui
+	pre_proxy_log  # logs the packet to the file system again. Attributes that have been added on during inspection are now visible
+
+        if("%{Packet-Type}" != "Accounting-Request") {
+
+              attr_filter.pre-proxy   # removes unnecessary attributes off of the request before sending the request upstream
+
+                }
+}
+
+post-proxy {
+                # if you want detailed logging
+
+                post_proxy_log              # logs the rply packet to the file system - as received by upstream
+
+                attr_filter.post-proxy      # strips unwanted attributes off of the reply, prior to sending it back to the Access Points (VLAN attributes in particular)
+
+
+}
+}
+
+```
+Create virtual server for eduroam-inner-tunnel.
+
+```
+vim sites-available/eduroam-inner-tunnel
+```
+
+```
+######################################################################
+#
+# Virtual Server Eduroam-Inner-Tunnel
+#
+######################################################################
+server eduroam-inner-tunnel {
+
+listen {
+       ipaddr = 127.0.0.1
+       port = 18120
+       type = auth
+}
+
+authorize {
+	auth_log
+	suffix
+	update control {
+ 			&Proxy-To-Realm := LOCAL
+	}
+	eap {
+		ok = return
+	}
+	files
+	-ldap
+	mschap
+	pap
+}
+
+authenticate {
+
+	Auth-Type PAP {
+		pap
+	}
+
+	Auth-Type MS-CHAP {
+		mschap
+	}
+
+	eap
+}
+
+
+session {
+	radutmp
+
+}
+
+
+
+post-auth {
+	cui-inner
+	reply_log
+	Post-Auth-Type REJECT {
+		reply_log
 		attr_filter.access_reject
-
-		eap
-
-		remove_reply_message_if_eap
+		update outer.session-state {
+			&Module-Failure-Message := &request:Module-Failure-Message
+		}
 	}
 }
 
@@ -396,52 +453,10 @@ pre-proxy {
 }
 
 
-
 post-proxy {
-
-
 	eap
-
 }
 }
-
-```
-Create virtual server for eduroam as
-
-```
-vim sites-available/eduroam-inner-tunnel
-```
-
-```
-server eduroam-inner-tunnel {
- 
-authorize {
-        auth_log
-        eap
-        files
-        mschap
-        pap
-}
- 
-authenticate {
-        Auth-Type PAP {
-                pap
-        }
-        Auth-Type MS-CHAP {
-                mschap
-        }
-        eap
-}
- 
-post-auth {
-	cui-inner
-        reply_log
-        Post-Auth-Type REJECT {
-                reply_log
-        }
- 
-}
-}      
 
 ```
 
@@ -459,14 +474,15 @@ proxy server {
 
 # Add your country's FLR details for the home_server {} attribute as shown below. port and status_check will not change.
 # Add as many definitions as there are FLRs
+# nro1.learn.ac.lk and nro2.learn.ac.lk are for Sri Lanka maintained by LEARN.
 home_server FLR1 {
-        ipaddr                  = 192.248.1.180
+        ipaddr                  = nro1.learn.ac.lk
         port                    = 1812
         secret                  = FLR_EDUROAM_SECRET
         status_check            = status-server
 }
 home_server FLR2 {
-        ipaddr                  = 192.248.3.195
+        ipaddr                  = nro2.learn.ac.lk
         port                    = 1812
         secret                  = FLR_EDUROAM_SECRET
         status_check            = status-server
@@ -490,7 +506,7 @@ realm "~.+$" {
 }
 
 # Your IdP realm
-realm iti.lk {
+realm YOUR-DOMAIN {
        # nostrip #uncomment to remove striping of realm from username
 }
 
@@ -506,28 +522,30 @@ vi clients.conf
 Add following to the tail
 ```
 client FLR1 {
-	ipaddr          = 192.248.1.180
+	ipaddr          = nro1.learn.ac.lk
 	secret          = FLR_EDUROAM_SECRET
         shortname       = FLR1
 	nas_type	 = other
-	Operator-Name = 1eduroamtest.ac.lk
+	Operator-Name = 1YOUR-DOMAIN
 	add_cui = yes
     virtual_server = eduroam
 }
 
 
 client FLR2 {
-	ipaddr		= 192.248.3.195
+	ipaddr		= nro2.learn.ac.lk
         secret          = FLR_EDUROAM_SECRET
         shortname       = FLR2
         nas_type        = other
-        Operator-Name = 1eduroamtest.ac.lk
+        Operator-Name = 1YOUR-DOMAIN
         add_cui = yes
     virtual_server = eduroam
 }
 
 ```
-need to add all clients directly connecting to the radius, such as AP's controllers...
+You may also need to add all clients directly connecting to the radius, such as AP's and controllers...
+
+Next,
 
 ```
 cd sites-enable
@@ -535,4 +553,58 @@ rm default
 rm inner-tunnel
 ln -s ../sites-available/eduroam-inner-tunnel eduroam-inner-tunnel
 ln -s ../sites-available/eduroam eduroam
+service freeradius restart
 ```
+After the restart, following tests should succeed.
+```
+rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u bob@YOUR-DOMAIN -p hello -m WPA-EAP -e PEAP
+rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u thili@YOUR-DOMAIN -p hello -m WPA-EAP -e PEAP
+```
+You may also test some of the test roaming accounts provided by your upstream NRO.
+
+### Enabling LDAP users
+
+Install Freeradius LDAP module
+
+```
+apt-get install freeradius-ldap
+```
+
+Configure LDAP parameters
+
+```
+vim /etc/freeradius/3.0/mods-available/ldap
+```
+Add or Modify the appopriate lines
+
+```
+server = 'LDAP-Server-FQDN'
+identity = 'cn=admin,dc=inst,dc=ac,dc=lk' #bind User
+password = irsldap
+base_dn = 'ou=people,dc=inst,dc=ac,dc=lk'
+edir_autz = yes
+```
+(You should consider connecting LDAP with STARTTLS enable. Please consult the ldap module for configurations)
+
+Enable LDAP Module & Restart Freeradius
+```
+ln -s /etc/freeradius/3.0/mods-available/ldap /etc/freeradius/3.0/mods-enabled/ldap
+service freeradius restart
+```
+
+Test ldap user authentication:
+```
+rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u user@YOUR-DOMAIN -p user_pass -m WPA-EAP -e PEAP
+```
+
+### Troubleshoot:
+
+Log Path: `/var/logs/freeradius/`
+
+Debug mode: 
+	* In a new console, stop freeradius service `service freeradius stop`
+	* Start in debug mode `freeradius -X`
+	* To stop debug mode, use CTRL+c
+	
+
+
