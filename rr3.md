@@ -112,7 +112,7 @@ max_execution_time = 60
 
 #### Install php dependancies
 
-   * `apt install php-apc`
+   * `apt install php-apcu`
    * `apt install php-mysql`
    * `apt install php-xml`
    * `apt install php-memcached`
