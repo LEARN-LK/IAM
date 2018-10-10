@@ -2,6 +2,8 @@
 
 Based on [IDEM-TUTORIALS](https://github.com/ConsortiumGARR/idem-tutorials/blob/master/idem-fedops/HOWTO-Shibboleth/Identity%20Provider/Ubuntu/HOWTO%20Install%20and%20Configure%20a%20Shibboleth%20IdP%20v3.2.1%20on%20Ubuntu%20Linux%20LTS%2016.04%20with%20Apache2%20%2B%20Tomcat8.md) by Marco Malavolti (marco.malavolti@garr.it)
 
+LEARN concluded a workshop on Federated Identity with the introduction of Shibboleth IDP and SP to IAM infrastructure on member institutions. Following are the generalized version of the guides used, originals can be found at [LEARN Workshop CMS](https://ws.learn.ac.lk/wiki/iam2018) 
+
 Installation assumes you have already installed Ubuntu Server 18.04 with default configuration and has a public IP connectivity with DNS setup
 
 Lets Assume your server hostname as **idp.YOUR-DOMAIN**
