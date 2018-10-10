@@ -14,13 +14,13 @@ All commands are to be run as root and you may use `sudo su` to become root
    * ```apt-get install vim default-jdk ca-certificates openssl tomcat8 apache2 ntp expat```
    
 
-2. Modify ```/etc/hosts```:
+2. Modify ```/etc/hosts``` and add:
    * ```vim /etc/hosts```
   
      ```bash
      127.0.0.1 idp.YOUR-DOMAIN idp
      ```
-   (*Replace ```idp.YOUR-DOMAIN``` with your IdP FQDN*)
+   (*Replace ```idp.YOUR-DOMAIN``` with your IdP FQDN, Also remember not to remove the entry for ```localhost```*)
 
 3. Define the costants ```JAVA_HOME``` and ```IDP_SRC``` inside ```/etc/environment```:
    * ```update-alternatives --config java``` (copy the path without /bin/java)
@@ -57,11 +57,9 @@ All commands are to be run as root and you may use `sudo su` to become root
    * ```tar -xzvf shibboleth-identity-provider-3.3.2.tar.gz```
    * ```cd shibboleth-identity-provider-3.3.2```
 
-6. Generate Passwords for later use in the installation
+6. Generate Passwords for later use in the installation, You will need two password strings, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION### for step 7.
    * ```tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo```
-   
-> Note: You will need two password string, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION###
-   
+      
 7. Run the installer ```install.sh``` to install Shibboleth Identity Provider v3.3.2:
    * ```./bin/install.sh```
   
@@ -220,7 +218,7 @@ If you do this installation in Lab setup please skip to implementing https with 
         ...
         SSLCertificateFile /root/certificates/idp-cert-server.crt
         SSLCertificateKeyFile /root/certificates/idp-key-server.key
-        SSLCertificateChainFile /root/certificates/publicCA.crt
+        #SSLCertificateChainFile /root/certificates/publicCA.crt #Uncomment if used.
         ...
       </VirtualHost>
    </IfModule>
@@ -228,7 +226,7 @@ If you do this installation in Lab setup please skip to implementing https with 
    Enable **proxy_http**, **SSL** and **headers** Apache2 modules:
    * ```a2enmod proxy_http ssl headers alias include negotiation```
    * ```a2ensite idp-ssl.conf```
-   * ```service apache2 restart```
+   
 
    Configure Apache2 to redirect all on HTTPS:
    * ```vim /etc/apache2/sites-enabled/000-default.conf```
@@ -239,6 +237,7 @@ If you do this installation in Lab setup please skip to implementing https with 
         Redirect "/" "https://idp.YOUR-DOMAIN/"
    </VirtualHost>
    ``` 
+   * ```service apache2 restart```
 
 ### Configure Apache Tomcat 8
 
