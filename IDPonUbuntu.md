@@ -8,7 +8,7 @@ Installation assumes you have already installed Ubuntu Server 18.04 with default
 
 Lets Assume your server hostname as **idp.YOUR-DOMAIN**
 
-All commands are to be run as root and you may use `sudo su` to become root
+All commands are to be run as **root** and you may use `sudo su`, to become root
 
 1. Install the packages required: 
    * ```apt-get install vim default-jdk ca-certificates openssl tomcat8 apache2 ntp expat```
@@ -239,7 +239,7 @@ If you do this installation in Lab setup please skip to implementing https with 
    ``` 
    * ```service apache2 restart```
 
-### Configure Apache Tomcat 8
+### Configure Apache Tomcat 8 to run as the back-end 
 
 
 14. Modify ```server.xml```:
@@ -247,7 +247,7 @@ If you do this installation in Lab setup please skip to implementing https with 
   
      Comment out the Connector 8080 (HTTP):
     
-     ```apache
+     ```xml
      <!-- A "Connector" represents an endpoint by which requests are received
           and responses are returned. Documentation at :
           Java HTTP Connector: /docs/config/http.html (blocking & non-blocking)
@@ -265,7 +265,7 @@ If you do this installation in Lab setup please skip to implementing https with 
 
      Enable the Connector 8009 (AJP):
 
-     ```apache
+     ```xml
      <!-- Define an AJP 1.3 Connector on port 8009 -->
      <Connector port="8009" protocol="AJP/1.3" redirectPort="443" address="127.0.0.1" enableLookups="false" tomcatAuthentication="false"/>
      ```
@@ -276,7 +276,7 @@ If you do this installation in Lab setup please skip to implementing https with 
 15. Create and change the file ```idp.xml```:
    * ```sudo vim /etc/tomcat8/Catalina/localhost/idp.xml```
 
-     ```apache
+     ```xml
      <Context docBase="/opt/shibboleth-idp/war/idp.war"
               privileged="true"
               antiResourceLocking="false"
@@ -318,6 +318,7 @@ If you do this installation in Lab setup please skip to implementing https with 
 20. Verify if the IdP works by opening this page on your browser:
    * ```https://idp.YOUR-DOMAIN/idp/shibboleth``` (you should see the IdP metadata)
 
+> If you see errors please consult log files of Tomcat8, Shibboleth or Apache. Troobleshoot locations are given at the end of this document
 
 
 ### Speed up Tomcat 8 startup
@@ -572,14 +573,14 @@ All done!
 
        ```xml
        idp.authn.LDAP.authenticator = bindSearchAuthenticator
-       idp.authn.LDAP.ldapURL = ldap://ldap.example.org:389
+       idp.authn.LDAP.ldapURL = ldap://LDAP.YOUR-DOMAIN:389
        idp.authn.LDAP.useStartTLS = true
        idp.authn.LDAP.useSSL = false
        idp.authn.LDAP.sslConfig = certificateTrust
        idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap-server.crt
-       idp.authn.LDAP.baseDN = ou=people,dc=example,dc=org
+       idp.authn.LDAP.baseDN = ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.userFilter = (uid={user})
-       idp.authn.LDAP.bindDN = cn=admin,dc=example,dc=org
+       idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
        idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates:undefined}
        ```
@@ -588,14 +589,14 @@ All done!
 
        ```xml
        idp.authn.LDAP.authenticator = bindSearchAuthenticator
-       idp.authn.LDAP.ldapURL = ldaps://ldap.example.org:636
+       idp.authn.LDAP.ldapURL = ldaps://LDAP.YOUR-DOMAIN:636
        idp.authn.LDAP.useStartTLS = false
        idp.authn.LDAP.useSSL = true
        idp.authn.LDAP.sslConfig = certificateTrust
        idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap-server.crt
-       idp.authn.LDAP.baseDN = ou=people,dc=example,dc=org
+       idp.authn.LDAP.baseDN = ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.userFilter = (uid={user})
-       idp.authn.LDAP.bindDN = cn=admin,dc=example,dc=org
+       idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
        idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates:undefined}
        ```
@@ -604,12 +605,12 @@ All done!
   
        ```xml
        idp.authn.LDAP.authenticator = bindSearchAuthenticator
-       idp.authn.LDAP.ldapURL = ldap://ldap.example.org:389
+       idp.authn.LDAP.ldapURL = ldap://LDAP.YOUR-DOMAIN:389
        idp.authn.LDAP.useStartTLS = false
        idp.authn.LDAP.useSSL = false
-       idp.authn.LDAP.baseDN = ou=people,dc=example,dc=org
+       idp.authn.LDAP.baseDN = ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.userFilter = (uid={user})
-       idp.authn.LDAP.bindDN = cn=admin,dc=example,dc=org
+       idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
        ```
        (If you decide to use the Solution 3, you have to remove (or comment out) the following code from your Attribute Resolver file:
@@ -624,11 +625,12 @@ All done!
        -->
        </resolver:DataConnector>
        ```
+> Make sure to change ***dc=YOUR-DOMAIN,dc=ac,dc=lk*** according to your domain
 
        **UTILITY FOR OPENLDAP ADMINISTRATOR:**
-           * ```ldapsearch -H ldap:// -x -b "dc=example,dc=it" -LLL dn```
-           * the baseDN ==> ```ou=people, dc=example,dc=org``` (branch containing the registered users)
-           * the bindDN ==> ```cn=admin,dc=example,dc=org``` (distinguished name for the user that can made queries on the LDAP)
+           * ```ldapsearch -H ldap:// -x -b "dc=YOUR-DOMAIN,dc=ac,dc=lk" -LLL dn```
+           * the baseDN ==> ```ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk``` (branch containing the registered users)
+           * the bindDN ==> ```cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk``` (distinguished name for the user that can made queries on the LDAP)
 
 
 29. Enrich IDP logs with the authentication error occurred on LDAP:
@@ -642,9 +644,9 @@ All done!
      <logger name="org.ldaptive.auth.Authenticator" level="INFO" />
      ```
 
-30. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-v1-LEARN.xml** provided by LEARN:
+30. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
     * Download the attribute resolver provided by LEARN:
-      ```wget https://fr-training.ac.lk/attribute-resolver-v1-LEARN.xml -O /opt/shibboleth-idp/conf/attribute-resolver-v1-LEARN.xml```
+      ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN.xml```
 
     * Modify ```services.xml``` file:
       ```vim /opt/shibboleth-idp/conf/services.xml```
@@ -656,21 +658,28 @@ All done!
       must become:
 
       ```xml
-      <value>%{idp.home}/conf/attribute-resolver-v1-LEARN.xml</value>
+      <value>%{idp.home}/conf/attribute-resolver-LEARN.xml</value>
       ```
-
-    * Configure the LDAP Data Connector to be compliant to the values put on ```ldap.properties```. (See above suggestions)
 
     * Restart Tomcat8: 
       ```service tomcat8 restart```
 
 31. Enable the SAML2 support by changing the ```idp-metadata.xml``` and disabling the SAML v1.x deprecated support:
     * ```vim /opt/shibboleth-idp/metadata/metadata.xml```
-      ```bash
+      ```xml
       <IDPSSODescriptor> SECTION:
         – From the list of "protocolSupportEnumeration" remove:
           - urn:oasis:names:tc:SAML:1.1:protocol
           - urn:mace:shibboleth:1.0
+        
+        - On <Extensions> include
+            <mdui:UIInfo>
+                <mdui:DisplayName xml:lang="en">Your Institute Name</mdui:DisplayName>
+                <mdui:Description xml:lang="en">Enter a description of your IdP</mdui:Description>
+                <mdui:Logo height="60" width="80">https://idp.YOUR-DOMAIN/logo.png</mdui:Logo>
+                <mdui:Logo height="16" width="16">https://idp.YOUR-DOMAIN/logo16.png</mdui:Logo>
+            </mdui:UIInfo>
+        - Upload example png files to /var/www/html as logo.png with 80x60 pixel and logo16.png with 16x16 pixel images.
 
         – Remove the endpoint:
           <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.YOUR-DOMAIN:8443/idp/profile/SAML1/SOAP/ArtifactResolution" index="1"/>
@@ -709,14 +718,52 @@ All done!
           <AttributeService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.YOUR-DOMAIN:8443/idp/profile/SAML1/SOAP/AttributeQuery"/>
 
         - Remove all ":8443" from the existing URL (such port is not used anymore)
+        - Finally remove all existing commented content from the whole document
+
       ```
 
 32. Obtain your IdP metadata here:
     *  ```https://idp.YOUR-DOMAIN/idp/shibboleth```
 
 33. Register you IdP on the test Federation:
-    * ```https://fr-training.ac.lk/```
-    > For production enviornments please use `https://fr.ac.lk`, Also make sure to remove `-training` from all urls.
+    * ```https://fr.ac.lk/```
+    * When Applying for the membership of the federation the form will ask lot of questions to identify your service. Therefore, answer all of them as per the following,
+
+    * On the IDP registration page start with pasting the whole xml metadata from https://idp.instXY.ac.lk/idp/shibboleth and click next. If you are using a browser to open the metadata link, use its view-source mode to copy the content.
+
+    * If you have correctly entered metadata you will be asked to select a Federation.
+
+    * Select "LEARN Identity Federation"
+
+    * Fill in your contact Details
+
+    * Go to Organization tab and Fill in all details for language English(en) by clicking "Add in new language" button
+
+    * Name of organization: Institute XY
+
+    * Displayname of organization: Institute XY
+
+    * URL: https://www.YOUR-DOMAIN
+
+    * Go to Contacts tab and add at least "Support" and "Technical" contacts
+
+    * On UI Information tab you will see some data extracted from metadata. Apart from those fill-in the rest
+
+      * Keywords: university or research
+
+      * For the tutorial put some dummy URL data for Information and Privacy Policy. But in production, you may have to provide your true data
+
+    * On UI Hints tab you may add your DNS Domain as instXY.ac.lk. Also you may specify your IP blocks or Location
+
+    * on SAML tab, tick the following on IDPSSODescriptor and AttributeAuthorityDescriptor? sections as Supported Name Identifiers
+
+      * urn:oasis:names:tc:SAML:2.0:nameid-format:persistent
+
+    * On Certificates tab, make sure it contains Certificate details, if not start Over by reloading IDP's metadata and pasting them.
+
+    * Finally click Register.
+
+    * Your Federation operator will review your application and will proceed with the registration
 
 34. Configure the IdP to retrieve the Federation Metadata:
     * ```cd /opt/shibboleth-idp/conf```
@@ -727,7 +774,7 @@ All done!
             id="HTTPMD-LEARN-Federation"
             xsi:type="FileBackedHTTPMetadataProvider"
             backingFile="%{idp.home}/metadata/test-metadata.xml"
-            metadataURL="http://fr-training.ac.lk/rr3/metadata/federation/FR-training/metadata.xml">
+            metadataURL="https://fr.ac.lk/signedmetadata/metadata.xml">
             <!--
                 Verify the signature on the root element of the metadata aggregate
                 using a trusted metadata signing certificate.
@@ -748,7 +795,7 @@ All done!
       ```
 
     * Retrive the Federation Certificate used to verify its signed metadata:
-    *  ```wget https://fr-training.ac.lk/metadata-signer -O /opt/shibboleth-idp/metadata/federation-cert.pem```
+    *  ```wget https://fr.ac.lk/signedmetadata/metadata-signer -O /opt/shibboleth-idp/metadata/federation-cert.pem```
 
     
   
@@ -757,13 +804,12 @@ All done!
     *  ```./reload-service.sh -id shibboleth.MetadataResolverService```
 
 
-
 36. The day after the Federation Operators approval you, check if you can login with your IdP on the following services:
-    * https://sp-training.ac.lk/secure   (Service Provider provided for testing the LEARN Training Federation)
-    * https://sp-test.learn.ac.lk/secure (Service Provider provided for testing the LEARN Production Federation)
+    * https://sp-training.ac.lk/secure   (Service Provider provided for testing the LEARN Federation)
+   
+    To be able to log-in, you should continue with the rest of the guide.
 
-
-### Configure Attribute Filters to release the mandatory attributes to the default IDEM Resources:
+### Configure Attribute Filters to release the mandatory attributes:
 
 37. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
     * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown tomcat8 /opt/shibboleth-idp/tmp/httpClientCache```
@@ -774,11 +820,11 @@ All done!
       ```xml
       <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
             c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr-training.ac.lk/attribute-filter-LEARN-Default.xml"
+            c:url="https://fr.ac.lk/templates/attribute-filter-LEARN-Default.xml"
             c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-Default.xml"/>
       <bean id="Production-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
             c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr-training.ac.lk/attribute-filter-LEARN-Production.xml"
+            c:url="https://fr.ac.lk/templates/attribute-filter-LEARN-Production.xml"
             c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-Production.xml"/>
       ...
 
@@ -789,9 +835,37 @@ All done!
        </util:list>
       ```
 
-39. Reload service with id ```shibboleth.AttributeFilterService``` to refresh the Attribute Filter followed by the IdP:
-    *  ```cd /opt/shibboleth-idp/bin```
-    *  ```./reload-service.sh -id shibboleth.AttributeFilterService```
+39. Reload service with id `shibboleth.AttributeFilterService` to refresh the Attribute Filter followed by the IdP:
+    *  `cd /opt/shibboleth-idp/bin`
+    *  `./reload-service.sh -id shibboleth.AttributeFilterService`
+
+### Enable Consent Module
+
+40. The consent module is shown when a user logs in to a service for the first time, and asks the user for permission to release the required (and desired) attributes to the service.
+
+    Edit `/opt/shibboleth-idp/conf/idp.properties` to uncomment and modify
+
+```
+     idp.consent.compareValues = true
+     idp.consent.maxStoredRecords = -1
+     idp.consent.storageRecordLifetime = P1Y
+```
+     
+   * Restart the Tomcat service by service tomcat8 restart
+
+   * By changing idp.consent.maxStoredRecords will remove the limit on the number of consent records held (by default, 10) by setting the limit to -1 (no limit)
+
+   * The Storage Record Life Time of 1 year should be sufficient and the consent records would expire after a year.
+
+   * Once you restart the service , the filters defined in step 38 will allow LEARN Federated Services to be authenticated with your IDP.
+
+### Release Attributes for your Service Providers (SP) in Production Environment
+
+41. Edit `/opt/shibboleth-idp/conf/attribute-filter.xml` to include service providers who will use your IDP to authenticate your users for their services.
+
+   * Consult Service Provider guidelines and https://fr.ac.lk/templates/attribute-filter-LEARN-Production.xml on deciding what attributes you should release.
+
+   * Reload shibboleth.AttributeFilterService to apply the new SP
 
 
 
@@ -891,4 +965,9 @@ Then remove the temporary additions on idp.conf and restart the apache service.
    * **Consent Log:** ```vim idp-consent-audit.log```
    * **Warn Log:** ```vim idp-warn.log```
    * **Process Log:** ```vim idp-process.log```
+   
+3. Apache Logs:
 
+   * ```cd /var/log/apache2/```
+   * **Error Log:** ```tail error.log```
+   * **Access Log:** ```tail access.log```
