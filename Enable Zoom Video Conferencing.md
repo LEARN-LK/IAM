@@ -1,8 +1,6 @@
-# Add Zoom Video Conferencing services to your IDP.
+# Add LEARN Video Conferencing services to your IDP.
 
-This will guide you throgh enabling Zoom video conferencing services on your IDP. 
-
-## Prerequisite 
+This will guide you through enabling LEARN Video Conferencing services via Zoom on your IDP. It is assumed that you have a working **Shibboleth IDP** installed with the **membership** association of **LEARN Identity Access Federation ( LIAF )**. 
 
 * Shibboleth IDP istalled
 * Membership of LIAF
@@ -26,8 +24,12 @@ Edit the Relaying Party configuration by `vim /opt/shibboleth-idp/conf/relying-p
             </property>
         </bean>
 ```
-
+Next Restart Tomcat 8: ```service tomcat8 restart```
+    
+    
 Now you can use the sign in feature of https://learn.zoom.us with your IDP through LIAF.
+
+How to work with Zoom is available at https://support.zoom.us/hc/en-us
 
 > Note:
 
@@ -46,4 +48,4 @@ Now you can use the sign in feature of https://learn.zoom.us with your IDP throu
  | affiliate | Relationship with the institution short of full member |
  | alum	| Alumnus/alumna (graduate) |
  | library-walk-in | A person physically present in the library |
- 
+* Zoom account type 
