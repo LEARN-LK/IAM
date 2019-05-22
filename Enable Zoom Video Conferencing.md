@@ -1,15 +1,51 @@
 # Add LEARN Video Conferencing services to your IDP.
 
-This will guide you through enabling LEARN Video Conferencing services via Zoom on your IDP. It is assumed that you have a working **Shibboleth IDP** installed with the **membership** association of **LEARN Identity Access Federation ( LIAF )**. 
+This will guide you through enabling LEARN Video Conferencing services via Zoom on your IDP. It is assumed that you have a working **Shibboleth IDP** installed with the **membership** of **LEARN Identity Access Federation ( LIAF )**. 
 
-* Shibboleth IDP istalled
-* Membership of LIAF
-* User Attibutes sn, givenname, eduPersonAffiliation, eduPersonOrgUnitDN, mobile properly populated.
+
+## Required Identity Features
+
+Signing-in using federation to Zoom system requires following directory attributes.
+
+* sn
+* givenname
+* eduPersonAffiliation
+* eduPersonOrgUnitDN
+* mobile
+
+Therefore, it is essential to have those fields properly populated. Specially,
+
+* Values for the attribute mobile should be in the form of `+94xxxxxxxxx` (eg: `+94770055755` )
+* Values for the attribute eduPersonOrgUnitDN should be in the form of `ou=Department,ou=Faculty,o=University,c=LK`  (eg: `ou=Physics,ou=Faculty of Sciences,o=University of Colombo,c=LK` )
+* Values for the attribute eduPersonAffiliation must be either `faculty`, `student`, `staff`, `alum`, `member`, `affiliate`, `employee`, `library-walk-in` as per the below definition,
+
+ | Value | Meaning |
+ |-------|---------|
+ | faculty | Academic or Research staff |
+ | student | Undergraduate or postgraduate student |
+ | staff | All staff |
+ | employee | Employee other than staff, e.g. contractor |
+ | member	| Comprises all the categories named above, plus other members with normal institutional privileges, such as honorary staff or visiting scholar |
+ | affiliate | Relationship with the institution short of full member |
+ | alum	| Alumnus/alumna (graduate) |
+ | library-walk-in | A person physically present in the library |
+* Zoom Service is provisioned to have pro accounts for all those who have faculty/ staff/ alum/ member or affiliate as their eduPersonAffiliation. Affiliations, student, employee and library-walk-in will have basic account types. 
+
+>Note:
+
+> **Basic Account:** A basic user can host meetings with up to 100 participants. If 3 or more participants join, the meeting will time out after 40 minutes. They cannot utilize user and account add-ons such as large meeting, webinar, or conference room connector. 
+
+> **Pro Account:** A pro user is a paid account by LEARN and can host unlimited meetings on the public cloud with up to 100 participants. Pro users have these additional features available:
+> * Customize Personal Meeting ID
+> * Record to the Zoom cloud
+> * Be an alternative host
+> * Assign others to schedule and schedule on behalf of
+> * Utilize account add-ons such as conference room connector
+> * Be assigned user add-ons such as large meeting, webinar, or personal audio conference
 
 ## Allow Zoom service
 
-Edit the Relaying Party configuration by `vim /opt/shibboleth-idp/conf/relying-party.xml` and the following bean to  `<util:list id="shibboleth.RelyingPartyOverrides">` . . . `
-</util:list> `
+Edit the Relaying Party configuration by `vim /opt/shibboleth-idp/conf/relying-party.xml` and append the following bean to  `<util:list id="shibboleth.RelyingPartyOverrides">` . . . `</util:list> `
 
 ```xml
         <bean parent="RelyingPartyByName" c:relyingPartyIds="https://proxy.liaf.ac.lk/Saml2/proxy_saml2_backend.xml">
@@ -33,19 +69,5 @@ How to work with Zoom is available at https://support.zoom.us/hc/en-us
 
 > Note:
 
-* If you do not satisfy the prerequisite, please contact LEARN TAC ( `tac[at]learn.ac.lk` ) for the assistance.
-* Values for the attribute mobie should be in the form of `+94770055755`
-* Values for the attribute eduPersonOrgUnitDN should be in the form of `ou=Department,ou=Faculty,o=University,c=LK`  (eg: `ou=Physics,ou=Faculty of Sciences,o=University of Colombo,c=LK` )
-* Values for the attribute eduPersonAffiliation must be either `faculty`, `student`, `staff`, `alum`, `member`, `affiliate`, `employee`, `library-walk-in` as per the below definition,
-
- | Value | Meaning |
- |-------|---------|
- | faculty | Academic or Research staff |
- | student | Undergraduate or postgraduate student |
- | staff | All staff |
- | employee | Employee other than staff, e.g. contractor |
- | member	| Comprises all the categories named above, plus other members with normal institutional privileges, such as honorary staff or visiting scholar |
- | affiliate | Relationship with the institution short of full member |
- | alum	| Alumnus/alumna (graduate) |
- | library-walk-in | A person physically present in the library |
-* Zoom account type 
+* If you do not participate in LIAF, please follow the guidelines in becoming a member by accessing https://liaf.ac.lk
+* If you have any technical issues, contact LEARN TAC ( `tac[at]learn.ac.lk` ) for the assistance.
