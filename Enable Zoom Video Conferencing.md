@@ -37,11 +37,12 @@ Therefore, it is essential to have those fields properly populated. Specially,
 
 > **Pro Account:** A pro user is a paid account by LEARN and can host unlimited meetings on the public cloud with up to 100 participants. Pro users have these additional features available:
 > * Customize Personal Meeting ID
-> * Record to the Zoom cloud
 > * Be an alternative host
-> * Assign others to schedule and schedule on behalf of
-> * Utilize account add-ons such as conference room connector
-> * Be assigned user add-ons such as large meeting, webinar, or personal audio conference
+> * Schedule Meetings
+> * Share screen as well as provide rights to participants to share their screens
+> * Provide Remote support to participants via personal meeting while others observe.
+> * Create custom polls during meetings
+
 
 ## Allow Zoom service
 
