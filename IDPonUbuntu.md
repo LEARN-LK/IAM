@@ -725,9 +725,9 @@ All done!
 32. Obtain your IdP metadata here:
     *  ```https://idp.YOUR-DOMAIN/idp/shibboleth```
 
-33. Register you IdP on the test Federation:
-    * ```https://fr.ac.lk/```
-    * When Applying for the membership of the federation the form will ask lot of questions to identify your service. Therefore, answer all of them as per the following,
+33. Register you IdP on LIAF:
+    * ```https://liaf.ac.lk/```
+    * Once your membership is approved, you will be sent a federation registry joining link where the form will ask lot of questions to identify your provider. Therefore, answer all of them as per the following,
 
     * On the IDP registration page start with pasting the whole xml metadata from https://idp.instXY.ac.lk/idp/shibboleth and click next. If you are using a browser to open the metadata link, use its view-source mode to copy the content.
 
@@ -748,9 +748,7 @@ All done!
     * Go to Contacts tab and add at least "Support" and "Technical" contacts
 
     * On UI Information tab you will see some data extracted from metadata. Apart from those fill-in the rest
-
       * Keywords: university or research
-
       * For the tutorial put some dummy URL data for Information and Privacy Policy. But in production, you may have to provide your true data
 
     * On UI Hints tab you may add your DNS Domain as instXY.ac.lk. Also you may specify your IP blocks or Location
