@@ -232,9 +232,9 @@ Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
 
 
 
-11. Download Federation Metadata Signing Certificate: (If its available)
+11. Download Federation Metadata Signing Certificate:
    * ```cd /etc/shibboleth/```
-   * ```wget https://LEARN-Test-federation/signning-key.pem```
+   * ```wget https://fr.ac.lk/signedmetadata/metadata-signer -O federation-cert.pem```
 
 
 12. Edit ```shibboleth2.xml``` opportunely:
@@ -247,14 +247,14 @@ Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
      ...
      <Sessions lifetime="28800" timeout="3600" checkAddress="false" handlerSSL="true" cookieProps="https">
      ...
-     <SSO discoveryProtocol="SAMLDS" discoveryURL="https://fds-training.ac.lk">
+     <SSO discoveryProtocol="SAMLDS" discoveryURL="https://fds.ac.lk">
         SAML2
      </SSO>
      ...
-     <MetadataProvider type="XML" uri="https://fr-training.ac.lk/rr3/metadata/federation/FR-training/metadata.xml" legacyOrgName="true" backingFilePath="test-metadata.xml" reloadInterval="600">
-           <!-- remove this comment if the signning key is available
-           <MetadataFilter type="Signature" certificate="signning-key.pem"/>
-           -->
+     <MetadataProvider type="XML" uri="https://fr.ac.lk/signedmetadata/metadata.xml" legacyOrgName="true" backingFilePath="test-metadata.xml" reloadInterval="600">
+           
+           <MetadataFilter type="Signature" certificate="federation-cert.pem"/>
+           
            <MetadataFilter type="RequireValidUntil" maxValidityInterval="864000" />
      </MetadataProvider>
      ```
@@ -270,8 +270,8 @@ Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
    * ```https://sp.YOUR-DOMAIN/Shibboleth.sso/Metadata```
    (change ```sp.YOUR-DOMAIN``` to you SP full qualified domain name)
 
-16. Register you SP on LEARN test federation:
-   * Go to ```https://fr-training.ac.lk/rr3/providers/sp_registration``` and continue registration with pasting the content of your metadata file 
+16. Register your SP on LEARN test federation:
+   * Go to ```https://liaf.ac.lk/#join``` and follow the Service provider registration. Once the federation operator approves your request, you will be asked to use the content of your metadata file on federation registry registration.
 
 You may have to answer several questions decsribing your service to the federation provider.
 
