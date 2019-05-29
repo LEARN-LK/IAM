@@ -16,7 +16,7 @@ Signing-in using federation to Zoom system requires following directory attribut
 Therefore, it is essential to have those fields properly populated. Specially,
 
 * Values for the attribute mobile should be in the form of `+94xxxxxxxxx` (eg: `+94770055755` )
-* Values for the attribute eduPersonOrgUnitDN should be in the form of `ou=Department,ou=Faculty,o=University,c=LK`  (eg: `ou=Physics,ou=Faculty of Sciences,o=University of Colombo,c=LK` )
+* Values for the attribute eduPersonOrgUnitDN should be in the form of `ou=Department,ou=Faculty,o=University,c=LK`  (eg: `ou=Physics,ou=Faculty of Sciences,o=University of Colombo,c=LK` ) ( Note: This is not the tree stucture of your directory, but an attribute for each user. )
 * Values for the attribute eduPersonAffiliation must be either `faculty`, `student`, `staff`, `alum`, `member`, `affiliate`, `employee`, `library-walk-in` as per the below definition,
 
  | Value | Meaning |
