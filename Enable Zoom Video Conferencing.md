@@ -2,6 +2,7 @@
 
 This will guide you through enabling LEARN Video Conferencing services via Zoom on your IDP. It is assumed that you have a working **Shibboleth IDP** installed with the **membership** of **LEARN Identity Access Federation ( LIAF )**. 
 
+> Note: You may refer https://github.com/LEARN-LK/IAM in installing your IDP. Also the content of [IAM workshop](https://ws.learn.ac.lk/wiki/iam2018agenda) will help you to understand what is Shibboleth and the process of federating identities.
 
 ## Required Identity Features
 
