@@ -32,7 +32,7 @@ All commands are to be run as root and you may use `sudo su` to become root
      mkdir ~/temp
      cd ~/temp
      apt-get download libxmltooling7 # Ignore the warnings
-     ar x libxmltooling7_1.6.4-1ubuntu2_amd64.deb
+     ar x libxmltooling7_1.6.4-1ubuntu2.1_amd64.deb
      tar xf control.tar.xz
      sed -i -e 's/libcurl3 (>= 7.16.2)/libcurl4/g' control
      tar -cJvf control.tar.xz control md5sums shlibs triggers
