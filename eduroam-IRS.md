@@ -3,7 +3,7 @@
 It is assumed that this installation will be carried on a fresh installation of ubuntu 18.04 server.
 
 Modify the apt source list (`/etc/apt/sources.list`) as per the source list from
-https://gist.github.com/jackw1111/d31140946901fab417131ff4d9ae92e3
+https://gist.github.com/jackw1111/
 
 
 ### Install Packages
