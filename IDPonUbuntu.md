@@ -99,7 +99,7 @@ If you do this installation in Lab setup please skip to implementing https with 
    * ```a2dissite 000-default```
    
 11. Create a new configuration file as `idp.conf` with the following:
-   * ```vim /etc/apache2/site-available/idp.conf```
+   * ```vim /etc/apache2/sites-available/idp.conf```
   
    ```apache
    <VirtualHost *:80>
