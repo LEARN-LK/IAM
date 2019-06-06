@@ -112,6 +112,9 @@ If you do this installation in Lab setup please skip to implementing https with 
    Enable Apache2 modules:
    * ```a2enmod proxy_http ssl headers alias include negotiation```
    
+   Enable IDP site config:
+   * ```a2ensite idp```
+   
    Restart the Apache service:
    * ```service apache2 restart```
 
