@@ -625,19 +625,7 @@ All done!
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
        idp.authn.LDAP.returnAttributes                 = *
        ```
-       
-       (If you decide to use the Solution 3, you have to remove (or comment out) the following code from your Attribute Resolver file:
-      
-       ```xml
-       </dc:FilterTemplate>
-       <!--
-       <dc:StartTLSTrustCredential id="LDAPtoIdPCredential" xsi:type="sec:X509ResourceBacked">
-         <sec:Certificate>%
-           {idp.attribute.resolver.LDAP.trustCertificates}</sec:Certificate>
-         </dc:StartTLSTrustCredential>
-       -->
-       </resolver:DataConnector>
-       ```
+
 > Make sure to change ***dc=YOUR-DOMAIN,dc=ac,dc=lk*** according to your domain
 
 
@@ -655,6 +643,46 @@ All done!
 30. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
     * Download the attribute resolver provided by LEARN:
       ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN.xml```
+    * If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
+       ```xml
+    <!-- LDAP Connector -->
+    <DataConnector id="myLDAP" xsi:type="LDAPDirectory"
+        ldapURL="%{idp.attribute.resolver.LDAP.ldapURL}"
+        baseDN="%{idp.attribute.resolver.LDAP.baseDN}"
+        principal="%{idp.attribute.resolver.LDAP.bindDN}"
+        principalCredential="%{idp.attribute.resolver.LDAP.bindDNCredential}"
+        useStartTLS="%{idp.attribute.resolver.LDAP.useStartTLS:true}">
+	      <!-- trustFile="%{idp.attribute.resolver.LDAP.trustCertificates}" -->
+        <FilterTemplate>
+            <![CDATA[
+                %{idp.attribute.resolver.LDAP.searchFilter}
+            ]]>
+        </FilterTemplate>
+        <!-- <StartTLSTrustCredential id="LDAPtoIdPCredential" xsi:type="sec:X509ResourceBacked">
+            <sec:Certificate>%{idp.attribute.resolver.LDAP.trustCertificates}</sec:Certificate>
+        </StartTLSTrustCredential> -->
+        <ReturnAttributes>%{idp.attribute.resolver.LDAP.returnAttributes}</ReturnAttributes>
+    </DataConnector>
+       ```
+    * Change the value of ```schacHomeOrganizationType```
+       ```xml
+    <Attribute id="schacHomeOrganizationType">
+            <Value>urn:schac:homeOrganizationType:lk:others</Value>
+
+    </Attribute>
+        ```
+        
+      where value must be either,
+
+      urn:schac:homeOrganizationType:int:university
+      urn:schac:homeOrganizationType:int:library
+      urn:schac:homeOrganizationType:int:public-research-institution
+      urn:schac:homeOrganizationType:int:private-research-institution
+
+
+
+
+      
 
     * Modify ```services.xml``` file:
       ```vim /opt/shibboleth-idp/conf/services.xml```
@@ -673,7 +701,7 @@ All done!
       ```service tomcat8 restart```
 
 31. Enable the SAML2 support by changing the ```idp-metadata.xml``` and disabling the SAML v1.x deprecated support:
-    * ```vim /opt/shibboleth-idp/metadata/metadata.xml```
+    * ```vim /opt/shibboleth-idp/metadata/idp-metadata.xml```
       ```xml
       <IDPSSODescriptor> SECTION:
         – From the list of "protocolSupportEnumeration" remove:
@@ -693,14 +721,6 @@ All done!
           <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.YOUR-DOMAIN:8443/idp/profile/SAML1/SOAP/ArtifactResolution" index="1"/>
           (and modify the index value of the next one to “1”)
 
-        – Remove the endpoint:
-          <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
-
-        – Replace the endpoint:
-          <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
-          with:
-          <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>
-          (because the IdP installed with this guide releases persistent SAML NameIDs)
 
         - Remove the endpoint: 
           <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://idp.YOUR-DOMAIN/idp/profile/Shibboleth/SSO"/>        
