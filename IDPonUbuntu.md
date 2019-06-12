@@ -865,9 +865,14 @@ All done!
 
    * Once you restart the service , the filters defined in step 38 will allow LEARN Federated Services to be authenticated with your IDP.
 
+
+41. Now you will be allowed to login with your IdP on the following services:
+    * https://sp-training.ac.lk/secure   (Service Provider provided for testing the LIAF)
+   
+
 ### Release Attributes for your Service Providers (SP) in Production Environment
 
-41. If you have any service provider (eg: Moodle) that supports SAML, you may use them to authenticate via your IDP. To do that, edit `/opt/shibboleth-idp/conf/attribute-filter.xml` to include service providers to authenticate your users for their services.
+42. If you have any service provider (eg: Moodle) that supports SAML, you may use them to authenticate via your IDP. To do that, edit `/opt/shibboleth-idp/conf/attribute-filter.xml` to include service providers to authenticate your users for their services.
 
    * Consult Service Provider guidelines and https://fr.ac.lk/templates/attribute-filter-LEARN-Production.xml on deciding what attributes you should release.
    * Instruction to add you moodle installations: https://moodle.org/auth/shibboleth/README.txt
@@ -958,8 +963,7 @@ service tomcat restart
 
 Then remove the temporary additions on idp.conf and restart the apache service.
 
-
-
+   
 ### Appendix: Useful logs to find problems
 
 1. Tomcat 8 Logs:
