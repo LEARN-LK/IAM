@@ -644,7 +644,8 @@ All done!
     * Download the attribute resolver provided by LEARN:
       ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN.xml```
     * If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
-       ```xml
+
+```xml
     <!-- LDAP Connector -->
     <DataConnector id="myLDAP" xsi:type="LDAPDirectory"
         ldapURL="%{idp.attribute.resolver.LDAP.ldapURL}"
@@ -662,27 +663,27 @@ All done!
             <sec:Certificate>%{idp.attribute.resolver.LDAP.trustCertificates}</sec:Certificate>
         </StartTLSTrustCredential> -->
         <ReturnAttributes>%{idp.attribute.resolver.LDAP.returnAttributes}</ReturnAttributes>
-    </DataConnector>
-       ```
+    </DataConnector> ```
+
     * Change the value of ```schacHomeOrganizationType```
-       ```xml
+```xml
     <Attribute id="schacHomeOrganizationType">
             <Value>urn:schac:homeOrganizationType:lk:others</Value>
 
     </Attribute>
-        ```
+```
         
-      where value must be either,
+where value must be either,
 
-      urn:schac:homeOrganizationType:int:university
-      urn:schac:homeOrganizationType:int:library
-      urn:schac:homeOrganizationType:int:public-research-institution
-      urn:schac:homeOrganizationType:int:private-research-institution
+urn:schac:homeOrganizationType:int:university
 
+urn:schac:homeOrganizationType:int:library
 
+urn:schac:homeOrganizationType:int:public-research-institution
 
+urn:schac:homeOrganizationType:int:private-research-institution
 
-      
+  
 
     * Modify ```services.xml``` file:
       ```vim /opt/shibboleth-idp/conf/services.xml```
