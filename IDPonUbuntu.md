@@ -586,6 +586,9 @@ All done!
        idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
        idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates:undefined}
+       idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
+       #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
+       idp.authn.LDAP.returnAttributes                 = *
        ```
 
      * Solution 2: LDAP + TLS:
@@ -602,6 +605,9 @@ All done!
        idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
        idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates:undefined}
+       idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
+       #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
+       idp.authn.LDAP.returnAttributes                 = *
        ```
 
      * Solution 3: plain LDAP
@@ -615,7 +621,11 @@ All done!
        idp.authn.LDAP.userFilter = (uid={user})
        idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
+       idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
+       #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
+       idp.authn.LDAP.returnAttributes                 = *
        ```
+       
        (If you decide to use the Solution 3, you have to remove (or comment out) the following code from your Attribute Resolver file:
       
        ```xml
@@ -629,11 +639,6 @@ All done!
        </resolver:DataConnector>
        ```
 > Make sure to change ***dc=YOUR-DOMAIN,dc=ac,dc=lk*** according to your domain
-
-       **UTILITY FOR OPENLDAP ADMINISTRATOR:**
-           * ```ldapsearch -H ldap:// -x -b "dc=YOUR-DOMAIN,dc=ac,dc=lk" -LLL dn```
-           * the baseDN ==> ```ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk``` (branch containing the registered users)
-           * the bindDN ==> ```cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk``` (distinguished name for the user that can made queries on the LDAP)
 
 
 29. Enrich IDP logs with the authentication error occurred on LDAP:
@@ -862,9 +867,10 @@ All done!
 
 ### Release Attributes for your Service Providers (SP) in Production Environment
 
-41. Edit `/opt/shibboleth-idp/conf/attribute-filter.xml` to include service providers who will use your IDP to authenticate your users for their services.
+41. If you have any service provider (eg: Moodle) that supports SAML, you may use them to authenticate via your IDP. To do that, edit `/opt/shibboleth-idp/conf/attribute-filter.xml` to include service providers to authenticate your users for their services.
 
    * Consult Service Provider guidelines and https://fr.ac.lk/templates/attribute-filter-LEARN-Production.xml on deciding what attributes you should release.
+   * Instruction to add you moodle installations: https://moodle.org/auth/shibboleth/README.txt
 
    * Reload shibboleth.AttributeFilterService to apply the new SP
 
