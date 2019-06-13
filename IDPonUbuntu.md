@@ -621,6 +621,8 @@ All done!
        idp.authn.LDAP.userFilter = (uid={user})
        idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
+       #idp.authn.LDAP.sslConfig = certificateTrust
+       #idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap-server.crt
        idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
        idp.authn.LDAP.returnAttributes                 = *
@@ -644,7 +646,6 @@ All done!
     * Download the attribute resolver provided by LEARN:
       ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN.xml```
     * If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
-
 ```xml
     <!-- LDAP Connector -->
     <DataConnector id="myLDAP" xsi:type="LDAPDirectory"
@@ -663,9 +664,11 @@ All done!
             <sec:Certificate>%{idp.attribute.resolver.LDAP.trustCertificates}</sec:Certificate>
         </StartTLSTrustCredential> -->
         <ReturnAttributes>%{idp.attribute.resolver.LDAP.returnAttributes}</ReturnAttributes>
-    </DataConnector> ```
+    </DataConnector>
+```
 
-    * Change the value of ```schacHomeOrganizationType```
+* Change the value of `schacHomeOrganizationType`,
+
 ```xml
     <Attribute id="schacHomeOrganizationType">
             <Value>urn:schac:homeOrganizationType:lk:others</Value>
@@ -683,22 +686,17 @@ urn:schac:homeOrganizationType:int:public-research-institution
 
 urn:schac:homeOrganizationType:int:private-research-institution
 
-  
 
-    * Modify ```services.xml``` file:
-      ```vim /opt/shibboleth-idp/conf/services.xml```
-
-      ```xml
+* Modify `services.xml` file: `vim /opt/shibboleth-idp/conf/services.xml`,
+```xml
       <value>%{idp.home}/conf/attribute-resolver.xml</value>
-      ```
-
-      must become:
-
-      ```xml
+```
+  must become:
+```xml
       <value>%{idp.home}/conf/attribute-resolver-LEARN.xml</value>
-      ```
+```
 
-    * Restart Tomcat8: 
+* Restart Tomcat8: 
       ```service tomcat8 restart```
 
 31. Enable the SAML2 support by changing the ```idp-metadata.xml``` and disabling the SAML v1.x deprecated support:
