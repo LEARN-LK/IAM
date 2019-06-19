@@ -199,7 +199,20 @@ Ask Users to login to https://keycloak.Your-Domain.ac.lk:8443/auth/realms/Your-D
 * Usage of OTP.
 
    Users can utilize the function OTP from their profile page. They may use any OTP software such as Google Authenticator, Authy, etc. This will add additional security to the password reset process.
-   
+
+* Define a Password Policy
+  To enforce a Password Policy, go to `Authentication --> Password Policy`
+  
+  Add policies as,
+  * Expire Password: 90
+  * Special Charaters: 1
+  * Uppercase Characters: 1
+  * Digits: 1
+  
+  This will enforce a policy to have a password with minimum 1 Special Character, 1 Uppercase Chatacter, 1 Digit, and with an expiry of 90 days.
+ 
+  
+  
 * Customize User Profile page to change ldap attribute values.
 
    By default users are only allowed to change Email, First Name and Last Name. But if you want to provide them access to change their any other details, you need to customize the template from the back end.
@@ -246,3 +259,10 @@ Ask Users to login to https://keycloak.Your-Domain.ac.lk:8443/auth/realms/Your-D
    * Now you may log in to user profile https://keycloak.Your-Domain.ac.lk:8443/auth/realms/Your-Domain/account and check whether the settings have applied, remember to use a private window as you needs to be authenticated as an ldapuser
 
 > For further customization you may consult keycloak official guides from https://www.keycloak.org/docs/latest/server_development/index.html#_themes
+
+
+* You need to add a cronjob to start keycloak at the boot, use `cronjob -e` with,
+
+```
+@reboot /opt/keycloak-6.0.1/bin/standalone.sh &
+```
