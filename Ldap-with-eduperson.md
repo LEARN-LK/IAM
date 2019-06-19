@@ -271,7 +271,32 @@ sudo ldapadd -Y EXTERNAL -H ldapi:/// -f schac-20150413.ldif
 
 ### Create User Structure
 
-Depending on your Institute's Requirement, you may create grouop as follows:
+Depending on your Institute's Requirement, you may create groups and users as follows, but you may need to create mandatory attributes when creating users:
+
+#### Mandatory Attributes:
+
+* Attribute `givenName`: First Name of the User
+* Attribute `sn`: Family Name of the User
+* Attribute `mail` Primary email address of your domain
+* Attribute `email`: Secondary email for the user to help password recovery
+* Attribute `eduPersonEntitlement` as `urn:mace:dir:entitlement:common-lib-terms`
+* Values for the attribute mobile should be in the form of `+94xxxxxxxxx` (eg: `+94770055755` )
+* Values for the attribute eduPersonOrgUnitDN should be in the form of `ou=Department,ou=Faculty,o=University,c=LK`  (eg: `ou=Physics,ou=Faculty of Sciences,o=University of Colombo,c=LK` ) ( Note: This is not the tree stucture of your directory, but an attribute for each user. )
+* Values for the attribute eduPersonAffiliation must be either `faculty`, `student`, `staff`, `alum`, `member`, `affiliate`, `employee`, `library-walk-in` as per the below definition,
+
+ | Value | Meaning |
+ |-------|---------|
+ | faculty | Academic or Research staff |
+ | student | Undergraduate or postgraduate student |
+ | staff | All staff |
+ | employee | Employee other than staff, e.g. contractor |
+ | member	| Comprises all the categories named above, plus other members with normal institutional privileges, such as honorary staff or visiting scholar |
+ | affiliate | Relationship with the institution short of full member |
+ | alum	| Alumnus/alumna (graduate) |
+ | library-walk-in | A person physically present in the library |
+
+
+#### Create a file containing those details and modify your directory.
 
 ```
 dn: ou=People,dc=YOUR-DOMAIN,dc=ac,dc=lk
@@ -350,14 +375,19 @@ objectClass: person
 objectClass: organizationalPerson
 objectClass: inetOrgPerson
 objectClass: eduPerson
+objectClass: extensibleObject
 objectClass: posixAccount
 objectClass: top
 objectClass: shadowAccount
 sn: Test
-mobile: +94791234567
+mobile: +94123456789
 userPassword: testme
-mail: testme@YOUR_DOMAIN
-eduPersonPrincipalName: testme@YOUR_DOMAIN
+mail: testme@YOUR_DOMAIN.ac.lk
+email: secondary_email@different_domain.com
+eduPersonPrincipalName: testme@YOUR_DOMAIN.ac.lk
+eduPersonAffiliation: staff
+eduPersonOrgUnitDN: ou=your department,ou=your faculty,o=your institute,c=LK
+eduPersonEntitlement: urn:mace:dir:entitlement:common-lib-terms
 
 ```
 
@@ -387,4 +417,4 @@ sudo slapcat
 sudo slapcat > backup.ldif
 ```
 
-
+>Next: Installing an UI for LDAP: https://github.com/LEARN-LK/IAM/blob/master/LDAP-UI.md
