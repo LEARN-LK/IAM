@@ -1,3 +1,5 @@
+# This is a Draft -- Donot Continue to follow the steps
+
 nano /etc/netplan/50-cloud-init.yaml
 
 network:
