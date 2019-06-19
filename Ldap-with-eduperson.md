@@ -1,6 +1,14 @@
 # Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema
 
-It is assumed that you have already install your Ubuntu server with a public IP address and a Domain Name (*ldap.YOUR-DOMAIN*). 
+It is assumed that you have already install your Ubuntu server with a public IP address and a registered Domain Name (**ldap.YOUR-DOMAIN.ac.lk**). 
+
+Modify /etc/hosts and append:
+
+* `sudo vim /etc/hosts`
+```
+127.0.0.1 ldap.YOUR-DOMAIN.ac.lk ldap
+```
+Install the required packages.
 
 ```bash
 sudo apt-get update
@@ -16,7 +24,7 @@ sudo dpkg-reconfigure slapd
 Answer the prompts appropriately, using the information below as a starting point:
 
   - Omit OpenLDAP server configuration? ***No*** (we want an initial database and configuration)
-  - DNS domain name: ***YOUR-DOMAIN*** (use the server's domain name, minus the hostname. This will be used to create the base entry for the information tree)
+  - DNS domain name: ***YOUR-DOMAIN.ac.lk*** (use the server's domain name, minus the hostname. This will be used to create the base entry for the information tree)
   - Organization name: ***Your Institute*** (This will simply be added to the base entry as the name of your institute)
   - Administrator password: ***whatever you'd like***
   - Confirm password: ***must match the above***
@@ -67,7 +75,7 @@ The cn in this template must match the FQDN of the LDAP server. If this value do
 
 ```
 organization = "Name of your institution"
-cn = idap.YOUR-DOMAIN
+cn = idap.YOUR-DOMAIN.ac.lk
 tls_www_server
 encryption_key
 signing_key
@@ -153,16 +161,16 @@ The end result will look like this:
 
 
 ```bash
-dn:cn=config
-changetype:modify
+dn: cn=config
+changetype: modify
 add:olcTLSCACertificateFile
-olcTLSCACertificateFile:/etc/ssl/certs/ca_server.pem
+olcTLSCACertificateFile: /etc/ssl/certs/ca_server.pem
 -
 add:olcTLSCertificateFile
-olcTLSCertificateFile:/etc/ssl/certs/ldap_server.pem
+olcTLSCertificateFile: /etc/ssl/certs/ldap_server.pem
 -
 add:olcTLSCertificateKeyFile
-olcTLSCertificateKeyFile:/etc/ssl/private/ldap_server.key
+olcTLSCertificateKeyFile: /etc/ssl/private/ldap_server.key
 ```
 
 Save and close the file when you are finished. Apply the changes to your OpenLDAP system using the ldapmodify command:
@@ -188,7 +196,7 @@ sudo slapd -h ldapi:/// -u openldap -g openldap -d 65 -F /etc/ldap/slapd.d/ -d 6
 Then in another console,
 
 ```
-ldapmodify -H ldapi:// -Y EXTERNAL -f addcerts.ldif
+sudo ldapmodify -H ldapi:// -Y EXTERNAL -f addcerts.ldif
 ```
 
 then `ctrl+c` to stop the debug mode on first console and start the service.
@@ -231,12 +239,10 @@ Save and close the file.
 You should now be able to upgrade your connections to use STARTTLS by passing the '''-Z''' option when using the OpenLDAP utilities. You can force STARTTLS upgrade by passing it twice. Test this by typing:
 
 ```
-ldapwhoami -H ldap:// -x -ZZ
+sudo ldapwhoami -H ldap:// -x -ZZ
 ```
 This forces a STARTTLS upgrade. If this is successful, you should see:
 ```
-STARTTLS success
-
 anonymous
 ```
 
@@ -249,7 +255,7 @@ Or the latest from `https://spaces.at.internet2.edu/display/macedir/LDIFs`
 Load it using:
 
 ```bash
-ldapadd -Y EXTERNAL -H ldapi:/// -f eduperson-201602.ldif
+sudo ldapadd -Y EXTERNAL -H ldapi:/// -f eduperson-201602.ldif
 ```
 
 Also Lets load The SChema for Academia, SCHAC.
@@ -260,7 +266,7 @@ Or the latest from `https://wiki.refeds.org/display/STAN/SCHAC+Releases`
 Load it using:
 
 ```bash
-ldapadd -Y EXTERNAL -H ldapi:/// -f schac-20150413.ldif
+sudo ldapadd -Y EXTERNAL -H ldapi:/// -f schac-20150413.ldif
 ```
 
 ### Create User Structure
@@ -269,79 +275,87 @@ Depending on your Institute's Requirement, you may create grouop as follows:
 
 ```
 dn: ou=People,dc=YOUR-DOMAIN,dc=ac,dc=lk
+
 objectClass: organizationalUnit
 objectClass: top
 ou: People
  
 dn: ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
+
 objectClass: organizationalUnit
 objectClass: top
 ou: Group
 description: All groups
 
 # System Admin Staff Group
-dn:cn=adm,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
-cn:adm
-description:System Admin Staff
-gidNumber:1500
-objectClass:posixGroup
-objectClass:top
+dn: cn=adm,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
+
+cn: adm
+description: System Admin Staff
+gidNumber: 1500
+objectClass: posixGroup
+objectClass: top
 
 # Acadamic staff Group
-dn:cn=acd,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
-cn:acd
-description:Acadamic Staff
-gidNumber:2000
-objectClass:posixGroup
-objectClass:top
+dn: cn=acd,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
+
+cn: acd
+description: Acadamic Staff
+gidNumber: 2000
+objectClass: posixGroup
+objectClass: top
 
 # Students Group
-dn:cn=student,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
-cn:student
-description:Students
-gidNumber:5000
-objectClass:posixGroup
-objectClass:top
+dn: cn=student,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
+
+cn: student
+description: Students
+gidNumber: 5000
+objectClass: posixGroup
+objectClass: top
 
 # servers OU
-dn:ou=servers,dc=YOUR-DOMAIN,dc=ac,dc=lk
-description:servers
-objectClass:top
-objectClass:organizationalUnit
-ou:servers
+dn: ou=servers,dc=YOUR-DOMAIN,dc=ac,dc=lk
 
-# idp servers
-dn:cn=idp,ou=servers,dc=YOUR-DOMAIN,dc=ac,dc=lk
-cn:idp
-description:Identity Server
+description: servers
+objectClass: top
+objectClass: organizationalUnit
+ou: servers
+
+# idp servers, change ipHostNumber to match your servers IP's
+dn: cn=idp,ou=servers,dc=YOUR-DOMAIN,dc=ac,dc=lk
+
+cn: idp
+description: Identity Server
 ipHostNumber: 3ffe:ffff:ffff::9
-objectClass:top
-objectClass:device
-objectClass:ipHost
-objectClass:simpleSecurityObject
-userPassword:{crypt}idpldap
+objectClass: top
+objectClass: device
+objectClass: ipHost
+objectClass: simpleSecurityObject
+userPassword: {crypt}idpldap
 
 
 # test User
 
-dn:uid=testme,ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
-cn:Test Me
-uid:testme
-uidNumber:1001
-gidNumber:1000
-givenName:Test Me
-homeDirectory:/dev/null
-homePhone:none
-objectClass:person
-objectClass:organizationalPerson
-objectClass:inetOrgPerson
+dn: uid=testme,ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
+
+cn: Test Me
+uid: testme
+uidNumber: 1001
+gidNumber: 1000
+givenName: Test Me
+homeDirectory: /dev/null
+homePhone: none
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
 objectClass: eduPerson
-objectClass:posixAccount
-objectClass:top
-objectClass:shadowAccount
-sn:Test
-mobile:+94791234567
-userPassword:testme
+objectClass: posixAccount
+objectClass: top
+objectClass: shadowAccount
+sn: Test
+mobile: +94791234567
+userPassword: testme
 mail: testme@YOUR_DOMAIN
 eduPersonPrincipalName: testme@YOUR_DOMAIN
 
@@ -349,4 +363,28 @@ eduPersonPrincipalName: testme@YOUR_DOMAIN
 
 Save the above as a ldif file and add it to your directory as
 
-`ldapadd -H ldap:// -x -D "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk" -W -Z -f path_to_file.ldif`
+`sudo ldapadd -H ldap:// -x -D "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk" -W -Z -f path_to_file.ldif`
+
+### Useful other commands:
+
+* Verify LDAP settings by:
+
+```
+sudo ldapsearch -H ldapi:// -Y EXTERNAL -b "cn=config" -LLL -Q
+```
+
+* View available schema by:
+
+```
+sudo ldapsearch -H ldapi:// -Y EXTERNAL -b "cn=schema,cn=config" -s one -Q -LLL dn
+```
+
+* View/backup ldap (to ldif)
+
+```
+sudo slapcat
+
+sudo slapcat > backup.ldif
+```
+
+
