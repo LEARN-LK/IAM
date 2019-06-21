@@ -261,7 +261,7 @@ Ask Users to login to https://keycloak.Your-Domain.ac.lk:8443/auth/realms/Your-D
 > For further customization you may consult keycloak official guides from https://www.keycloak.org/docs/latest/server_development/index.html#_themes
 
 
-* You need to add a cronjob to start keycloak at the boot, use `cronjob -e` with,
+* You need to add a cronjob to start keycloak at the boot, use `crontab -e` with,
 
 ```
 @reboot /opt/keycloak-6.0.1/bin/standalone.sh &
