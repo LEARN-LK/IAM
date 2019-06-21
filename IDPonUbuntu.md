@@ -566,13 +566,13 @@ All done!
 
 
 28. Connect the openLDAP to the IdP to allow the authentication of the users:
-    * use ```openssl x509 -outform der -in /etc/ssl/certs/ldap_server.pem -out /opt/shibboleth-idp/credentials/ldap_server.crt``` to load the ldap certificate.
-    
-    If you host ldap in a seperate machine, copy the ldap_server.crt to  ```/opt/shibboleth-idp/credentials```
-    * ```vim /opt/shibboleth-idp/conf/ldap.properties```
+    * Login to your openLDAP server as root or with sudo permission.
+    * use ```openssl x509 -outform der -in /etc/ssl/certs/ldap_server.pem -out /etc/ssl/certs/ldap_server.crt``` to convert the ldap `.pem` certificate to a `.cert`.
+    * copy the ldap_server.crt to  ```/opt/shibboleth-idp/credentials``` of your `idp` server
+    * Next, edit ```vim /opt/shibboleth-idp/conf/ldap.properties``` with one of the following solutions.
 
 
-     * Solution 1: LDAP + STARTTLS:
+     * Solution 1: LDAP + STARTTLS: (recommended)
 
        ```xml
        idp.authn.LDAP.authenticator = bindSearchAuthenticator
