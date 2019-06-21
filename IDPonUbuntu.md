@@ -698,7 +698,7 @@ All done!
     * From the list of `protocolSupportEnumeration` delete:
       * urn:oasis:names:tc:SAML:1.1:protocol
       * urn:mace:shibboleth:1.0  
-    * On `<Extensions>` remove commentted text and modify, 
+    * On `<Extensions>` remove commented text and modify, 
       ```xml  
 	     <mdui:UIInfo>
                 <mdui:DisplayName xml:lang="en">Your Institute Name</mdui:DisplayName>
@@ -883,7 +883,22 @@ All done!
 41. Now you will be allowed to login with your IdP on the following services:
     * https://sp-training.ac.lk/secure   (Service Provider provided for testing the LIAF)
    
-
+    If your authentication is successed, you should see a consent page asking permission to allow the service provider to read your user data and once you approve it must see the following attributes and similar values amoung the rest of the details.
+	  
+```
+	affiliation = staff@learn.ac.lk
+	cn = Thilina Pathirana
+	eppn = thilina@learn.ac.lk
+	givenName = Thilina
+	mail = thilina@learn.ac.lk
+	schacHomeOrganization = learn.ac.lk
+	sn = Pathirana
+	uid = thilina
+	unscoped-affiliation = staff
+```	  
+   If you did not get any of those details or the consent page, please contact LEARN TAC for further support.
+	  
+	  
 ### Release Attributes for your Service Providers (SP) in Production Environment
 
 42. If you have any service provider (eg: Moodle) that supports SAML, you may use them to authenticate via your IDP. To do that, edit `/opt/shibboleth-idp/conf/attribute-filter.xml` to include service providers to authenticate your users for their services.
