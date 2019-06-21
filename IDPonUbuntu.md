@@ -644,46 +644,39 @@ All done!
 30. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
     * Download the attribute resolver provided by LEARN:
       ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN.xml```
-    * If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
-```xml
-    <!-- LDAP Connector -->
-    <DataConnector id="myLDAP" xsi:type="LDAPDirectory"
-        ldapURL="%{idp.attribute.resolver.LDAP.ldapURL}"
-        baseDN="%{idp.attribute.resolver.LDAP.baseDN}"
-        principal="%{idp.attribute.resolver.LDAP.bindDN}"
-        principalCredential="%{idp.attribute.resolver.LDAP.bindDNCredential}"
-        useStartTLS="%{idp.attribute.resolver.LDAP.useStartTLS:true}">
-	      <!-- trustFile="%{idp.attribute.resolver.LDAP.trustCertificates}" -->
-        <FilterTemplate>
-            <![CDATA[
-                %{idp.attribute.resolver.LDAP.searchFilter}
-            ]]>
-        </FilterTemplate>
-        <!-- <StartTLSTrustCredential id="LDAPtoIdPCredential" xsi:type="sec:X509ResourceBacked">
-            <sec:Certificate>%{idp.attribute.resolver.LDAP.trustCertificates}</sec:Certificate>
-        </StartTLSTrustCredential> -->
-        <ReturnAttributes>%{idp.attribute.resolver.LDAP.returnAttributes}</ReturnAttributes>
-    </DataConnector>
-```
+>If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
+>```xml
+>    <!-- LDAP Connector -->
+>    <DataConnector id="myLDAP" xsi:type="LDAPDirectory"
+>        ldapURL="%{idp.attribute.resolver.LDAP.ldapURL}"
+>        baseDN="%{idp.attribute.resolver.LDAP.baseDN}"
+>        principal="%{idp.attribute.resolver.LDAP.bindDN}"
+>        principalCredential="%{idp.attribute.resolver.LDAP.bindDNCredential}"
+>        useStartTLS="%{idp.attribute.resolver.LDAP.useStartTLS:true}">
+>	      <!-- trustFile="%{idp.attribute.resolver.LDAP.trustCertificates}" -->
+>        <FilterTemplate>
+>            <![CDATA[
+>                %{idp.attribute.resolver.LDAP.searchFilter}
+>            ]]>
+>        </FilterTemplate>
+>        <!-- <StartTLSTrustCredential id="LDAPtoIdPCredential" xsi:type="sec:X509ResourceBacked">
+>            <sec:Certificate>%{idp.attribute.resolver.LDAP.trustCertificates}</sec:Certificate>
+>        </StartTLSTrustCredential> -->
+>        <ReturnAttributes>%{idp.attribute.resolver.LDAP.returnAttributes}</ReturnAttributes>
+>    </DataConnector>
+>```
 
-* Change the value of `schacHomeOrganizationType`,
-
-```xml
-    <Attribute id="schacHomeOrganizationType">
+ * Change the value of `schacHomeOrganizationType`,
+      ```xml
+      <Attribute id="schacHomeOrganizationType">
             <Value>urn:schac:homeOrganizationType:lk:others</Value>
-
-    </Attribute>
-```
-        
-where value must be either,
-
-urn:schac:homeOrganizationType:int:university
-
-urn:schac:homeOrganizationType:int:library
-
-urn:schac:homeOrganizationType:int:public-research-institution
-
-urn:schac:homeOrganizationType:int:private-research-institution
+      </Attribute>
+      ```
+      where value must be either,
+      * urn:schac:homeOrganizationType:int:university
+      * urn:schac:homeOrganizationType:int:library
+      * urn:schac:homeOrganizationType:int:public-research-institution
+      * urn:schac:homeOrganizationType:int:private-research-institution
 
 
 * Modify `services.xml` file: `vim /opt/shibboleth-idp/conf/services.xml`,
@@ -698,55 +691,57 @@ urn:schac:homeOrganizationType:int:private-research-institution
 * Restart Tomcat8: 
       ```service tomcat8 restart```
 
-31. Enable the SAML2 support by changing the ```idp-metadata.xml``` and disabling the SAML v1.x deprecated support:
-    * ```vim /opt/shibboleth-idp/metadata/idp-metadata.xml```
-      ```xml
-      <IDPSSODescriptor> SECTION:
-        – From the list of "protocolSupportEnumeration" remove:
-          - urn:oasis:names:tc:SAML:1.1:protocol
-          - urn:mace:shibboleth:1.0
-        
-        - On <Extensions> include
-            <mdui:UIInfo>
+31. Enable the SAML2 support by changing the ```idp-metadata.xml```:
+
+* ```vim /opt/shibboleth-idp/metadata/idp-metadata.xml```
+  * From the `<IDPSSODescriptor>` session:
+    * From the list of `protocolSupportEnumeration` delete:
+      * urn:oasis:names:tc:SAML:1.1:protocol
+      * urn:mace:shibboleth:1.0  
+    * On `<Extensions>` remove commentted text and modify, 
+      ```xml  
+	     <mdui:UIInfo>
                 <mdui:DisplayName xml:lang="en">Your Institute Name</mdui:DisplayName>
                 <mdui:Description xml:lang="en">Enter a description of your IdP</mdui:Description>
                 <mdui:Logo height="60" width="80">https://idp.YOUR-DOMAIN/logo.png</mdui:Logo>
                 <mdui:Logo height="16" width="16">https://idp.YOUR-DOMAIN/logo16.png</mdui:Logo>
             </mdui:UIInfo>
-        - Upload example png files to /var/www/html as logo.png with 80x60 pixel and logo16.png with 16x16 pixel images.
+      ```
+    * Upload example png files to /var/www/html as logo.png with 80x60 pixel and logo16.png with 16x16 pixel images.
+    * Remove the endpoint:
+	  
+	  `<ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.YOUR-DOMAIN:8443/idp/profile/SAML1/SOAP/ArtifactResolution" index="1"/>`
+         
+	  (and modify the index value of the next one to “1”)
 
-        – Remove the endpoint:
-          <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.YOUR-DOMAIN:8443/idp/profile/SAML1/SOAP/ArtifactResolution" index="1"/>
-          (and modify the index value of the next one to “1”)
-
-
-        - Remove the endpoint: 
-          <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://idp.YOUR-DOMAIN/idp/profile/Shibboleth/SSO"/>        
-        - Remove all ":8443" from the existing URL (such port is not used anymore)
-        
-        - Uncomment SingleLogoutService:
-        
+    * Remove the endpoint: 
+      
+	  `<SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://idp.YOUR-DOMAIN/idp/profile/Shibboleth/SSO"/>`
+	  
+    * Remove all ":8443" from the existing URL (such port is not used anymore)
+    * Uncomment SingleLogoutService:
+      ```xml
           <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://identity.thilinapathirana.xyz/idp/profile/SAML2/Redirect/SLO"/>
           <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://identity.thilinapathirana.xyz/idp/profile/SAML2/POST/SLO"/>
           <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST-SimpleSign" Location="https://identity.thilinapathirana.xyz/idp/profile/SAML2/POST-SimpleSign/SLO"/>
           <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://identity.thilinapathirana.xyz/idp/profile/SAML2/SOAP/SLO"/>
+     ```
+  * On `<AttributeAuthorityDescriptor>` Section:
+    * From the list "protocolSupportEnumeration" replace the value of `urn:oasis:names:tc:SAML:1.1:protocol` with
+      * urn:oasis:names:tc:SAML:2.0:protocol
 
-
-      <AttributeAuthorityDescriptor> Section:
-        – From the list "protocolSupportEnumeration" replace the value of:
-          - urn:oasis:names:tc:SAML:1.1:protocol
-          with
-          - urn:oasis:names:tc:SAML:2.0:protocol
-
-        - Remove the comment from:
-          <AttributeService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://idp.YOUR-DOMAIN/idp/profile/SAML2/SOAP/AttributeQuery"/>
-        - Remove the endpoint: 
+    * Remove the comment from:
+          
+	  <AttributeService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://idp.YOUR-DOMAIN/idp/profile/SAML2/SOAP/AttributeQuery"/>
+	  
+    * Remove the endpoint: 
+	  
           <AttributeService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.YOUR-DOMAIN:8443/idp/profile/SAML1/SOAP/AttributeQuery"/>
 
-        - Remove all ":8443" from the existing URL (such port is not used anymore)
-        - Finally remove all existing commented content from the whole document
+    * Remove all ":8443" from the existing URL (such port is not used anymore)
+  * Finally remove all existing commented content from the whole document
 
-      ```
+     
 
 32. Obtain your IdP metadata here:
     *  ```https://idp.YOUR-DOMAIN/idp/shibboleth```
@@ -838,7 +833,7 @@ urn:schac:homeOrganizationType:int:private-research-institution
 37. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
     * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown tomcat8 /opt/shibboleth-idp/tmp/httpClientCache```
 
-38. Modify your ```services.xml```:
+38. Append your ```services.xml``` with:
     * ```vim /opt/shibboleth-idp/conf/services.xml```
 
       ```xml
@@ -850,8 +845,9 @@ urn:schac:homeOrganizationType:int:private-research-institution
             c:client-ref="shibboleth.FileCachingHttpClient"
             c:url="https://fr.ac.lk/templates/attribute-filter-LEARN-Production.xml"
             c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-Production.xml"/>
-      ...
-
+      ```
+      Modify the **shibboleth.AttributeFilterResources** util:list
+      ```xml
       <util:list id ="shibboleth.AttributeFilterResources">
          <value>%{idp.home}/conf/attribute-filter.xml</value>
          <ref bean="Default-Filter"/>
