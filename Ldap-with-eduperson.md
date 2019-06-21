@@ -300,13 +300,11 @@ Depending on your Institute's Requirement, you may create groups and users as fo
 
 ```
 dn: ou=People,dc=YOUR-DOMAIN,dc=ac,dc=lk
-
 objectClass: organizationalUnit
 objectClass: top
 ou: People
  
 dn: ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
-
 objectClass: organizationalUnit
 objectClass: top
 ou: Group
@@ -314,7 +312,6 @@ description: All groups
 
 # System Admin Staff Group
 dn: cn=adm,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
-
 cn: adm
 description: System Admin Staff
 gidNumber: 1500
@@ -323,7 +320,6 @@ objectClass: top
 
 # Acadamic staff Group
 dn: cn=acd,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
-
 cn: acd
 description: Acadamic Staff
 gidNumber: 2000
@@ -332,7 +328,6 @@ objectClass: top
 
 # Students Group
 dn: cn=student,ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
-
 cn: student
 description: Students
 gidNumber: 5000
@@ -341,7 +336,6 @@ objectClass: top
 
 # servers OU
 dn: ou=servers,dc=YOUR-DOMAIN,dc=ac,dc=lk
-
 description: servers
 objectClass: top
 objectClass: organizationalUnit
@@ -349,7 +343,6 @@ ou: servers
 
 # idp servers, change ipHostNumber to match your servers IP's
 dn: cn=idp,ou=servers,dc=YOUR-DOMAIN,dc=ac,dc=lk
-
 cn: idp
 description: Identity Server
 ipHostNumber: 3ffe:ffff:ffff::9
@@ -363,7 +356,6 @@ userPassword: {crypt}idpldap
 # test User
 
 dn: uid=testme,ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
-
 cn: Test Me
 uid: testme
 uidNumber: 1001
