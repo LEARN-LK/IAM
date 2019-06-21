@@ -478,21 +478,20 @@ All done!
 
 26. Enable the generation of the ```persistent-id``` (this replace the deprecated attribute *eduPersonTargetedID*)
    
-    * ```vim /opt/shibboleth-idp/conf/saml-nameid.properties```
-   
-   (the *sourceAttribute* MUST BE an attribute, or a list of comma-separated attributes, that uniquely identify the subject of the generated ```persistent-id```. It MUST BE: **Stable**, **Permanent** and **Not-reassignable**)
-
-     ```xml
+   * Find and modify the following variables with the given content on,
+     * ```vim /opt/shibboleth-idp/conf/saml-nameid.properties```
+     
+```xml
      idp.persistentId.sourceAttribute = uid
-     ...
+     
      idp.persistentId.salt = ### result of 'openssl rand -base64 36'###
-     ...
+     
      idp.persistentId.generator = shibboleth.StoredPersistentIdGenerator
-     ...
+     
      idp.persistentId.dataSource = MyDataSource
-     ...
+     
      idp.persistentId.computed = shibboleth.ComputedPersistentIdGenerator
-     ```
+```
 
    * Enable the **SAML2PersistentGenerator**:
      * ```vim /opt/shibboleth-idp/conf/saml-nameid.xml```
@@ -580,7 +579,7 @@ All done!
        idp.authn.LDAP.useStartTLS = true
        idp.authn.LDAP.useSSL = false
        idp.authn.LDAP.sslConfig = certificateTrust
-       idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap-server.crt
+       idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap_server.crt
        idp.authn.LDAP.baseDN = ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.userFilter = (uid={user})
        idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
@@ -599,14 +598,14 @@ All done!
        idp.authn.LDAP.useStartTLS = false
        idp.authn.LDAP.useSSL = true
        idp.authn.LDAP.sslConfig = certificateTrust
-       idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap-server.crt
+       idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap_server.crt
        idp.authn.LDAP.baseDN = ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.userFilter = (uid={user})
        idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
        idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
        idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates:undefined}
        idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
-       #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
+       #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap_server.truststore
        idp.authn.LDAP.returnAttributes                 = *
        ```
 
