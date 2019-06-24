@@ -209,7 +209,7 @@ sudo service slapd start
 Your clients can now be configured to encrypt their connections to the server over the conventional 'ldap://ldap.YOUR-DOMAIN:389' port by using STARTTLS.
 
 
-== Setting up the Client Machines ==
+### Setting up the Client Machines
 
 In order to connect to the LDAP server and initiate a STARTTLS upgrade, the clients must have access to the certificate authority certificate and must request the upgrade.
 On the OpenLDAP Server
