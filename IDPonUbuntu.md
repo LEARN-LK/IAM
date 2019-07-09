@@ -881,7 +881,7 @@ All done!
 
 
 41. Now you will be allowed to login with your IdP on the following services:
-    * https://sp-training.ac.lk/secure   (Service Provider provided for testing the LIAF)
+    * https://sp-test.liaf.ac.lk   (Service Provider provided for testing the LIAF)
    
     If your authentication is successed, you should see a consent page asking permission to allow the service provider to read your user data and once you approve it must see the following attributes and similar values amoung the rest of the details.
 	  
