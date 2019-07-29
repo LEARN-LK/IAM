@@ -2,7 +2,7 @@
 
 It is assumed that you have already install your Ubuntu server with a public IP address and a registered Domain Name (**ldap.YOUR-DOMAIN.ac.lk**). 
 
-Modify /etc/hosts and append:
+Modify /etc/hosts and append: (Make sure not to remove exsisting entries)
 
 * `sudo vim /etc/hosts`
 ```
@@ -75,7 +75,7 @@ The cn in this template must match the FQDN of the LDAP server. If this value do
 
 ```
 organization = "Name of your institution"
-cn = idap.YOUR-DOMAIN.ac.lk
+cn = ldap.YOUR-DOMAIN.ac.lk
 tls_www_server
 encryption_key
 signing_key
