@@ -440,7 +440,7 @@ Open page **https://YOUR-DOMAIN/rr3/setup** and fill the form.
 
 
 
-Once the default user is created switch of the setup mode on `config_rr.php` by
+Once the default user is created switch **OFF** the setup mode on `config_rr.php` by
 
 
 ```php
