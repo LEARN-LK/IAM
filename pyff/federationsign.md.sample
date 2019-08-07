@@ -15,5 +15,5 @@
 - sign:
     key: /opt/pyff/certs/sign.key
     cert: /opt/pyff/certs/sign.pem
-- publish: /opt/pyff/output/meta-signed.xml
+- publish: /opt/pyff/output/LocalFed_meta-signed.xml
 - stats
