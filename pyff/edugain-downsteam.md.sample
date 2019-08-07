@@ -1,0 +1,67 @@
+### Load eduGAIN Metadata ###
+- load:
+   # Load from the eduGAIN Metadata URL
+   - http://mds.edugain.org//edugain-v1.xml as edugain-md certs/eduGAIN-signer-ca.pem
+   # Load from a specific directory contains the eduGAIN Metadata
+   #- /opt/pyff/metadata as edugain-md certs/eduGAIN-signer-ca.pem
+
+### Replace the value of '###YOUR-REG-AUTH###' with your registrationAuthority to exclude the entities of your federation. ###
+- select:
+   - "edugain-md!//md:EntityDescriptor[md:Extensions/mdrpi:RegistrationInfo/@registrationAuthority and not(md:Extensions/mdrpi:RegistrationInfo/@registrationAuthority='https://liaf.ac.lk')]"
+
+### Remove comments and replace 'entityID_X' with the entityID of the eduGAIN entities that you want exclude from your interfederation metadata. ###
+#- fork merge remove:
+#   - select:
+#      - entityID_1
+#      - entityID_2
+
+### Fork to produce the Interfederation Identity Providers Metadata ###
+### Replace the value of '###YOUR-ENTITIESDESCRIPTOR-NAME-FOR-INTERFEDERATION###' and '###YOUR-ENTITIESDESCRIPTOR-ID-FOR-INTERFEDERATION###' with the values of XML attributes "Name" and "ID" chosen for your interfederation metadata stream ###
+- fork:
+   - select:
+      - "edugain-md!//md:EntityDescriptor[md:IDPSSODescriptor]"
+   - xslt:
+      stylesheet: tidy.xsl
+   - finalize:
+      Name: eduGAIN_to_LocalFed_IDP
+###      ID: ###YOUR-ENTITIESDESCRIPTOR-ID-FOR-INTERFEDERATION###
+      cacheDuration: PT5H
+      validUntil: P5D
+   - sign:
+      key: /opt/pyff/certs/sign.key
+      cert: /opt/pyff/certs/sign.pem
+   - publish:
+      - /opt/pyff/output/LocalFed-interfederation-idp-metadata.xml
+
+### Fork to produce the Interfederation Service Providers Metadata ###
+### Replace the value of '###YOUR-ENTITIESDESCRIPTOR-NAME-FOR-INTERFEDERATION###' and '###YOUR-ENTITIESDESCRIPTOR-ID-FOR-INTERFEDERATION###' with the values of XML attributes "Name" and "ID" chosen for your interfederation metadata stream ###
+- fork:
+   - select:
+      - "edugain-md!//md:EntityDescriptor[md:SPSSODescriptor]"
+   - xslt:
+      stylesheet: tidy.xsl
+   - finalize:
+      Name: eduGAIN_to_LocalFed_SP
+###      ID: ###YOUR-ENTITIESDESCRIPTOR-ID-FOR-INTERFEDERATION###
+      cacheDuration: PT5H
+      validUntil: P5D
+   - sign:
+      key: /opt/pyff/certs/sign.key
+      cert: /opt/pyff/certs/sign.pem
+   - publish:
+      - /opt/pyff/output/LIAF-interfederation-sp-metadata.xml
+
+### Produce the Interfederation Metadata ###
+### Replace the value of '###YOUR-ENTITIESDESCRIPTOR-NAME-FOR-INTERFEDERATION###' and '###YOUR-ENTITIESDESCRIPTOR-ID-FOR-INTERFEDERATION###' with the values of XML attributes "Name" and "ID" chosen for your interfederation metadata stream ###
+- xslt:
+   stylesheet: tidy.xsl
+- finalize:
+   Name: eduGAIN_to_LocalFed
+###   ID: ###YOUR-ENTITIESDESCRIPTOR-ID-FOR-INTERFEDERATION###
+   cacheDuration: PT5H
+   validUntil: P5D
+- sign:
+   key: /opt/pyff/certs/sign.key
+   cert: /opt/pyff/certs/sign.pem
+- publish:
+   - /opt/pyff/output/LocalFed-interfederation-metadata.xml
