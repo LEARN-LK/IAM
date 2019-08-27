@@ -824,7 +824,7 @@ All done!
 
 
 36. The day after the Federation Operators approval you, check if you can login with your IdP on the following services:
-    * https://sp-training.ac.lk/secure   (Service Provider provided for testing the LEARN Federation)
+    * https://sp-test.liaf.ac.lk    (Service Provider provided for testing the LEARN Federation)
    
     To be able to log-in, you should continue with the rest of the guide.
 
