@@ -244,10 +244,10 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
 ## Provide Metadata to Zoom and to your Federation Registry.
 
 * For Zoom: 
-  * Sign in page URL: https://proxy.liaf.ac.lk/Saml2IDP/sso/post
+  * Sign in page URL: https://proxy-saml.Your-Domain.TLD/Saml2IDP/sso/post
   * IDP Certificate: 
-  * SP entity ID: https://learn.zoom.us
-  * Issuer ID: https://liaf.ac.lk
+  * SP entity ID: https://yourbranding.zoom.us
+  * Issuer ID: https://www.Your-Domain.TLD
   * Binding: HTTP-Post
   * Signature Algorithm SHA256
   * Provision User: At sign-in
