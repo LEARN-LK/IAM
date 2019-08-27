@@ -245,7 +245,7 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
 
 * For Zoom: 
   * Sign in page URL: https://proxy-saml.Your-Domain.TLD/Saml2IDP/sso/post
-  * IDP Certificate: 
+  * IDP Certificate: `cat frontend.crt`
   * SP entity ID: https://yourbranding.zoom.us
   * Issuer ID: https://www.Your-Domain.TLD
   * Binding: HTTP-Post
