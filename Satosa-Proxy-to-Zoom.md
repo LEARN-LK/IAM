@@ -27,7 +27,7 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
 
 * Run docker container
   ```
-  docker run -i -t  -p 8080:8080 -v /PATH-to-Directory/data/:/data -e DATA_DIR=/data -e PROXY_PORT=8080 -e SATOSA_STATE_ENCRYPTION_KEY=###RANDOM_KEY### -e SATOSA_USER_ID_HASH_SALT=###RANDOM_KEY### -e METADATA_DIR=/data/meta --restart unless-stopped satosa/satosa
+  docker run -i -t  -p 8080:8080 -v /PATH-to-Directory/data/:/data -e DATA_DIR=/data -e PROXY_PORT=8080 -e SATOSA_STATE_ENCRYPTION_KEY=###RANDOM_KEY1### -e SATOSA_USER_ID_HASH_SALT=###RANDOM_KEY1### -e METADATA_DIR=/data/meta --restart unless-stopped satosa/satosa
   ```
 * Go to data directory; `cd /PATH-to-Directory/data/`
 * Create backend  `vim plugins/backends/saml2_backend.yaml` , there will be an example for the reference.
@@ -110,21 +110,21 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
         ui_info:
           display_name:
             - lang: en
-              text: "LIAF Proxy"
+              text: "SAML Proxy"
           description:
             - lang: en
-              text: "LEARN Identity Access Federation Identity Proxy"
+              text: "Access Federation Proxy"
           information_url:
             - lang: en
-              text: "https://liaf.ac.lk"
+              text: "https://www.Your-Domain.TLD"
           privacy_statement_url:
             - lang: en
-              text: "https://idp.learn.ac.lk/privacy.html"
+              text: "https://www.Your-Domain.TLD/privacy.html"
           keywords:
             - lang: en
               text: ["Satosa", "IdP-EN"]
           logo:
-            text: "https://idp.learn.ac.lk/logo60x80.png"
+            text: "https://www.Your-Domain.TLD/logo60x80.png"
             width: "80"
             height: "60"
         name_id_format: ['urn:oasis:names:tc:SAML:2.0:nameid-format:persistent']
@@ -136,10 +136,140 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
             name_form: urn:oasis:names:tc:SAML:2.0:attrname-format:uri
     acr_mapping:
      "": default-LoA
-     "https://learn.zoom.us": LoA1
+     "https://yourbranding.zoom.us": LoA1
     endpoints:
      single_sign_on_service:
        'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST': sso/post
        'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect': sso/redirect
    ```
    
+* Configure `vim internal_attributes.yaml`
+  ```
+  attributes:
+    edupersontargetedid:
+      saml: [eduPersonTargetedID]
+    mail:
+      saml: [mail]
+    givenname:
+      saml: [givenName]
+    surname:
+      saml: [sn, surname]
+    eduPersonScopedAffiliation:
+      saml: [eduPersonScopedAffiliation]
+    eduPersonAffiliation:
+      saml: [eduPersonAffiliation]
+    mobile:
+      saml: [mobile]
+    eduPersonOrgUnitDN:
+      saml: [eduPersonOrgUnitDN]
+  user_id_from_attrs: [mail]
+  user_id_to_attr: mail
+  ```
+  
+* Configure `vim proxy_conf.yaml`
+  ```
+  #--- SATOSA Config ---#
+  BASE: https://proxy-saml.Your-Domain.TLD
+  INTERNAL_ATTRIBUTES: "internal_attributes.yaml"
+  COOKIE_STATE_NAME: "SATOSA_STATE"
+  STATE_ENCRYPTION_KEY: "###RANDOM_KEY1###"
+  CUSTOM_PLUGIN_MODULE_PATHS:
+    - "plugins/backends"
+    - "plugins/frontends"
+  BACKEND_MODULES:
+    - "plugins/backends/saml2_backend.yaml"
+  FRONTEND_MODULES:
+    - "plugins/frontends/saml2_frontend.yaml"
+  LOGGING:
+    version: 1
+    formatters:
+      simple:
+        format: "[%(asctime)-19.19s] [%(levelname)-5.5s]: %(message)s"
+    handlers:
+      console:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: simple
+        stream: ext://sys.stdout
+      info_file_handler:
+        class: logging.handlers.RotatingFileHandler
+        level: INFO
+        formatter: simple
+        filename: info.log
+        maxBytes: 10485760 # 10MB
+        backupCount: 20
+        encoding: utf8
+    loggers:
+      satosa:
+        level: DEBUG
+        handlers: [console]
+        propagate: no
+    root:
+      level: INFO
+      handlers: [info_file_handler]
+  ```
+* Get a copy of your federation metadata in to data directory using `wget` or `curl`
+* Restart the docker instance
+  * enter `docker ps` and get the **CONTAINER_ID** of the running instance
+  * restart by `docker restart CONTAINER_ID`
+  
+## Configure Apache Proxy.
+
+* Create a new Virtual host `vim /etc/apache2/sites-available/proxysaml.conf`
+
+```
+<VirtualHost *:*>
+	ProxyPreserveHost On
+	ProxyPass / http://127.0.0.1:8080/
+	ProxyPassReverse / http://127.0.0.1:8080/
+	ServerName proxy-saml.Your-Domain.TLD
+
+
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+	CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+</VirtualHost>
+```
+* Disable default configs and enable new one.
+  * `a2dissite 000-default`
+  * `a2enmod proxy proxy_http proxy_ajp rewrite deflate headers proxy_connect html proxy_html`
+  * `a2enmod proxysaml`
+  * `service apache2 restart`
+
+* Install Letsencrypt and enable HTTPS:
+  * `add-apt-repository ppa:certbot/certbot`
+  * `apt install python-certbot-apache`
+  * `certbot --apache -d proxy-saml.Your-Domain.TLD`
+
+## Provide Metadata to Zoom and to your Federation Registry.
+
+* For Zoom: 
+  * Sign in page URL: https://proxy.liaf.ac.lk/Saml2IDP/sso/post
+  * IDP Certificate: 
+  * SP entity ID: https://learn.zoom.us
+  * Issuer ID: https://liaf.ac.lk
+  * Binding: HTTP-Post
+  * Signature Algorithm SHA256
+  * Provision User: At sign-in
+  * On SAML response mapping:
+  * Default user type : Pro
+  * Email: urn:oid:1.3.6.1.4.1.5923.1.1.1.6
+  * First name:  urn:oid:2.5.4.42
+  * Last Name:  urn:oid:2.5.4.4
+  * phonenumber: urn:oid:0.9.2342.19200300.100.1.41
+ 
+  
+  
+  
+  
+  * Entity ID: `https://proxy-saml.Your-Domain.TLD/Saml2IDP/proxy.xml`
+  * Metadata: `cat meta/frontend.xml`
+* For RR3:
+  * Entity ID: `https://proxy-saml.Your-Domain.TLD/Saml2/proxy_saml2_backend.xml`
+  * Metadata: `cat meta/backend.xml`
+
+### Troubleshoot
+
+* `tail data\info.log`
+* `tail /var/log/apache2/access.log`
+* `tail /var/log/apache2/error.log`
