@@ -447,7 +447,7 @@ Once the default user is created switch **OFF** the setup mode on `config_rr.php
 $config['rr_setup_allowed'] = FALSE;
 ```
 
-##Metadata signing
+## Metadata signing
 
 Please refer: http://pyff.io/
 
