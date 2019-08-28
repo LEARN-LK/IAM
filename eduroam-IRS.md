@@ -45,6 +45,7 @@ thili@YOUR-DOMAIN         Cleartext-Password := "hello"
 ```
 After the user modification following radtests should succeed.
 ```
+service freeradius restart
 radtest -t mschap -x bob hello 127.0.0.1:1812 10000 testing123
 radtest -t mschap -x thili@YOUR-DOMAIN  hello 127.0.0.1:1812 10000 testing123
 ```
@@ -74,6 +75,7 @@ cp rad_eap_test /usr/local/bin
 
 After the user modification, following tests should succeed.
 ```
+service freeradius restart
 rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u bob -p hello -m WPA-EAP -e PEAP
 rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u thili@YOUR-DOMAIN -p hello -m WPA-EAP -e PEAP
 ```
@@ -479,13 +481,13 @@ proxy server {
 # Add as many definitions as there are FLRs
 # nro1.learn.ac.lk and nro2.learn.ac.lk are for Sri Lanka maintained by LEARN.
 home_server FLR1 {
-        ipaddr                  = nro1.learn.ac.lk
+        ipaddr                  = nrs1.ac.lk
         port                    = 1812
         secret                  = FLR_EDUROAM_SECRET
         status_check            = status-server
 }
 home_server FLR2 {
-        ipaddr                  = nro2.learn.ac.lk
+        ipaddr                  = nrs2.ac.lk
         port                    = 1812
         secret                  = FLR_EDUROAM_SECRET
         status_check            = status-server
@@ -525,7 +527,7 @@ vi clients.conf
 Add following to the tail
 ```
 client FLR1 {
-	ipaddr          = nro1.learn.ac.lk
+	ipaddr          = nrs1.ac.lk
 	secret          = FLR_EDUROAM_SECRET
         shortname       = FLR1
 	nas_type	 = other
@@ -536,7 +538,7 @@ client FLR1 {
 
 
 client FLR2 {
-	ipaddr		= nro2.learn.ac.lk
+	ipaddr		= nrs2.ac.lk
         secret          = FLR_EDUROAM_SECRET
         shortname       = FLR2
         nas_type        = other
