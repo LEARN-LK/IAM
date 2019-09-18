@@ -451,7 +451,7 @@ sudo ldapsearch -H ldapi:// -Y EXTERNAL -b "cn=schema,cn=config" -s one -Q -LLL 
 * List Users
 
 ```
- ldapsearch -h localhost -D "cn=admin,dc=pdn,dc=ac,dc=lk" -W -b "dc=pdn,dc=ac,dc=lk"
+ ldapsearch -h localhost -D "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk" -W -b "dc=YOUR-DOMAIN,dc=ac,dc=lk"
  ```
  
 * View/backup ldap (to ldif)
