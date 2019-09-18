@@ -246,6 +246,53 @@ This forces a STARTTLS upgrade. If this is successful, you should see:
 anonymous
 ```
 
+Then we need to disallow anonymous login to the ldap server.
+
+Create a ldif file,
+
+```
+cd ~
+vim ldap_disable_bind_anon.ldif
+```
+
+include following,
+
+```bash
+dn: cn=config
+changetype: modify
+add: olcDisallows
+olcDisallows: bind_anon
+
+dn: cn=config
+changetype: modify
+add: olcRequires
+olcRequires: authc
+
+dn: olcDatabase={-1}frontend,cn=config
+changetype: modify
+add: olcRequires
+olcRequires: authc
+```
+Save and close the file when you are finished. Apply the changes to your OpenLDAP system using the ldapmodify command:
+
+```
+sudo ldapmodify -H ldapi:// -Y EXTERNAL -f ldap_disable_bind_anon.ldif
+```
+
+We can check again,
+
+```
+sudo ldapwhoami -H ldap:// -x -ZZ
+```
+
+And you should see 
+
+```
+ldap_bind: Inappropriate authentication (48)
+	additional info: anonymous bind disallowed
+```
+
+
 ### Load eduPerson Schema.
 
 Get the schema downloaded from [Eduperson.ldif](https://raw.githubusercontent.com/LEARN-LK/IAM/master/eduperson-201602.ldif)
