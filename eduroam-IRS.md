@@ -206,8 +206,10 @@ vi mods-available/linelog
 Modify the following lines containing `Access-Accept` and `Access-Reject`
 
 ```
+
 Access-Accept = "%T eduroam-auth#ORG=%{request:Realm}#USER=%{User-Name}#CSI=%{%{Calling-Station-Id}:-Unknown Caller Id}#NAS=%{%{Called-Station-Id}:-Unknown Access Point}#NAS-IP=%{%{NAS-IP-Address}:-Unknown}#OPERATOR=%{%{Operator-Name}:-Unknown}#CUI=%{%{reply:Chargeable-User-Identity}:-Unknown}#RESULT=OK#" 
-        Access-Reject = "%T eduroam-auth#ORG=%{request:Realm}#USER=%{User-Name}#CSI=%{%{Calling-Station-Id}:-Unknown Caller Id}#NAS=%{%{Called-Station-Id}:-Unknown Access Point}#NAS-IP=%{%{NAS-IP-Address}:-Unknown}#OPERATOR=%{%{Operator-Name}:-Unknown}#CUI=%{%{reply:Chargeable-User-Identity}:-Unknown}#MSG=%{%{reply:Reply-Message}:-No Failure Reason}#RESULT=FAIL#"
+Access-Reject = "%T eduroam-auth#ORG=%{request:Realm}#USER=%{User-Name}#CSI=%{%{Calling-Station-Id}:-Unknown Caller Id}#NAS=%{%{Called-Station-Id}:-Unknown Access Point}#NAS-IP=%{%{NAS-IP-Address}:-Unknown}#OPERATOR=%{%{Operator-Name}:-Unknown}#CUI=%{%{reply:Chargeable-User-Identity}:-Unknown}#MSG=%{%{reply:Reply-Message}:-No Failure Reason}#RESULT=FAIL#"
+
 ```
 
 Modify the cui policy as follows,
