@@ -1,0 +1,19 @@
+- load:
+     - https://federationregistry-link/metadata/federation/LocalFed-to-edugain/metadata.xml
+- select:
+- xslt:
+    stylesheet: tidy.xsl
+- xslt:
+    stylesheet: pubinfo.xsl
+    publisher: "LocalFedName"
+- xslt:
+    stylesheet: pp.xsl
+- finalize:
+    Name: "LocalFed_edugain"
+    cacheDuration: PT5H
+    validUntil: P9D
+- sign:
+    key: /opt/pyff/certs/sign.key
+    cert: /opt/pyff/certs/sign.pem
+- publish: /opt/pyff/output/LocalFed_to_edugain.xml
+- stats

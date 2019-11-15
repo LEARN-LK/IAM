@@ -1,0 +1,19 @@
+- load:
+     - https://FederationRegistry-link/metadata/federation/FederationName/metadata.xml
+- select:
+- xslt:
+    stylesheet: tidy.xsl
+- xslt:
+    stylesheet: pubinfo.xsl
+    publisher: "YourFederationName"
+- xslt:
+    stylesheet: pp.xsl
+- finalize:
+    Name: "YourFederationName"
+    cacheDuration: PT5H
+    validUntil: P9D
+- sign:
+    key: /opt/pyff/certs/sign.key
+    cert: /opt/pyff/certs/sign.pem
+- publish: /opt/pyff/output/LocalFed_meta-signed.xml
+- stats
