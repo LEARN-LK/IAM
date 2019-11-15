@@ -171,9 +171,9 @@ You may also want to set production environment. To do it find the line
 
 `define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');`
 
-and before that line add
+and change to
 
-`$_SERVER['CI_ENV'] = 'production';`
+`define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'production ');`
 
 
 
