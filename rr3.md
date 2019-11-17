@@ -382,7 +382,7 @@ edit composer.json to add
 then run,
 
 ```bash
-./doctrine orm:schema-tool:update --force
+composer update
 ./doctrine orm:schema-tool:create
 ```
 
