@@ -146,6 +146,9 @@ tar xzf shibboleth-eds.tar.gz
 cd shibboleth-embedded-ds-1.2.1
 
 sudo apt install make ; make install
+
+systemctl reload apache2.service 
+systemctl restart shibd
 ```
 
 
