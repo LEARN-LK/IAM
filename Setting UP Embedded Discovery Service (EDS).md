@@ -109,10 +109,15 @@ Include /etc/letsencrypt/options-ssl-apache.conf
 ...
 <Sessions lifetime="28800" timeout="3600" checkAddress="false" handlerSSL="true" cookieProps="https">
 ...
-<SSO discoveryProtocol="SAMLDS" discoveryURL="https://fds.YOUR-DOMAIN/index.html">
+<SSO discoveryProtocol="SAMLDS" discoveryURL="https://fds.YOUR-DOMAIN/index.html" isDefault="true">
    SAML2
 </SSO>
-…
+<!-- SAML and local-only logout. -->
+<Logout>SAML2 Local</Logout>
+...
+<!-- JSON feed of discovery information. -->
+<Handler type="DiscoveryFeed" Location="/DiscoFeed"/
+...
    	 <MetadataProvider type="XML" validate="true"
               uri="https://fr.YOUR-DOMAIN/metadata/federation/Your-Federation/metadata.xml"
               backingFilePath="federation-metadata.xml" legacyOrgNames="true" reloadInterval="7200">
@@ -129,8 +134,22 @@ a2enmod shib2
 systemctl reload apache2.service 
 systemctl restart shibd
 ```
+6. Install Shobboleth EDS
 
-6. Now you are able to reach your Shibboleth SP Metadata on:
+```bash
+cd /usr/local/src
+
+wget https://shibboleth.net/downloads/embedded-discovery-service/1.2.1/shibboleth-embedded-ds-1.2.1.tar.gz -O shibboleth-eds.tar.gz
+
+tar xzf shibboleth-eds.tar.gz
+
+cd shibboleth-embedded-ds-1.2.1
+
+sudo apt install make ; make install
+```
+
+
+7. Now you are able to reach your Shibboleth SP Metadata on:
    
    `https://fds.YOUR-DOMAIN/Shibboleth.sso/Metadata` (change fds.YOUR-DOMAIN to you SP full qualified domain name)
 
