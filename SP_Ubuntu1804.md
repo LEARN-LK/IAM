@@ -280,7 +280,7 @@ You may have to answer several questions decsribing your service to the federati
 17. Create the Apache2 configuration for the application: 
    * ```sudo su -```
 
-   * ```vim /etc/apache2/site-available/secure.conf```
+   * ```vim /etc/apache2/sites-available/secure.conf```
   
      ```bash
      RedirectMatch    ^/$  /secure
@@ -302,7 +302,7 @@ You may have to answer several questions decsribing your service to the federati
      <html>
        <head>
          <title></title>
-         <meta name="GENERATOR" content="Quanta Plus">
+         
          <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
        </head>
        <body>
@@ -333,7 +333,8 @@ You may have to answer several questions decsribing your service to the federati
    
    * ```systemctl restart apache2```
 
-
+   Now you may browse to `https://sp.YOUR-DOMAIN/secure` and select your IDP to log in.
+   
 ### Enable Attribute Support on Shibboleth SP
 20. Enable attribute by remove comment from the related content into ```/etc/shibboleth/attribute-map.xml```
     Disable First deprecated/incorrect version of ```persistent-id``` from ```attribute-map.xml```. Also you may enable any attribute map as per your requirement.
@@ -349,6 +350,6 @@ You may have to answer several questions decsribing your service to the federati
 Setting asynchronous="false" would make the flow return back to the SP (this otherwise only happens for the SOAP binding which cannot be done asynchronously).
 
 
-To initiate, create a button or link to go to a URL on the SP of the form: https://sp.example.org/Shibboleth.sso/Logout
+To initiate, create a button or link to go to a URL on the SP of the form: https://sp.YOUR-DOMAIN/Shibboleth.sso/Logout
 
-The SLO would use an asynchronous message to the IdP and the flow would end at the IdP Logout page.  The user would be returned to the return URL only if the SLO is done in synchronous mode and the flow returns back to the SP.  To set the return URL, pass it in the return parameter as a query string to the Logout initiator - e.g.: https://sp.example.org/Shibboleth.sso/Logout?return=https://sp.example.org/logout-completed.html
+The SLO would use an asynchronous message to the IdP and the flow would end at the IdP Logout page.  The user would be returned to the return URL only if the SLO is done in synchronous mode and the flow returns back to the SP.  To set the return URL, pass it in the return parameter as a query string to the Logout initiator - e.g.: https://sp.YOUR-DOMAIN/Shibboleth.sso/Logout?return=https://sp.example.org/logout-completed.html
