@@ -907,7 +907,26 @@ All done!
    * Instruction to add you moodle installations: https://moodle.org/auth/shibboleth/README.txt
 
    * Reload shibboleth.AttributeFilterService to apply the new SP
-
+  	  
+Eg:
+```xml
+<!--  Example SP  -->
+<AttributeFilterPolicy id="exampleSP">
+	<PolicyRequirementRule xsi:type="Requester" value="https://sp.YOUR-DOMAIN/shibboleth"/>
+	<AttributeRule attributeID="uid">
+		<PermitValueRule xsi:type="ANY"/>
+	</AttributeRule>
+	<AttributeRule attributeID="email">
+		<PermitValueRule xsi:type="ANY"/>
+	</AttributeRule>
+	<AttributeRule attributeID="givenName">
+		<PermitValueRule xsi:type="ANY"/>
+	</AttributeRule>
+	<AttributeRule attributeID="surname">
+		<PermitValueRule xsi:type="ANY"/>
+	</AttributeRule>
+</AttributeFilterPolicy>
+```
 
 
 ### Customization and Branding
