@@ -33,7 +33,7 @@
    
 3. Enable shibboleth SP for  Embeded Discovery Server over SSL (Letsencypt)
 
-   Create a seperate virtual host  `/etc/apache2/site-available/eds.conf` with
+   Create a seperate virtual host  `/etc/apache2/sites-available/eds.conf` with
 
 ```bash
 <VirtualHost *:80>
