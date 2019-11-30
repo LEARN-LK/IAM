@@ -20,17 +20,14 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
 * Pull Docker Image 
 
   ```   
-   docker pull satosa/satosa
+   docker pull satosa/satosa:v3.4.8
   ```
 
-* Make data directory `mkdir data`
+* Make data directories `mkdir -p /PATH-to-Directory/data/plugins/{backends,frontends}`
 
-* Run docker container
-  ```
-  docker run -i -t  -p 8080:8080 -v /PATH-to-Directory/data/:/data -e DATA_DIR=/data -e PROXY_PORT=8080 -e SATOSA_STATE_ENCRYPTION_KEY=###RANDOM_KEY1### -e SATOSA_USER_ID_HASH_SALT=###RANDOM_KEY1### -e METADATA_DIR=/data/meta --restart unless-stopped satosa/satosa
-  ```
+
 * Go to data directory; `cd /PATH-to-Directory/data/`
-* Create backend  `vim plugins/backends/saml2_backend.yaml` , there will be an example for the reference.
+* Create backend  `vim plugins/backends/saml2_backend.yaml`
 
   ```
   module: satosa.backends.saml2.SAMLBackend
@@ -85,7 +82,7 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
    # disco_srv must be defined if there is more than one IdP in the metadata specified above
    disco_srv: https://discovery.Your-Domain.TLD/
    ```
-* Create front end `vim plugins/frontends/saml2_frontend.yaml` , there will be an example for the reference.
+* Create front end `vim plugins/frontends/saml2_frontend.yaml` 
    
    ```
    module: satosa.frontends.saml2.SAMLFrontend
@@ -208,10 +205,40 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
       level: INFO
       handlers: [info_file_handler]
   ```
-* Get a copy of your federation metadata in to data directory using `wget` or `curl`
-* Restart the docker instance
-  * enter `docker ps` and get the **CONTAINER_ID** of the running instance
-  * restart by `docker restart CONTAINER_ID`
+* Get a copy of your federation metadata in to data directory using `wget` or `curl` (ref: your-federation-metadata.xml)
+* Create sp.xml with metadata recieved from your zoom account.
+* Generate Certificates.
+  * `openssl req -x509 -newkey rsa:4096 -keyout metadata.key -out metadata.crt -nodes -days 1095`
+  Example Input:
+```
+  Generating a RSA private key
+............................................................++++
+..........................................................................................................................++++
+writing new private key to 'metadata.key'
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:TLD
+State or Province Name (full name) [Some-State]:
+Locality Name (eg, city) []:
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:
+Organizational Unit Name (eg, section) []:
+Common Name (e.g. server FQDN or YOUR name) []:proxy-saml.Your-Domain.TLD
+Email Address []:
+  ```
+  * `openssl req -x509 -newkey rsa:4096 -keyout frontend.key -out frontend.crt -nodes -days 1095`
+  * `openssl req -x509 -newkey rsa:4096 -keyout backend.key -out backend.crt -nodes -days 1095`
+
+* Run docker container
+  ```
+  docker run -i -t -d -p 8080:8080 -v /PATH-to-Directory/data/:/data -e DATA_DIR=/data -e PROXY_PORT=8080 -e SATOSA_STATE_ENCRYPTION_KEY=###RANDOM_KEY1### -e SATOSA_USER_ID_HASH_SALT=###RANDOM_KEY1### -e METADATA_DIR=/data/meta --restart unless-stopped satosa/satosa:v3.4.8
+  ```
+
   
 ## Configure Apache Proxy.
 
