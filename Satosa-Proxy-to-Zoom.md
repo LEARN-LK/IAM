@@ -96,7 +96,7 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
      key_file: frontend.key
      cert_file: frontend.crt
      metadata:
-        local: [sp.xml]
+        local: [zoom.xml]
      entityid: https://proxy-saml.Your-Domain.TLD/Saml2IDP/proxy.xml
      accepted_time_diff: 60
      service:
@@ -206,7 +206,8 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
       handlers: [info_file_handler]
   ```
 * Get a copy of your federation metadata in to data directory using `wget` or `curl` (ref: your-federation-metadata.xml)
-* Create sp.xml with metadata recieved from your zoom account.
+* Create zoom.xml with metadata recieved from your zoom account. 
+  * If you are using vanity url, use `https://yourvanityurl.zoom.us/saml/metadata/sp` to retrieve the metadata
 * Generate Certificates.
   * `openssl req -x509 -newkey rsa:4096 -keyout metadata.key -out metadata.crt -nodes -days 1095`
   Example Input:
@@ -259,8 +260,7 @@ Email Address []:
 ```
 * Disable default configs and enable new one.
   * `a2dissite 000-default`
-  * `a2enmod proxy proxy_http proxy_ajp rewrite deflate headers proxy_connect html proxy_html`
-  * `a2enmod proxysaml`
+  * `a2enmod proxy proxy_http proxy_ajp rewrite deflate headers proxy_connect proxy_html`
   * `service apache2 restart`
 
 * Install Letsencrypt and enable HTTPS:
