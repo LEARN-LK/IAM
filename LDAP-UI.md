@@ -1,5 +1,7 @@
 Native LDAP store doesn't come with a GUI. Therefore, as administrators we may have to provide a nice user interface to our users. This UI should have the capability of changing details of users password resets, etc. To do these actions there are lot of open source packages as well as commercialized products.
 
+If you are checking this-out to find a UI for AD, check https://github.com/mprahl/ADReset
+
 On this tutorial we will go through two UI setups that will focus on different outputs.
 
 ## Apache Directory Studio *(For Admins)*
