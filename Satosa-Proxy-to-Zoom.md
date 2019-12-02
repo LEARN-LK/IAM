@@ -207,7 +207,7 @@ apt install apache2 docker apt-transport-https ca-certificates curl software-pro
   ```
 * Get a copy of your federation metadata in to data directory using `wget` or `curl` (ref: your-federation-metadata.xml)
 * Create zoom.xml with metadata recieved from your zoom account. 
-  * If you are using vanity url, use `https://yourvanityurl.zoom.us/saml/metadata/sp` to retrieve the metadata
+  * If you are using vanity url, use `wget https://yourvanityurl.zoom.us/saml/metadata/sp  -O /PATH-to-Directory/data/zoom.xml` to retrieve the metadata
 * Generate Certificates.
   * `openssl req -x509 -newkey rsa:4096 -keyout metadata.key -out metadata.crt -nodes -days 1095`
   Example Input:
