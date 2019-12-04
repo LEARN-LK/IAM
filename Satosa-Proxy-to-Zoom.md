@@ -261,6 +261,7 @@ Email Address []:
 * Disable default configs and enable new one.
   * `a2dissite 000-default`
   * `a2enmod proxy proxy_http proxy_ajp rewrite deflate headers proxy_connect proxy_html`
+  * `a2ensite proxysaml`
   * `service apache2 restart`
 
 * Install Letsencrypt and enable HTTPS:
@@ -271,7 +272,7 @@ Email Address []:
 ## Provide Metadata to Zoom and to your Federation Registry.
 
 * For Zoom: 
-  * Sign in page URL: https://proxy-saml.Your-Domain.TLD/Saml2IDP/sso/post
+  * Sign in page URL: https://proxy-saml.Your-Domain.TLD/Saml2/sso/post
   * IDP Certificate: `cat frontend.crt`
   * SP entity ID: https://yourbranding.zoom.us
   * Issuer ID: https://www.Your-Domain.TLD
