@@ -284,17 +284,99 @@ Email Address []:
   * Email: urn:oid:1.3.6.1.4.1.5923.1.1.1.6
   * First name:  urn:oid:2.5.4.42
   * Last Name:  urn:oid:2.5.4.4
-  * phonenumber: urn:oid:0.9.2342.19200300.100.1.41
- 
-  
-  
-  
-  
+  * phonenumber: urn:oid:0.9.2342.19200300.100.1.41 
   * Entity ID: `https://proxy-saml.Your-Domain.TLD/Saml2IDP/proxy.xml`
   * Metadata: `cat meta/frontend.xml`
 * For RR3:
   * Entity ID: `https://proxy-saml.Your-Domain.TLD/Saml2/proxy_saml2_backend.xml`
   * Metadata: `cat meta/backend.xml`
+  
+  
+## Final Steps:
+
+1. Release attribute from IDP
+
+```xml
+<!-- Proxy for ZOOM  -->
+<AttributeFilterPolicy id="zoom.us">
+     <PolicyRequirementRule xsi:type="Requester" value="https://proxy-saml.Your-Domain.TLD/Saml2/proxy_saml2_backend.xml" />
+
+        <AttributeRule attributeID="commonName">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="uid">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="email">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="surname">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="organizationName">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="organizationalUnit">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="mobile">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="givenName">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="preferredLanguage">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="eduPersonAffiliation">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="eduPersonEntitlement">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="eduPersonOrgUnitDN">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="eduPersonPrimaryAffiliation">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        <AttributeRule attributeID="eduPersonPrincipalName">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+        
+       <AttributeRule attributeID="eduPersonScopedAffiliation">
+            <PermitValueRule xsi:type="OR">
+                <Rule xsi:type="Value" value="faculty" ignoreCase="true" />
+                <Rule xsi:type="Value" value="student" ignoreCase="true" />
+                <Rule xsi:type="Value" value="staff" ignoreCase="true" />
+                <Rule xsi:type="Value" value="alum" ignoreCase="true" />
+                <Rule xsi:type="Value" value="member" ignoreCase="true" />
+                <Rule xsi:type="Value" value="affiliate" ignoreCase="true" />
+                <Rule xsi:type="Value" value="employee" ignoreCase="true" />
+                <Rule xsi:type="Value" value="library-walk-in" ignoreCase="true" />
+            </PermitValueRule>
+        </AttributeRule>
+    </AttributeFilterPolicy>
+```
+
+2. Define relaying party at IDP in relaying-party.xml
+
+```xml
+<bean parent="RelyingPartyByName" c:relyingPartyIds="https://proxy-saml.Your-Domain.TLD/Saml2/proxy_saml2_backend.xml">
+        <property name="profileConfigurations">
+                <list>
+                    <bean parent="SAML2.SSO" p:encryptAssertions="false" p:postAuthenticationFlows="attribute-release" />
+                    <ref bean="SAML2.Logout" />
+                    <ref bean="SAML2.AttributeQuery" />
+                    <ref bean="SAML2.ArtifactResolution" />
+                    <ref bean="Liberty.SSOS" />
+                </list>
+            </property>
+        </bean>
+```
+
+Ref: [Guide on enabling Zoom Service - LIAF](https://github.com/LEARN-LK/IAM/blob/master/Enable%20Zoom%20Video%20Conferencing.md)
+
 
 ### Troubleshoot
 
