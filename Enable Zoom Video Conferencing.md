@@ -73,4 +73,4 @@ How to work with Zoom is available at https://support.zoom.us/hc/en-us
 > Note:
 
 * If you do not participate in LIAF, please follow the guidelines in becoming a member by accessing https://liaf.ac.lk
-* If you have any technical issues, contact LEARN TAC ( `tac[at]learn.ac.lk` ) for the assistance.
+* If you have any technical issues, contact LEARN TAC ( `tac[at]learn.ac.lk` ) or Thilina ( `+94 77 005 5755` ) for the assistance.
