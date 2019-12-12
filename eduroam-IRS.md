@@ -37,17 +37,16 @@ command `eapol_test` should work now...
 
 ```
 #
-bob     Cleartext-Password := "hello"
-        Reply-Message := "Hello, %{User-Name}"
+#bob     Cleartext-Password := "hello"
+#       Reply-Message := "Hello, %{User-Name}"
 #
-thili@YOUR-DOMAIN         Cleartext-Password := "hello"
+eduroamtest         Cleartext-Password := "test@eduroam.lk"
 ####
 ```
 After the user modification following radtests should succeed.
 ```
 service freeradius restart
-radtest -t mschap -x bob hello 127.0.0.1:1812 10000 testing123
-radtest -t mschap -x thili@YOUR-DOMAIN  hello 127.0.0.1:1812 10000 testing123
+radtest -t mschap -x eduroamtest  test@eduroam.lk 127.0.0.1:1812 10000 testing123
 ```
 
 ### Install rad_eap_test
@@ -69,8 +68,7 @@ cp rad_eap_test /usr/local/bin
 After the user modification, following tests should succeed.
 ```
 service freeradius restart
-rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u bob -p hello -m WPA-EAP -e PEAP
-rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u thili@YOUR-DOMAIN -p hello -m WPA-EAP -e PEAP
+rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u eduroamtest -p test@eduroam.lk -m WPA-EAP -e PEAP
 ```
 You will recieve, 
 ```
@@ -456,6 +454,16 @@ post-proxy {
 
 ```
 
+Create `vim sites-available/blackhole` for blackholing
+
+```
+server blackhole {
+    authorize {
+        reject
+    }
+}
+```
+
 Now you should contact your National Roaming Operator and get your shared keys.
 
 Then modify proxy.conf
@@ -491,6 +499,11 @@ realm LOCAL {
 	#  requests are not proxied to it.
 }
 
+realm NULL {
+	# If a user types their username without the domain, it will end up here
+}
+
+
 # eduroam home_server_pool attribute links from the home_server attribute. ensure home_server in home_server_pool matches home_server above
 home_server_pool EDUROAM {
         type                    = fail-over
@@ -498,16 +511,66 @@ home_server_pool EDUROAM {
 	home_server		= FLR2
 }
 
-realm "~.+$" {
-        pool                    = EDUROAM
-        nostrip
-}
 
 # Your IdP realm
 realm YOUR-DOMAIN {
        # nostrip #uncomment to remove striping of realm from username
 }
 
+# Catchall for unhandled realms
+# redirect them to a blackhole server
+#
+home_server blackhole {
+    virtual_server = blackhole
+}
+
+home_server_pool blackhole_pool {
+    home_server = blackhole
+    name = blackhole
+}
+
+realm  wlan.mnc001.mcc413.3gppnetwork.org{
+    auth_pool = blackhole_pool
+}
+
+realm  wlan.mnc002.mcc413.3gppnetwork.org{
+    auth_pool = blackhole_pool
+}
+
+realm  wlan.mnc003.mcc413.3gppnetwork.org{
+auth_pool = blackhole_pool
+}
+
+realm  wlan.mnc004.mcc413.3gppnetwork.org{
+    auth_pool = blackhole_pool
+}
+
+realm  wlan.mnc005.mcc413.3gppnetwork.org{
+    auth_pool = blackhole_pool
+}
+
+realm  wlan.mnc006.mcc413.3gppnetwork.org{
+auth_pool = blackhole_pool
+}
+
+realm  wlan.mnc007.mcc413.3gppnetwork.org{
+    auth_pool = blackhole_pool
+}
+
+realm  wlan.mnc008.mcc413.3gppnetwork.org{
+    auth_pool = blackhole_pool
+}
+
+realm  wlan.mnc009.mcc413.3gppnetwork.org{
+auth_pool = blackhole_pool
+}
+
+###########################################
+# Proxy the rest
+realm "~.+$" {
+        pool                    = EDUROAM
+        nostrip
+}
 
 ```
 
@@ -551,12 +614,12 @@ rm default
 rm inner-tunnel
 ln -s ../sites-available/eduroam-inner-tunnel eduroam-inner-tunnel
 ln -s ../sites-available/eduroam eduroam
+ln -s ../sites-available/blackhole blackhole
 service freeradius restart
 ```
 After the restart, following tests should succeed.
 ```
-rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u bob@YOUR-DOMAIN -p hello -m WPA-EAP -e PEAP
-rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u thili@YOUR-DOMAIN -p hello -m WPA-EAP -e PEAP
+rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u eduroamtest -p test@eduroam.lk -m WPA-EAP -e PEAP
 ```
 You may also test some of the test roaming accounts provided by your upstream NRO.
 
