@@ -55,21 +55,12 @@ radtest -t mschap -x thili@YOUR-DOMAIN  hello 127.0.0.1:1812 10000 testing123
 ```
 cd ~
 
-wget http://www.eduroam.cz/rad_eap_test/rad_eap_test-0.26.tar.bz2
+mkdir rad_eap_test
 
-tar -xvf rad_eap_test-0.26.tar.bz2
+cd rad_eap_test
 
-cd rad_eap_test-0.26
-```
+wget https://raw.githubusercontent.com/CESNET/rad_eap_test/master/rad_eap_test
 
-edit  `rad_eap_test` and Update the path to eapol test
-
-```
-EAPOL_PROG=eapol_test
-```
-
-and 
-```
 cp rad_eap_test /usr/local/bin
 ```
 
