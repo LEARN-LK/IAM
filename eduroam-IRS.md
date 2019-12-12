@@ -61,6 +61,8 @@ cd rad_eap_test
 
 wget https://raw.githubusercontent.com/CESNET/rad_eap_test/master/rad_eap_test
 
+chmod +x rad_eap_test
+
 cp rad_eap_test /usr/local/bin
 ```
 
