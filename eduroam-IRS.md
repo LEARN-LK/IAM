@@ -529,6 +529,10 @@ home_server_pool blackhole_pool {
     name = blackhole
 }
 
+realm  wlan.mnc000.mcc413.3gppnetwork.org{
+    auth_pool = blackhole_pool
+}
+
 realm  wlan.mnc001.mcc413.3gppnetwork.org{
     auth_pool = blackhole_pool
 }
