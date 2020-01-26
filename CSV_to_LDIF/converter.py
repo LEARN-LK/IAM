@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#thilina@learn.ac.lk
+#thilina [[AT]] learn.ac.lk
 #Usage:
 #
 #python3 converter.py -i <inputfile> -o <outputfile> -b <baseDN>
@@ -7,8 +7,10 @@
 #eg:
 #python3 converter.py -i data.csv -o data.ldif -b ou=dept,ou=people,dc=inst,dc=ac,dc=lk
 #
-#Data csv should contain: uid,uidNumber,gidNumber,givenName,sn,Password,mobile,email,eduPersonAffiliation  as the head row and Case sensitive
+#Data csv should contain: uid,uidNumber,gidNumber,givenName,sn,Password,mobile,email,eduPersonAffiliation  as the head row
+#and Case sensitive
 #value for email should be from another domain / a personal email and mobile should be in full with country code
+#Values for baseDN should match your user database and values for uidNumber and gidNumber should be decided.
 #Eg:
 #uid,uidNumber,gidNumber,givenName,sn,Password,mobile,email,eduPersonAffiliation
 #kamal,1000,2000,kamal,perera,test123,+94777777777,kamal123@gsmail.com,staff
