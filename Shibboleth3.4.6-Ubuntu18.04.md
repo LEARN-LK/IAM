@@ -811,6 +811,19 @@ All done!
               <RetainedRole>md:SPSSODescriptor</RetainedRole>
             </MetadataFilter>
       </MetadataProvider>
+      <MetadataProvider id="HTTPMD-LEARN-interfederation"
+                      xsi:type="FileBackedHTTPMetadataProvider"
+                      backingFile="%{idp.home}/metadata/LEARNmetadata.xml"
+                      metadataURL="https://fr.ac.lk/signedmetadata/LIAF-interfederation-sp-metadata.xml">
+
+        <MetadataFilter xsi:type="SignatureValidation" requireSignedRoot="true" certificateFile="${idp.home}/metadata/federation-cert.pem"/>
+        <MetadataFilter xsi:type="RequiredValidUntil" maxValidityInterval="P11D"/>
+
+            <!-- Consume all SP metadata in the aggregate -->
+        <MetadataFilter xsi:type="EntityRoleWhiteList">
+            <RetainedRole>md:SPSSODescriptor</RetainedRole>
+        </MetadataFilter>
+      </MetadataProvider>
       ```
 
     * Retrive the Federation Certificate used to verify its signed metadata:
@@ -845,15 +858,25 @@ All done!
             c:client-ref="shibboleth.FileCachingHttpClient"
             c:url="https://fr.ac.lk/templates/attribute-filter-LEARN-Production.xml"
             c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-Production.xml"/>
+      <bean id="ResearchAndScholarship" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
+            c:client-ref="shibboleth.FileCachingHttpClient"
+            c:url="https://fr.ac.lk/templates/attribute-filter-rs.xml"
+            c:backingFile="%{idp.home}/conf/attribute-filter-rs.xml"/>
+      <bean id="CodeOfConduct" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
+            c:client-ref="shibboleth.FileCachingHttpClient"
+            c:url="https://fr.ac.lk/templates/attribute-filter-coco.xml"
+            c:backingFile="%{idp.home}/conf/attribute-filter-coco.xml"/>
       ```
       Modify the **shibboleth.AttributeFilterResources** util:list
-      ```xml
+```xml
       <util:list id ="shibboleth.AttributeFilterResources">
          <value>%{idp.home}/conf/attribute-filter.xml</value>
          <ref bean="Default-Filter"/>
          <ref bean="Production-Filter"/>
-       </util:list>
-      ```
+	 <ref bean="ResearchAndScholarship"/>
+         <ref bean="CodeOfConduct"/>
+      </util:list>
+```
 
 39. Reload service with id `shibboleth.AttributeFilterService` to refresh the Attribute Filter followed by the IdP:
     *  `cd /opt/shibboleth-idp/bin`
