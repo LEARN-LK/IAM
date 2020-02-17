@@ -350,7 +350,7 @@ dn: ou=People,dc=YOUR-DOMAIN,dc=ac,dc=lk
 objectClass: organizationalUnit
 objectClass: top
 ou: People
- 
+
 dn: ou=Group,dc=YOUR-DOMAIN,dc=ac,dc=lk
 objectClass: organizationalUnit
 objectClass: top
@@ -401,7 +401,6 @@ userPassword: {crypt}idpldap
 
 
 # test User
-
 dn: uid=testme,ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
 cn: Test Me
 uid: testme
