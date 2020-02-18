@@ -324,12 +324,12 @@ If you do this installation in Lab setup please skip to implementing https with 
 > If you see errors please consult log files of Tomcat8, Shibboleth or Apache. Troobleshoot locations are given at the end of this document
 
 
-### Speed up Tomcat 8 startup
+### Speed up Tomcat 8 startup (Optional)
 
   
 21. Find out the JARs that can be skipped from the scanning:
     * ```cd /opt/shibboleth-idp/```
-    * ```ls webapp/WEB-INF/lib | awk '{print $1",\\"}'```
+    * ```ls webapp/WEB-INF/lib | awk '{print $1",\\"}'``` If you see an error, skip to step 22.
   
     Insert the output list into ```/etc/tomcat8/catalina.properties``` at the tail of  ```tomcat.util.scan.StandardJarScanFilter.jarsToSkip```
     Make sure about the  ```,\``` symbols
