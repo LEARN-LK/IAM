@@ -173,7 +173,7 @@ If you do this installation in Lab setup please skip to implementing https with 
    ```
   
 
-
+<!--
 13. (OPTIONAL) If you haven't follow the letsencrypt method Create a Certificate and a Key self-signed for HTTPS
    * ```mkdir /root/certificates```
    * ```openssl req -x509 -newkey rsa:4096 -keyout /root/certificates/idp-key-server.key -out /root/certificates/idp-cert-server.crt -nodes -days 1095```
@@ -241,7 +241,7 @@ If you do this installation in Lab setup please skip to implementing https with 
    </VirtualHost>
    ``` 
    * ```service apache2 restart```
-
+-->
 ### Configure Apache Tomcat 8 to run as the back-end 
 
 
@@ -323,7 +323,7 @@ If you do this installation in Lab setup please skip to implementing https with 
 
 > If you see errors please consult log files of Tomcat8, Shibboleth or Apache. Troobleshoot locations are given at the end of this document
 
-
+<!--
 ### Speed up Tomcat 8 startup (Optional)
 
   
@@ -337,7 +337,7 @@ If you do this installation in Lab setup please skip to implementing https with 
     Restart Tomcat 8:
     * ```service tomcat8 restart```
   
-
+-->
 ### Configure Shibboleth Identity Provider v3.2.1 to release the persistent-id (Stored mode)
 
 
@@ -589,7 +589,7 @@ All done!
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
        idp.authn.LDAP.returnAttributes                 = *
        ```
-
+<!--
      * Solution 2: LDAP + TLS:
 
        ```xml
@@ -626,7 +626,7 @@ All done!
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
        idp.authn.LDAP.returnAttributes                 = *
        ```
-
+-->
 > Make sure to change ***dc=YOUR-DOMAIN,dc=ac,dc=lk*** according to your domain
 
 
@@ -644,6 +644,7 @@ All done!
 30. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
     * Download the attribute resolver provided by LEARN:
       ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN.xml```
+<!--
 >If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
 >```xml
 >    <!-- LDAP Connector -->
@@ -662,10 +663,12 @@ All done!
 >        <!-- <StartTLSTrustCredential id="LDAPtoIdPCredential" xsi:type="sec:X509ResourceBacked">
 >            <sec:Certificate>%{idp.attribute.resolver.LDAP.trustCertificates}</sec:Certificate>
 >        </StartTLSTrustCredential> -->
+<!--
 >        <ReturnAttributes>%{idp.attribute.resolver.LDAP.returnAttributes}</ReturnAttributes>
 >    </DataConnector>
 >```
 
+-->
  * Change the value of `schacHomeOrganizationType`,
       ```xml
       <Attribute id="schacHomeOrganizationType">
