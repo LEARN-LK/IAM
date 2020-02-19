@@ -24,7 +24,7 @@ Go to File --> new --> ldap browser --> ldap connection --> next
 
 ```
 Connection Name: LDAP Server
-Hostname: idp.YOUR-DOMAIN.ac.lk
+Hostname: idb.YOUR-DOMAIN.ac.lk
 port: 389
 Encrypted Method: Use STARTTLS
 Provider: Apache Directory LDAP Client API
@@ -173,7 +173,7 @@ It is assumed that your FQDN of the server is ***keycloak.YOUR-DOMAIN.ac.lk***
       * Sync Registrations as ***ON***
       * Vender as ***Other***
       * User Object Classes as `inetOrgPerson, organizationalPerson, eduPerson, extensibleObject`
-      * Connection URL as `ldap://idp.YOUR-DOMAIN.ac.lk:389`
+      * Connection URL as `ldap://idb.YOUR-DOMAIN.ac.lk:389`
       * Users DN as `ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk`
       * Authentication type as ***simple***
       * BIND DN as `cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk`
