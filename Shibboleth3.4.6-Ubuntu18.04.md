@@ -575,7 +575,7 @@ All done!
 
        ```xml
        idp.authn.LDAP.authenticator = bindSearchAuthenticator
-       idp.authn.LDAP.ldapURL = ldap://LDAP.YOUR-DOMAIN:389
+       idp.authn.LDAP.ldapURL = ldap://your-ldap-server-FQDN:389
        idp.authn.LDAP.useStartTLS = true
        idp.authn.LDAP.useSSL = false
        idp.authn.LDAP.sslConfig = certificateTrust
