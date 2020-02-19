@@ -1021,7 +1021,7 @@ Alias /idp/images /opt/shibboleth-idp/edit-webapp/images
 Alias /idp/css /opt/shibboleth-idp/edit-webapp/css
 ```
 
-And, as default permissions on Apache 2.4 are more restrictive, grant also explicitly access to the /opt/shibboleth-idp/edit-webapp directory: insert this at the very top of /etc/httpd/conf.d/idp.conf:
+And, as default permissions on Apache 2.4 are more restrictive, grant also explicitly access to the /opt/shibboleth-idp/edit-webapp directory: insert this at the very top of /etc/apache2/sites-available/idp.conf:
 
 ```apache
 <Directory /opt/shibboleth-idp/edit-webapp>
