@@ -789,7 +789,9 @@ All done!
 
 34. Configure the IdP to retrieve the Federation Metadata:
     * ```cd /opt/shibboleth-idp/conf```
-    * ```vim metadata-providers.xml```
+    * ```vim metadata-providers.xml``` 
+	
+	Add folowing before the closing ```</MetadataProvider>``` Make sure to maintain proper indentation 
 
       ```xml
       <MetadataProvider
@@ -851,6 +853,8 @@ All done!
 
 38. Append your ```services.xml``` with:
     * ```vim /opt/shibboleth-idp/conf/services.xml```
+	
+	Add folowing before the closing ```</beans>``` Make sure to maintain proper indentation 
 
       ```xml
       <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
