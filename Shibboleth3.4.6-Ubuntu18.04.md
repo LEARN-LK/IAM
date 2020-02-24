@@ -589,7 +589,7 @@ All done!
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
        idp.authn.LDAP.returnAttributes                 = *
        ```
-<!--
+
      * Solution 2: LDAP + TLS:
 
        ```xml
@@ -626,7 +626,7 @@ All done!
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
        idp.authn.LDAP.returnAttributes                 = *
        ```
--->
+
 > Make sure to change ***dc=YOUR-DOMAIN,dc=ac,dc=lk*** according to your domain
 
 
@@ -644,7 +644,7 @@ All done!
 30. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
     * Download the attribute resolver provided by LEARN:
       ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN.xml```
-<!--
+
 >If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
 >```xml
 >    <!-- LDAP Connector -->
@@ -663,12 +663,11 @@ All done!
 >        <!-- <StartTLSTrustCredential id="LDAPtoIdPCredential" xsi:type="sec:X509ResourceBacked">
 >            <sec:Certificate>%{idp.attribute.resolver.LDAP.trustCertificates}</sec:Certificate>
 >        </StartTLSTrustCredential> -->
-<!--
 >        <ReturnAttributes>%{idp.attribute.resolver.LDAP.returnAttributes}</ReturnAttributes>
 >    </DataConnector>
 >```
 
--->
+
  * Change the value of `schacHomeOrganizationType`,
       ```xml
       <Attribute id="schacHomeOrganizationType">
