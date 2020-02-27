@@ -3,7 +3,7 @@ All about creating Identity Access Management within NREN
 
 
 ## If you are an Identity Provider
-Identity Provider is the party who provides authentication and authorization for selected services. They are the owners of the identity data and 
+Identity Provider is the party who provides authentication and authorization for selected services. They are the owners of the identity data and
 
 ### First Step
 
@@ -36,3 +36,4 @@ Identity Provider is the party who provides authentication and authorization for
 * [Jagger RR3 Tool](rr3.md)
 
 
+>If you have any questions please contact LEARN TAC. 
