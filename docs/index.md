@@ -1,9 +1,9 @@
 ## If you are an Identity Provider
-Identity Provider is the party who provides authentication and authorization for selected services. They are the owners of the identity data and
+Identity Provider is the party who provides authentication and authorisation for selected services. They are the owners of the identity data and
 
-### First Step
+<h2>First Step</h2>
 
-* [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](Ldap-with-eduperson.md)
+* [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](../Ldap-with-eduperson.md)
 
 ### Install eduroam
 
