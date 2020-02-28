@@ -1,15 +1,22 @@
-## If you are an Identity Provider
+<html>
+<head><title>LIAF-Guide</title></head>
+<body>
+<h1>LEARN Identity Access Federation</h1>
+
+<h2>If you are an Identity Provider</h2>
 Identity Provider is the party who provides authentication and authorisation for selected services. They are the owners of the identity data and
 
-<h2>First Step</h2>
+<h3>First Step</h3>
 
-* [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](../Ldap-with-eduperson.md)
+<ul>
+<li><a href="https://github.com/LEARN-LK/IAM/blob/master/Ldap-with-eduperson.md">Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema</a></li></ul>
 
-### Install eduroam
+<h3> Install eduroam </h3>
 
-* [Freeradius based eduroam IRS on Ubuntu 18.04](eduroam-IRS.md)
 <ul>
 <li><a href="https://github.com/LEARN-LK/IAM/blob/master/Ldap-with-eduperson.md">Freeradius based eduroam IRS on Ubuntu 18.04</a></li></ul>
+
+
 ### Install Federated Identity System
 
 * [Shibboleth IdP v3.4.6 on Ubuntu Linux LTS 18.04](Shibboleth3.4.6-Ubuntu18.04.md)
@@ -34,3 +41,6 @@ Identity Provider is the party who provides authentication and authorisation for
 
 
 >If you have any questions please contact LEARN TAC.
+
+</body>
+</html>
