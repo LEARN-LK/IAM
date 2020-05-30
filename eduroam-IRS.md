@@ -1,9 +1,6 @@
-# Installation of Eduroam IRS with Freeradius on Ubuntu18.04
+# Installation of Eduroam IRS with Freeradius on Ubuntu20.04
 
-It is assumed that this installation will be carried on a fresh installation of ubuntu 18.04 server.
-
-Modify the apt source list (`/etc/apt/sources.list`) as per the source list from
-https://gist.github.com/jackw1111/
+It is assumed that this installation will be carried on a fresh installation of ubuntu 20.04 server.
 
 
 ### Install Packages
