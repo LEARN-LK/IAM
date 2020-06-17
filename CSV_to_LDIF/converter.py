@@ -24,7 +24,7 @@ import sys
 
 objClass = "objectClass: person\nobjectClass: organizationalPerson\nobjectClass: inetOrgPerson\nobjectClass: " \
            "eduPerson\nobjectClass: extensibleObject\nobjectClass: posixAccount\nobjectClass: top\nobjectClass: " \
-           "shadowAccount "
+           "shadowAccount"
 
 
 def mydomain(domain):
@@ -64,15 +64,15 @@ def main(argv):
         with io.open(outfile, 'a', encoding='utf-8') as outf:
             for row in csv_reader:
                 x = "#" + row['uid']
-                x += "\ndn: " + row['uid'] + domain + "\n"
-                x += objClass
+                x += "\ndn: " + row['uid'] + domain
                 x += "\ncn: " + row['givenName'] + " " + row['sn']
                 x += "\nuid: " + row['uid']
                 x += "\nuidNumber: " + row['uidNumber']
                 x += "\ngidNumber: " + row['gidNumber']
                 x += "\ngivenName: " + row['givenName']
                 x += "\nhomeDirectory: /dev/null"
-                x += "\nhomePhone: none"
+                x += "\nhomePhone: none\n"
+                x += objClass
                 x += "\nsn: " + row['sn']
                 x += "\nmobile: " + row['mobile']
                 x += "\nuserPassword: " + row['Password']
