@@ -64,7 +64,7 @@ def main(argv):
         with io.open(outfile, 'a', encoding='utf-8') as outf:
             for row in csv_reader:
                 x = "#" + row['uid']
-                x += "\ndn: " + row['uid'] + domain
+                x += "\ndn: uid=" + row['uid'] + "," + domain
                 x += "\ncn: " + row['givenName'] + " " + row['sn']
                 x += "\nuid: " + row['uid']
                 x += "\nuidNumber: " + row['uidNumber']
