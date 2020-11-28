@@ -9,7 +9,7 @@ This will guide you through enabling LEARN Video Conferencing services via Zoom 
 Signing-in using federation to Zoom system requires following directory attributes.
 
 * sn
-* mail
+* uid (unique username to identify the user within the domain)
 * givenname
 * eduPersonAffiliation
 * eduPersonOrgUnitDN
