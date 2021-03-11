@@ -19,7 +19,7 @@ Build eapol tool
 
 git clone --depth 1 --no-single-branch https://github.com/FreeRADIUS/freeradius-server.git
 
-cd freeradius-server/scripts/travis/
+cd freeradius-server/scripts/ci/
 
 ./eapol_test-build.sh
 
@@ -610,7 +610,7 @@ You may also need to add all clients directly connecting to the radius, such as 
 Next,
 
 ```
-cd sites-enable
+cd sites-enabled
 rm default
 rm inner-tunnel
 ln -s ../sites-available/eduroam-inner-tunnel eduroam-inner-tunnel
