@@ -240,6 +240,7 @@ You may have to answer several questions decsribing your service to the federati
             print $key." = ".$value."<br>";
          }*/
          ?>
+         <p> <a href="https://sp.YOUR-DOAMIN/Shibboleth.sso/Logout"><button>Sign Out</button></a> </p>
        </body>
      </html>
      ```
@@ -258,17 +259,15 @@ You may have to answer several questions decsribing your service to the federati
 ### Enable Attribute Support on Shibboleth SP
 20. Enable attribute by removing comment from the related content of ```/etc/shibboleth/attribute-map.xml``` you may enable any attribute map as per your requirement.
     
-### Enable Single Logout
 
-21. Change <Logout> element in /etc/shibboleth/shibboleth2.xml. They get passed as attributes to the SAML2 LogoutInitiator that gets created by the Logout element.  The fully unfolded configuration with settings identical to default is:
-```xml
-<Logout asynchronous="true" outgoingBindings="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST urn:oasis:names:tc:SAML:2.0:bindings:SOAP">
-  SAML2 Local
-</Logout>
-```
-Setting asynchronous="false" would make the flow return back to the SP (this otherwise only happens for the SOAP binding which cannot be done asynchronously).
+**Note**
+
+For this system following parameters may come in handy.
+
+Login Initiator: `https://sp.YOUR-DOMAIN/Shibboleth.sso/Login`
+Logout Initiator: `https://sp.YOUR-DOMAIN/Shibboleth.sso/Logout`
 
 
-To initiate, create a button or link to go to a URL on the SP of the form: https://sp.YOUR-DOMAIN/Shibboleth.sso/Logout
+### Credits
 
-The SLO would use an asynchronous message to the IdP and the flow would end at the IdP Logout page.  The user would be returned to the return URL only if the SLO is done in synchronous mode and the flow returns back to the SP.  To set the return URL, pass it in the return parameter as a query string to the Logout initiator - e.g.: https://sp.YOUR-DOMAIN/Shibboleth.sso/Logout?return=https://sp.example.org/logout-completed.html
+* Marco Malavolti (marco.malavolti@garr.it) 
