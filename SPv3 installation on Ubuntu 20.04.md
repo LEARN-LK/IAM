@@ -7,7 +7,7 @@ Lets Assume your server hostname as **sp.YOUR-DOMAIN**
 All commands are to be run as root and you may use `sudo su` to become root
 
 1. Install the packages required: 
-   * ```apt install apache2 ntp ca-certificates vim openssl binutils```
+   * ```apt install apache2 ca-certificates vim openssl binutils```
    
 
 2. Modify ```/etc/hosts```:
@@ -37,42 +37,26 @@ All commands are to be run as root and you may use `sudo su` to become root
    If you have purchased ssl certificate from a commercial CA substitute those with the self signed files.
    If you wish to get **letsencrypt** certificates *Skip* to **Step 10**.
 
-   Create a Certificate and a Key self-signed for HTTPS:
+5.  Create a Certificate and a Key self-signed for HTTPS:
    * ```openssl req -x509 -newkey rsa:4096 -keyout /etc/ssl/private/ssl-sp.key -out /etc/ssl/certs/ssl-sp.crt -nodes -days 1095```
 
 6. Modify the file ```/etc/apache2/sites-available/sp-ssl.conf``` as follows:
 
    ```apache
    <IfModule mod_ssl.c>
-      SSLStaplingCache        shmcb:/var/run/ocsp(128000)
-      <VirtualHost _default_:443>
-        ServerName sp.YOUR-DOMAIN:443
-        ServerAdmin admin@YOUR-DOMAIN
-        DocumentRoot /var/www/html
-        ...
-        SSLEngine On
-        
-        SSLProtocol All -SSLv2 -SSLv3 -TLSv1 -TLSv1.1
-        SSLCipherSuite "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH"
+      <VirtualHost *:443>
 
-        SSLHonorCipherOrder on
+          ServerName sp.YOUR-DOMAIN
 
-        # Disable SSL Compression
-        SSLCompression Off
-        
-        # OCSP Stapling, only in httpd/apache >= 2.3.3
-        SSLUseStapling          on
-        SSLStaplingResponderTimeout 5
-        SSLStaplingReturnResponderErrors off
-        
-        # Enable HTTP Strict Transport Security with a 2 year duration
-        Header always set Strict-Transport-Security "max-age=63072000;includeSubDomains;preload"
-        ...
+          ServerAdmin webmaster@localhost
+          DocumentRoot /var/www/html
+
+          ErrorLog ${APACHE_LOG_DIR}/error.log
+          CustomLog ${APACHE_LOG_DIR}/access.log combined
+
         SSLCertificateFile /etc/ssl/certs/ssl-sp.crt
         SSLCertificateKeyFile /etc/ssl/private/ssl-sp.key
-        SSLCertificateChainFile /root/certificates/ssl-ca.pem
-        ...
-      </VirtualHost>
+        </VirtualHost>
    </IfModule>
    ```
 
@@ -146,60 +130,14 @@ All commands are to be run as root and you may use `sudo su` to become root
    * `systemctl reload apache2`
    
    
-   Install Letsencypt and enable https
+   Install Letsencypt and enable https 
 
 ```bash
 add-apt-repository ppa:certbot/certbot
-apt install python-certbot-apache
-certbot --apache -d sp.YOUR-DOMAIN
+apt install apt install certbot python3-certbot-apache
+certbot --apache
 ```
-```
-Plugins selected: Authenticator apache, Installer apache
-Enter email address (used for urgent renewal and security notices) (Enter 'c' to
-cancel): YOU@YOUR-DOMAIN
-
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Please read the Terms of Service at
-https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf. You must
-agree in order to register with the ACME server at
-https://acme-v02.api.letsencrypt.org/directory
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-(A)gree/(C)ancel: A
-
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Would you be willing to share your email address with the Electronic Frontier
-Foundation, a founding partner of the Let's Encrypt project and the non-profit
-organization that develops Certbot? We'd like to send you email about our work
-encrypting the web, EFF news, campaigns, and ways to support digital freedom.
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-(Y)es/(N)o: Y
-
-Obtaining a new certificate
-Performing the following challenges:
-http-01 challenge for sp.YOUR_DOMAIN
-Waiting for verification...
-Cleaning up challenges
-Created an SSL vhost at /etc/apache2/sites-available/sp-le-ssl.conf
-Enabled Apache socache_shmcb module
-Enabled Apache ssl module
-Deploying Certificate to VirtualHost /etc/apache2/sites-available/sp-le-ssl.conf
-Enabling available site: /etc/apache2/sites-available/sp-le-ssl.conf
-
-
-Please choose whether or not to redirect HTTP traffic to HTTPS, removing HTTP access.
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-1: No redirect - Make no further changes to the webserver configuration.
-2: Redirect - Make all requests redirect to secure HTTPS access. Choose this for
-new sites, or if you're confident your site works on HTTPS. You can undo this
-change by editing your web server's configuration.
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Select the appropriate number [1-2] then [enter] (press 'c' to cancel): 2
-Redirecting vhost in /etc/apache2/sites-enabled/sp.conf to ssl vhost in /etc/apache2/sites-available/sp-le-ssl.conf
-
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
-
-```
+   Go through the interactive prompt and include your server details. Make sure you select **redirect** option when asked.
 
 
 ### Configure Shibboleth SP
@@ -217,23 +155,30 @@ Congratulations! You have successfully enabled https://sp.YOUR-DOMAIN
      ```bash
      ...
      <ApplicationDefaults entityID="https://sp.YOUR-DOMAIN/shibboleth"
-          REMOTE_USER="eppn persistent-id targeted-id">
+             REMOTE_USER="eppn subject-id pairwise-id persistent-id"
+             cipherSuites="DEFAULT:!EXP:!LOW:!aNULL:!eNULL:!DES:!IDEA:!SEED:!RC4:!3DES:!kRSA:!SSLv2:!SSLv3:!TLSv1:!TLSv1.1">
      ...
-     <Sessions lifetime="28800" timeout="3600" checkAddress="false" handlerSSL="true" cookieProps="https">
+     <Sessions lifetime="28800" timeout="3600" relayState="ss:mem" checkAddress="false" handlerSSL="true" cookieProps="https">
      ...
      <SSO discoveryProtocol="SAMLDS" discoveryURL="https://fds.ac.lk">
         SAML2
      </SSO>
      ...
-     <MetadataProvider type="XML" uri="https://fr.ac.lk/signedmetadata/metadata.xml" legacyOrgName="true" backingFilePath="test-metadata.xml" reloadInterval="600">
+     <MetadataProvider type="XML" url="https://fr.ac.lk/signedmetadata/metadata.xml" legacyOrgName="true" backingFilePath="test-metadata.xml" maxRefreshDelay="7200">
            
-           <MetadataFilter type="Signature" certificate="federation-cert.pem"/>
+           <MetadataFilter type="Signature" certificate="federation-cert.pem" verifyBackup="false"/>
            
            <MetadataFilter type="RequireValidUntil" maxValidityInterval="864000" />
      </MetadataProvider>
+     <!-- Simple file-based resolvers for separate signing/encryption keys. -->
+     <CredentialResolver type="File" use="signing"
+           key="sp-signing-key.pem" certificate="sp-signing-cert.pem"/>
+     <CredentialResolver type="File" use="encryption"
+           key="sp-encrypt-key.pem" certificate="sp-encrypt-cert.pem"/>
      ```
 13. Create SP metadata credentials:
-   * ```/usr/sbin/shib-keygen```
+   * ```/usr/sbin/shib-keygen -n sp-signing -e https://sp.YOUR-DOMAIN/shibboleth```
+   * ```/usr/sbin/shib-keygen -n sp-encrypt -e https://sp.YOUR-DOMAIN/shibboleth```
    * ```shibd -t /etc/shibboleth/shibboleth2.xml``` (Check Shibboleth configuration)
 
 14. Enable Shibboleth Apache2 configuration:
@@ -300,6 +245,7 @@ You may have to answer several questions decsribing your service to the federati
      ```
 
 19. Install needed packages:
+   * ```apt install libapache2-mod-php php```
    
    * ```a2ensite secure```
   
@@ -310,8 +256,7 @@ You may have to answer several questions decsribing your service to the federati
    Now you may browse to `https://sp.YOUR-DOMAIN/secure` and select your IDP to log in.
    
 ### Enable Attribute Support on Shibboleth SP
-20. Enable attribute by remove comment from the related content into ```/etc/shibboleth/attribute-map.xml```
-    Disable First deprecated/incorrect version of ```persistent-id``` from ```attribute-map.xml```. Also you may enable any attribute map as per your requirement.
+20. Enable attribute by removing comment from the related content of ```/etc/shibboleth/attribute-map.xml``` you may enable any attribute map as per your requirement.
     
 ### Enable Single Logout
 
