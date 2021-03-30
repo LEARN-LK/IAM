@@ -257,15 +257,16 @@ You may have to answer several questions decsribing your service to the federati
    Now you may browse to `https://sp.YOUR-DOMAIN/secure` and select your IDP to log in.
    
 ### Enable Attribute Support on Shibboleth SP
-20. Enable attribute by removing comment from the related content of ```/etc/shibboleth/attribute-map.xml``` you may enable any attribute map as per your requirement.
+20. Enable attribute by removing comment from the related content of ```/etc/shibboleth/attribute-map.xml``` you may enable any attribute map as per your requirement. Restart Shibd to apply ```systemctl restart shibd.service```
     
 
 **Note**
 
 For this system following parameters may come in handy.
 
-Login Initiator: `https://sp.YOUR-DOMAIN/Shibboleth.sso/Login`
-Logout Initiator: `https://sp.YOUR-DOMAIN/Shibboleth.sso/Logout`
+* Login Initiator: `https://sp.YOUR-DOMAIN/Shibboleth.sso/Login`
+
+* Logout Initiator: `https://sp.YOUR-DOMAIN/Shibboleth.sso/Logout`
 
 
 ### Credits
