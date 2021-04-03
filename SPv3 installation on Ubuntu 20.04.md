@@ -202,7 +202,7 @@ You may have to answer several questions decsribing your service to the federati
    * ```vim /etc/apache2/sites-available/secure.conf```
   
      ```bash
-     RedirectMatch    ^/$  /secure
+     #RedirectMatch    ^/$  /secure
 
      <Location /secure>
        Authtype shibboleth
