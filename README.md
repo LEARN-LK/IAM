@@ -30,6 +30,7 @@ Identity Provider is the party who provides authentication and authorization for
 
 ### Install federated Identity Manager
 
+* [Shibboleth SPv3 on Ubuntu Linux LTS 20.04](SPv3%20installation%20on%20Ubuntu%2020.04.md)
 * [Shibboleth SP on Ubuntu Linux LTS 18.04](SP_Ubuntu1804.md)
 
 ## If you are a Federation Operator looking to install Resource Registry,
