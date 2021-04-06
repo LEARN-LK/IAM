@@ -133,7 +133,6 @@ All commands are to be run as root and you may use `sudo su` to become root
    Install Letsencypt and enable https 
 
 ```bash
-add-apt-repository ppa:certbot/certbot
 apt install certbot python3-certbot-apache
 certbot --apache
 ```
