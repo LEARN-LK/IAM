@@ -134,7 +134,7 @@ All commands are to be run as root and you may use `sudo su` to become root
 
 ```bash
 add-apt-repository ppa:certbot/certbot
-apt install apt install certbot python3-certbot-apache
+apt install certbot python3-certbot-apache
 certbot --apache
 ```
    Go through the interactive prompt and include your server details. Make sure you select **redirect** option when asked.
