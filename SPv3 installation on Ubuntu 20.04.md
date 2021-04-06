@@ -182,7 +182,7 @@ certbot --apache
    * ```shibd -t /etc/shibboleth/shibboleth2.xml``` (Check Shibboleth configuration)
 
 14. Enable Shibboleth Apache2 configuration:
-   * ```a2enmod shib2```
+   * ```a2enmod shib```
    * ```systemctl reload apache2.service ```
 
 15. Now you are able to reach your Shibboleth SP Metadata on:
