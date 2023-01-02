@@ -10,7 +10,7 @@ Based on [IDEM-TUTORIALS](https://github.com/ConsortiumGARR/idem-tutorials/blob/
 - CPU: 2 Core (64 bit)
 - RAM: 4 GB
 - HDD: 20 GB
-OS: Debian 10 / Ubuntu 18.04 / Ubuntu 20.04
+OS:Ubuntu 22.04
 
 #### Other
 
