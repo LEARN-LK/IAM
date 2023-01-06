@@ -1149,6 +1149,18 @@ cd /opt/shibboleth-idp/bin ; ./build.sh
 Restart Jetty:
 
 sudo systemctl restart jetty.service
+       
+       
+## For exsisting IDP in LIAF
+       
+Log in to fr.ac.lk with the provided login details(One login crediantials have shared when idp registration on Federated registery)
+
+Then navigate "Edit" symbol in left side and click on option "edit identity provider"
+After, navigate for metadata > certificates
+Next, Delete the excisting certificates and copy the certificates from the metadata and update
+       
+You will have to check on https://sp-test.liaf.ac.lk after updating the certificates.
+
 Useful Documentation
 
 https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1265631699/SpringConfiguration
