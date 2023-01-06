@@ -518,7 +518,7 @@ Check IdP Status:
 
 #### Configure the Directory (openLDAP or AD) Connection ####
 
-https://github.com/LEARN-LK/IAM/blob/master/Ldap-with-eduperson.md
+[https://github.com/LEARN-LK/IAM/blob/master/Ldap-with-eduperson.md](https://github.com/LEARN-LK/IAM/blob/master/ldap22-latest.md)
 
 Connect the openLDAP to the IdP to allow the authentication of the users:
 
