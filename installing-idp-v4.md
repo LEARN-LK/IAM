@@ -107,7 +107,7 @@ echo $JAVA_HOME
 8. Download the Shibboleth Identity Provider
 
     * ```cd /usr/local/src```
-    * ``` wget https://shibboleth.net/downloads/identity-provider/4.2.1/sshibboleth-identity-provider-4.2.1.tar.gz```
+    *  wget [https://shibboleth.net/downloads/identity-provider/4.2.1/sshibboleth-identity-provider-4.2.1.tar.gz```](https://shibboleth.net/downloads/identity-provider/latest4/shibboleth-identity-provider-4.2.1.tar.gz)
     *``` tar -xzf shibboleth-identity-provider-4.2.1.tar.gz```
 
 9. Generate Passwords for later use in the installation, You will need two password strings, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION### for step 11
