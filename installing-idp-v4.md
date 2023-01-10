@@ -1,71 +1,103 @@
-# Shibboleth IdP v3.4.6 on Ubuntu Linux LTS 18.04
+# Shibboleth IdP v4+ on Ubuntu Linux LTS 22.04
 
-Based on [IDEM-TUTORIALS](https://github.com/ConsortiumGARR/idem-tutorials/blob/master/idem-fedops/HOWTO-Shibboleth/Identity%20Provider/Ubuntu/HOWTO%20Install%20and%20Configure%20a%20Shibboleth%20IdP%20v3.2.1%20on%20Ubuntu%20Linux%20LTS%2016.04%20with%20Apache2%20%2B%20Tomcat8.md) by Marco Malavolti (marco.malavolti@garr.it)
+Based on [IDEM-TUTORIALS](https://github.com/ConsortiumGARR/idem-tutorials/blob/master/idem-fedops/HOWTO-Shibboleth/Identity%20Provider/Debian-Ubuntu/HOWTO%20Install%20and%20Configure%20a%20Shibboleth%20IdP%20v4.x%20on%20Debian-Ubuntu%20Linux%20with%20Apache2%20%2B%20Jetty9.md) by Marco Malavolti (marco.malavolti@garr.it)
 
-LEARN concluded a workshop on Federated Identity with the introduction of Shibboleth IDP and SP to IAM infrastructure on member institutions. Following are the generalized version of the guides used, originals can be found at [LEARN Workshop CMS](https://ws.learn.ac.lk/wiki/iam2018) 
+LEARN concluded a workshop on Federated Identity with the introduction of Shibboleth IDP and SP to IAM infrastructure on member institutions. 
 
-Installation assumes you have already installed Ubuntu Server 18.04 with default configuration and has a public IP connectivity with DNS setup
+Installation assumes you have already installed Ubuntu Server 22.04 with default configuration and has a public IP connectivity with DNS setup
 
 Lets Assume your server hostname as **idp.YOUR-DOMAIN**
 
 All commands are to be run as **root** and you may use `sudo su`, to become root
 
-1. Install the packages required: 
-   * ```apt-get install vim default-jdk ca-certificates openssl tomcat8 apache2 ntp expat```
+## Install Instructions
+
+### Install software requirements
+
+1. Become ROOT:
+   * `sudo su -`
    
 
-2. Modify ```/etc/hosts``` and add:
-   * ```vim /etc/hosts```
-  
-     ```bash
-     127.0.0.1 idp.YOUR-DOMAIN idp
-     ```
-   (*Replace ```idp.YOUR-DOMAIN``` with your IdP FQDN, Also remember not to remove the entry for ```localhost```*)
-
-3. Define the costants ```JAVA_HOME``` and ```IDP_SRC``` inside ```/etc/environment```:
-   * ```update-alternatives --config java``` (copy the path without /bin/java)
-   * ```vim /etc/environment```
-
-     ```bash
-     JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-     IDP_SRC=/usr/local/src/shibboleth-identity-provider-3.4.6
-     ```
-   * ```source /etc/environment```
-   * ```export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64```
-   * ```export IDP_SRC=/usr/local/src/shibboleth-identity-provider-3.4.6```
-  
-
-4. Configure **/etc/default/tomcat8**:
-   * ```update-alternatives --config java``` (copy the path without /bin/java)
-   * ```update-alternatives --config javac```
-   * ```vim /etc/default/tomcat8```
-  
-     ```bash
-     JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-     ...
-     JAVA_OPTS="-Djava.awt.headless=true -XX:+DisableExplicitGC -XX:+UseParallelOldGC -Xms256m -Xmx1g -Djava.security.egd=file:/dev/./urandom"
-     ```
-
-     (This settings configure the memory of the JVM that will host the IdP Web Application. 
-     The Memory value depends on the phisical memory installed on the machine. 
-     On production environment Set the "**Xmx**" (max heap space available to the JVM) at least to **2GB**)
-
-
-5. Download the Shibboleth Identity Provider v3.4.6:
-   * ```cd /usr/local/src```
-   * ```wget http://shibboleth.net/downloads/identity-provider/3.4.6/shibboleth-identity-provider-3.4.6.tar.gz```
-   * ```tar -xzvf shibboleth-identity-provider-3.4.6.tar.gz```
-   * ```cd shibboleth-identity-provider-3.4.6```
-
-6. Generate Passwords for later use in the installation, You will need two password strings, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION### for step 7.
-   * ```tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo```
-      
-7. Run the installer ```install.sh``` to install Shibboleth Identity Provider v3.4.6:
-   * ```./bin/install.sh```
-  
+2. Update packages:
    ```bash
-   root@idp:/usr/local/src/shibboleth-identity-provider-3.4.6# ./bin/install.sh
-   Source (Distribution) Directory: [/usr/local/src/shibboleth-identity-provider-3.4.6]
+   apt update && apt-get upgrade -y --no-install-recommends
+   ```
+   
+3.Install the required packages:
+   ```bash
+   apt install vim wget gnupg ca-certificates openssl apache2 ntp libservlet3.1-java liblogback-java --no-install-recommends
+   ```
+   
+4. Install Amazon Corretto JDK:
+   ```bash
+   wget -O- https://apt.corretto.aws/corretto.key | apt-key add -
+
+   apt-get install software-properties-common
+
+   add-apt-repository 'deb https://apt.corretto.aws stable main'
+
+   apt-get update; apt-get install -y java-11-amazon-corretto-jdk
+
+   java -version
+   ```
+Check that Java is working:
+   ```bash
+   update-alternatives --config java
+   ```
+   
+   (It will return something like this "`There is only one alternative in link group java (providing /usr/bin/java):`" )
+
+### Configure the environment
+
+1. Become ROOT:
+   * `sudo su -`
+   
+2. Be sure that your firewall **is not blocking** the traffic on port **443** and **80** for the IdP server.
+
+3. Set the IdP hostname:
+
+   (**ATTENTION**: *Replace `idp.example.org` with your IdP Full Qualified Domain Name and `<HOSTNAME>` with the IdP hostname*)
+
+   * `vim /etc/hosts`
+
+     ```bash
+     <YOUR SERVER IP ADDRESS> idp.example.org <HOSTNAME>
+     ```
+
+   * `hostnamectl set-hostname <HOSTNAME>`
+   
+4. Set the variable `JAVA_HOME` in `/etc/environment`:
+   * Set JAVA_HOME:
+     ```bash
+     echo 'JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto' > /etc/environment
+
+     source /etc/environment
+
+     export JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto
+
+     echo $JAVA_HOME
+     ```
+
+### Install Shibboleth Identity Provider v4.x
+
+1. Download the Shibboleth Identity Provider v4.x.y (replace '4.x.y' with the latest version found [here](https://shibboleth.net/downloads/identity-provider/)):
+   * `cd /usr/local/src`
+   * `wget http://shibboleth.net/downloads/identity-provider/4.x.y/shibboleth-identity-provider-4.x.y.tar.gz`
+   * `tar -xzf shibboleth-identity-provider-4.*.tar.gz`
+   * `cd shibboleth-identity-provider-4.*.`
+
+2. Generate Passwords for later use in the installation, You will need two password strings, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION### for step 7.
+   * ```tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo```
+
+3. Run the installer `install.sh`:
+   > According to [NSA and NIST](https://www.keylength.com/en/compare/), RSA with 3072 bit-modulus is the minimum to protect up to TOP SECRET over than 2030.
+
+   * `cd /usr/local/src/shibboleth-identity-provider-4.x/bin`
+   * `bash install.sh -Didp.host.name=$(hostname -f) -Didp.keysize=3072`
+
+  
+   ```
+   Source (Distribution) Directory: [/usr/local/src/shibboleth-identity-provider-4.x]
    Installation Directory: [/opt/shibboleth-idp]
    Hostname: [localhost.localdomain]
    idp.YOUR-DOMAIN
@@ -78,21 +110,126 @@ All commands are to be run as **root** and you may use `sudo su`, to become root
    Re-enter password:              ###PASSWORD-FOR-COOKIE-ENCRYPTION###
    ```
   
+   By starting from this point, the variable **idp.home** refers to the directory: `/opt/shibboleth-idp`
+     
+     Save the `###PASSWORD-FOR-BACKCHANNEL###` value somewhere to be able to find it when you need it.
+     
+     The `###PASSWORD-FOR-COOKIE-ENCRYPTION###` will be saved into `/opt/shibboleth-idp/credentials/secrets.properties` as `idp.sealer.storePassword` and `idp.sealer.keyPassword` value.
+     
    From this point the variable **idp.home** refers to the directory: ```/opt/shibboleth-idp```
 
-8. Import the JST libraries to visualize the IdP ```status``` page:
-   * ```cd /opt/shibboleth-idp/edit-webapp/WEB-INF/lib```
-   * ```wget https://build.shibboleth.net/nexus/service/local/repositories/thirdparty/content/javax/servlet/jstl/1.2/jstl-1.2.jar```
-   * ```cd /opt/shibboleth-idp/bin ; ./build.sh -Didp.target.dir=/opt/shibboleth-idp```
+### Install Jetty 9 Web Server
+Jetty is a Web server and a Java Servlet container. It will be used to run the IdP application through its WAR file.
 
-9. Change the owner to enable **tomcat8** user to access on the following directories:
-   * ```chown -R tomcat8 /opt/shibboleth-idp/logs/```
-   * ```chown -R tomcat8 /opt/shibboleth-idp/metadata/```
-   * ```chown -R tomcat8 /opt/shibboleth-idp/credentials/```
-   * ```chown -R tomcat8 /opt/shibboleth-idp/conf/```
+1. Become ROOT:
+   * `sudo su -`
 
+2. Download and Extract Jetty:
+   ```bash
+   cd /usr/local/src
+   
+   wget https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/9.4.43.v20210629/jetty-distribution-9.4.43.v20210629.tar.gz
+   
+   tar xzvf jetty-distribution-9.4.43.v20210629.tar.gz
+   ```
 
-### Configure SSL on Apache2 with Letsencrypt.
+3. Create the `jetty-src` folder as a symbolic link. It will be useful for future Jetty updates:
+   ```bash
+   ln -nsf jetty-distribution-9.4.43.v20210629 jetty-src
+   ```
+
+4. Create the system user `jetty` that can run the web server (without home directory):
+   ```bash
+   useradd -r -M jetty
+   ```
+
+5. Create your custom Jetty configuration that overrides the default one and will survive upgrades:
+   ```bash
+   mkdir /opt/jetty
+   
+   wget https://registry.idem.garr.it/idem-conf/shibboleth/IDP4/jetty/start.ini -O /opt/jetty/start.ini
+   ```
+
+6. Create the TMPDIR directory used by Jetty:
+   ```bash
+   mkdir /opt/jetty/tmp ; chown jetty:jetty /opt/jetty/tmp
+   
+   chown -R jetty:jetty /opt/jetty /usr/local/src/jetty-src
+   ```
+
+7. Create the Jetty Log's folder:
+   ```bash
+   mkdir /var/log/jetty
+   
+   mkdir /opt/jetty/logs
+   
+   chown jetty:jetty /var/log/jetty /opt/jetty/logs
+   ```
+
+8. Configure **/etc/default/jetty**:
+   ```bash
+   bash -c 'cat > /etc/default/jetty <<EOF
+   JETTY_HOME=/usr/local/src/jetty-src
+   JETTY_BASE=/opt/jetty
+   JETTY_USER=jetty
+   JETTY_START_LOG=/var/log/jetty/start.log
+   TMPDIR=/opt/jetty/tmp
+   EOF'
+   ```
+
+9. Create the service loadable from command line:
+   ```bash
+   cd /etc/init.d
+   
+   ln -s /usr/local/src/jetty-src/bin/jetty.sh jetty
+   
+   update-rc.d jetty defaults
+   ```
+
+10. Check if all settings are OK:
+    * `service jetty check`   (Jetty NOT running)
+    * `service jetty start`
+    * `service jetty check`   (Jetty running pid=XXXX)
+
+    If you receive an error likes "*Job for jetty.service failed because the control process exited with error code. See "systemctl status jetty.service" and "journalctl -xe" for details.*", try this:
+      * `rm /var/run/jetty.pid`
+      * `systemctl start jetty.service`
+
+## Configuration Instructions
+
+### Configure Jetty
+
+1. Become ROOT:
+   * `sudo su -`
+
+2. Configure the IdP Context Descriptor:
+   ```bash
+   mkdir /opt/jetty/webapps
+   
+   bash -c 'cat > /opt/jetty/webapps/idp.xml <<EOF
+   <Configure class="org.eclipse.jetty.webapp.WebAppContext">
+     <Set name="war"><SystemProperty name="idp.home"/>/war/idp.war</Set>
+     <Set name="contextPath">/idp</Set>
+     <Set name="extractWAR">false</Set>
+     <Set name="copyWebDir">false</Set>
+     <Set name="copyWebInf">true</Set>
+     <Set name="persistTempDirectory">false</Set>
+   </Configure>
+   EOF'
+   ```
+
+3. Make the **jetty** user owner of IdP main directories:
+   ```bash
+   cd /opt/shibboleth-idp
+
+   chown -R jetty logs/ metadata/ credentials/ conf/ war/
+   ```
+
+4. Restart Jetty:
+   * `systemctl restart jetty.service`
+
+### Configure SSL on Apache2 with Letsencrypt(front-end of Jetty).
+
 If you do this installation in Lab setup please skip to implementing https with self-signed certificates as described in **step 13**.
 
 10. Disable default apache configuration:
@@ -120,8 +257,7 @@ If you do this installation in Lab setup please skip to implementing https with 
 
 12. Install Letsencrypt and enable HTTPS:
 
-   * ```add-apt-repository ppa:certbot/certbot```
-   * ```apt install python-certbot-apache```
+   * ```apt install python3-certbot-apache```
    * ```certbot --apache -d idp.YOUR-DOMAIN```
    
    ```
@@ -242,103 +378,8 @@ If you do this installation in Lab setup please skip to implementing https with 
    ``` 
    * ```service apache2 restart```
 -->
-### Configure Apache Tomcat 8 to run as the back-end 
 
-
-14. Modify ```server.xml```:
-   * ```vim /etc/tomcat8/server.xml```
-  
-     Comment out the Connector 8080 (HTTP):
-    
-     ```xml
-     <!-- A "Connector" represents an endpoint by which requests are received
-          and responses are returned. Documentation at :
-          Java HTTP Connector: /docs/config/http.html (blocking & non-blocking)
-          Java AJP  Connector: /docs/config/ajp.html
-          APR (HTTP/AJP) Connector: /docs/apr.html
-          Define a non-SSL/TLS HTTP/1.1 Connector on port 8080
-     -->
-     <!--
-     <Connector port="8080" protocol="HTTP/1.1"
-                connectionTimeout="20000"
-                URIEncoding="UTF-8"
-                redirectPort="8443" />
-     -->
-     ```
-
-     Enable the Connector 8009 (AJP):
-
-     ```xml
-     <!-- Define an AJP 1.3 Connector on port 8009 -->
-     <Connector port="8009" protocol="AJP/1.3" redirectPort="443" address="127.0.0.1" enableLookups="false" tomcatAuthentication="false"/>
-     ```
-    
-     Check the integrity of XML files just edited with:
-     ```xmlwf -e UTF-8 /etc/tomcat8/server.xml```
-
-15. Create and change the file ```idp.xml```:
-   * ```sudo vim /etc/tomcat8/Catalina/localhost/idp.xml```
-
-     ```xml
-     <Context docBase="/opt/shibboleth-idp/war/idp.war"
-              privileged="true"
-              antiResourceLocking="false"
-              swallowOutput="true"/>
-     ```
-
-16. Create the Apache2 configuration file for IdP:
-   * ```vim /etc/apache2/sites-available/idp-proxy.conf```
-  
-     ```apache
-     <IfModule mod_proxy.c>
-       ProxyPreserveHost On
-       RequestHeader set X-Forwarded-Proto "https"
-
-       <Proxy ajp://localhost:8009>
-         Require all granted
-       </Proxy>
-
-       ProxyPass /idp ajp://localhost:8009/idp retry=5
-       ProxyPassReverse /idp ajp://localhost:8009/idp retry=5
-     </IfModule>
-     ```
-
-17. Enable **proxy_ajp** apache2 module and the new IdP site:
-   * ```a2enmod proxy_ajp```
-   * ```a2ensite idp-proxy.conf```
-   * ```service apache2 restart```
-  
-18. Modify **context.xml** to prevent error of *lack of persistence of the session objects* created by the IdP :
-   * ```vim /etc/tomcat8/context.xml```
-
-     and remove the comment from:
-
-     ```<Manager pathname="" />```
-    
-19. Restart Tomcat8:
-   * ```service tomcat8 restart```
-
-20. Verify if the IdP works by opening this page on your browser:
-   * ```https://idp.YOUR-DOMAIN/idp/shibboleth``` (you should see the IdP metadata)
-
-> If you see errors please consult log files of Tomcat8, Shibboleth or Apache. Troobleshoot locations are given at the end of this document
-
-<!--
-### Speed up Tomcat 8 startup (Optional)
-
-  
-21. Find out the JARs that can be skipped from the scanning:
-    * ```cd /opt/shibboleth-idp/```
-    * ```ls webapp/WEB-INF/lib | awk '{print $1",\\"}'``` If you see an error, skip to step 22.
-  
-    Insert the output list into ```/etc/tomcat8/catalina.properties``` at the tail of  ```tomcat.util.scan.StandardJarScanFilter.jarsToSkip```
-    Make sure about the  ```,\``` symbols
-   
-    Restart Tomcat 8:
-    * ```service tomcat8 restart```
-  
--->
-### Configure Shibboleth Identity Provider v3.2.1 to release the persistent-id (Stored mode)
+### Configure Shibboleth Identity Provider v4 to release the persistent-id (Stored mode)
 
 
 22. Test IdP by opening a terminal and running these commands:
