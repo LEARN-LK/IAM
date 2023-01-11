@@ -252,8 +252,27 @@ If you do this installation in Lab setup please skip to implementing https with 
    Enable IDP site config:
    * ```a2ensite idp```
    
+   Create the Apache2 configuration file for IdP:
+   * ```vim /etc/apache2/sites-available/idp-proxy.conf``
+   
+   ```
+   <IfModule mod_proxy.c>
+  ProxyPreserveHost On
+  RequestHeader set X-Forwarded-Proto "https"
+
+  <Location /idp>
+    Require all granted
+  </Location>
+
+        ProxyPass /idp http://localhost:8080/idp retry=5
+        ProxyPassReverse /idp http://localhost:8080/idp retry=5
+
+</IfModule>
+   ```
+   
    Restart the Apache service:
    * ```service apache2 restart```
+
 
 12. Install Letsencrypt and enable HTTPS:
 
