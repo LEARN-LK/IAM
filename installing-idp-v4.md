@@ -624,6 +624,7 @@ and add this piece of code to the tail before the ending \</beans\>:
 	      p:validationQuery="select 1"
 	      p:validationQueryTimeout="5" />   
 	```
+
      (and modify the "###_SS-USERNAME-CHANGEME_###" and "**PASSWORD**" for your "###_SS-DB-USER-PASSWORD-CHANGEME_###" DB)
 
    * Modify the IdP configuration file:
