@@ -327,10 +327,9 @@ If you do this installation in Lab setup please skip to implementing https with 
    Congratulations! You have successfully enabled https://idp.YOUR-DOMAIN
 
    ```
-  
 
-<!--
 13. (OPTIONAL) If you haven't follow the letsencrypt method Create a Certificate and a Key self-signed for HTTPS
+
    * ```mkdir /root/certificates```
    * ```openssl req -x509 -newkey rsa:4096 -keyout /root/certificates/idp-key-server.key -out /root/certificates/idp-cert-server.crt -nodes -days 1095```
    If you purchased SSL certificates from a Public CA, move the Certificate and the Key file for HTTPS server to ```/root/certificates```: 
@@ -397,7 +396,6 @@ If you do this installation in Lab setup please skip to implementing https with 
    </VirtualHost>
    ``` 
    * ```service apache2 restart```
--->
 
 If you use ACME (Let's Encrypt):
 
@@ -416,7 +414,7 @@ If you use ACME (Let's Encrypt):
 
 Activate MariaDB database service:
 
-* ```systemctl start mariadb.service```
+* ```systemctl start mysql.service```
 
 25. Create and prepare the "**shibboleth**" MySQL DB to host the values of the several **persistent-id** and **StorageRecords** MySQL DB to host other useful information about user consent:
 
