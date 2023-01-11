@@ -403,12 +403,6 @@ If you use ACME (Let's Encrypt):
 
 * ``` ln -s /etc/letsencrypt/live/<SERVER_FQDN>/chain.pem /etc/ssl/certs/ACME-CA.pem ```
 
-
-
-
-
-
-
 ### Configure Shibboleth Identity Provider v4 to release the persistent-id (Stored mode)
 
 
@@ -591,45 +585,45 @@ bin/build.sh
 and add this piece of code to the tail before the ending \</beans\>:
 
      ```xml
-    <!-- DB-independent Configuration -->
+	    <!-- DB-independent Configuration -->
 
-<bean id="storageservice.JPAStorageService" 
-      class="org.opensaml.storage.impl.JPAStorageService"
-      p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
-      c:factory-ref="storageservice.JPAStorageService.EntityManagerFactory"/>
+	<bean id="storageservice.JPAStorageService" 
+	      class="org.opensaml.storage.impl.JPAStorageService"
+	      p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
+	      c:factory-ref="storageservice.JPAStorageService.EntityManagerFactory"/>
 
-<bean id="storageservice.JPAStorageService.EntityManagerFactory"
-      class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-      <property name="packagesToScan" value="org.opensaml.storage.impl"/>
-      <property name="dataSource" ref="storageservice.JPAStorageService.DataSource"/>
-      <property name="jpaVendorAdapter" ref="storageservice.JPAStorageService.JPAVendorAdapter"/>
-      <property name="jpaDialect">
-         <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
-      </property>
-</bean>
+	<bean id="storageservice.JPAStorageService.EntityManagerFactory"
+	      class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+	      <property name="packagesToScan" value="org.opensaml.storage.impl"/>
+	      <property name="dataSource" ref="storageservice.JPAStorageService.DataSource"/>
+	      <property name="jpaVendorAdapter" ref="storageservice.JPAStorageService.JPAVendorAdapter"/>
+	      <property name="jpaDialect">
+		 <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
+	      </property>
+	</bean>
 
-<!-- DB-dependent Configuration -->
+	<!-- DB-dependent Configuration -->
 
-<bean id="storageservice.JPAStorageService.JPAVendorAdapter" 
-      class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
-      <property name="database" value="MYSQL" />
-</bean>
+	<bean id="storageservice.JPAStorageService.JPAVendorAdapter" 
+	      class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+	      <property name="database" value="MYSQL" />
+	</bean>
 
-<!-- Bean to store IdP data unrelated with persistent identifiers on 'storageservice' database -->
+	<!-- Bean to store IdP data unrelated with persistent identifiers on 'storageservice' database -->
 
-<bean id="storageservice.JPAStorageService.DataSource"
-      class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" lazy-init="true"
-      p:driverClassName="org.mariadb.jdbc.Driver"
-      p:url="jdbc:mysql://localhost:3306/storageservice?autoReconnect=true"
-      p:username="###_SS-USERNAME-CHANGEME_###"
-      p:password="###_SS-DB-USER-PASSWORD-CHANGEME_###"
-      p:maxActive="10"
-      p:maxIdle="5"
-      p:maxWait="15000"
-      p:testOnBorrow="true"
-      p:validationQuery="select 1"
-      p:validationQueryTimeout="5" />
-     ```
+	<bean id="storageservice.JPAStorageService.DataSource"
+	      class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" lazy-init="true"
+	      p:driverClassName="org.mariadb.jdbc.Driver"
+	      p:url="jdbc:mysql://localhost:3306/storageservice?autoReconnect=true"
+	      p:username="###_SS-USERNAME-CHANGEME_###"
+	      p:password="###_SS-DB-USER-PASSWORD-CHANGEME_###"
+	      p:maxActive="10"
+	      p:maxIdle="5"
+	      p:maxWait="15000"
+	      p:testOnBorrow="true"
+	      p:validationQuery="select 1"
+	      p:validationQueryTimeout="5" />   
+	```
      (and modify the "###_SS-USERNAME-CHANGEME_###" and "**PASSWORD**" for your "###_SS-DB-USER-PASSWORD-CHANGEME_###" DB)
 
    * Modify the IdP configuration file:
