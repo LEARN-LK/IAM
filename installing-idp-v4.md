@@ -269,10 +269,11 @@ If you do this installation in Lab setup please skip to implementing https with 
 
 </IfModule>
    ```
+   Enable idp_proxy file 
+   * ``` a2ensite idp-proxy.conf ```
    
    Restart the Apache service:
    * ```service apache2 restart```
-
 
 12. Install Letsencrypt and enable HTTPS:
 
@@ -398,6 +399,16 @@ If you do this installation in Lab setup please skip to implementing https with 
    * ```service apache2 restart```
 -->
 
+If you use ACME (Let's Encrypt):
+
+* ``` ln -s /etc/letsencrypt/live/<SERVER_FQDN>/chain.pem /etc/ssl/certs/ACME-CA.pem ```
+
+
+
+
+
+
+
 ### Configure Shibboleth Identity Provider v4 to release the persistent-id (Stored mode)
 
 
@@ -405,18 +416,13 @@ If you do this installation in Lab setup please skip to implementing https with 
    * ```cd /opt/shibboleth-idp/bin```
    * ```./status.sh``` (You should see some informations about the IdP installed)
 
-23. Install **MySQL Connector Java** and other useful libraries used by Tomcat for MySQL DB (if you don't have them already):
-   * ```apt-get install mysql-server libmysql-java libcommons-dbcp-java libcommons-pool-java```
-   * ```cd /usr/share/tomcat8/lib/```
-   * ```ln -s ../../java/mysql.jar mysql-connector-java.jar```
-   * ```ln -s ../../java/commons-pool.jar commons-pool.jar```
-   * ```ln -s ../../java/commons-dbcp.jar commons-dbcp.jar```
-   * ```ln -s ../../java/tomcat-jbcp.jar tomcat-jbcp.jar```
-   Ignore if you get errors for some of the ```ln``` commands as the files might be already there.
+23. Install **MySQL Connector Java** and other useful libraries for MySQL DB (if you don't have them already):
 
-24. Rebuild the **idp.war** of Shibboleth with the new libraries:
-   * ```cd /opt/shibboleth-idp/ ; ./bin/build.sh```
-   You may need to press enter on `Installation Directory: [/opt/shibboleth-idp]`
+   * ```apt install default-mysql-server libmariadb-java libcommons-dbcp-java libcommons-pool-java --no-install-recommends```
+
+Activate MariaDB database service:
+
+* ```systemctl start mariadb.service```
 
 25. Create and prepare the "**shibboleth**" MySQL DB to host the values of the several **persistent-id** and **StorageRecords** MySQL DB to host other useful information about user consent:
 
@@ -535,6 +541,15 @@ All done!
      
    * Restart mysql service:
      ```service mysql restart```
+     
+     Rebuild IdP with the needed libraries:
+```
+cd /opt/shibboleth-idp
+ln -s /usr/share/java/mariadb-java-client.jar edit-webapp/WEB-INF/lib
+ln -s /usr/share/java/commons-dbcp.jar edit-webapp/WEB-INF/lib
+ln -s /usr/share/java/commons-pool.jar edit-webapp/WEB-INF/lib
+bin/build.sh
+```
 
 26. Enable the generation of the ```persistent-id``` (this replace the deprecated attribute *eduPersonTargetedID*)
    
@@ -571,41 +586,51 @@ All done!
      ```
        
 27. Enable **JPAStorageService** for the **StorageService** of the user consent:
-   * ```vim /opt/shibboleth-idp/conf/global.xml``` and add this piece of code to the tail before the ending \</beans\>:
+   * ```vim /opt/shibboleth-idp/conf/global.xml``` 
+
+and add this piece of code to the tail before the ending \</beans\>:
 
      ```xml
-     <!-- A DataSource bean suitable for use in the idp.persistentId.dataSource property. -->
-     <bean id="MyDataSource" class="org.apache.commons.dbcp.BasicDataSource"
-           p:driverClassName="com.mysql.jdbc.Driver"
-           p:url="jdbc:mysql://localhost:3306/shibboleth?useSSL=false&amp;autoReconnect=true" 
-           p:username="##USER_DB_NAME##"
-           p:password="##PASSWORD##"
-           p:maxActive="10"
-           p:maxIdle="5"
-           p:maxWait="15000"
-           p:testOnBorrow="true"
-           p:validationQuery="select 1"
-           p:validationQueryTimeout="5" />
+    <!-- DB-independent Configuration -->
 
-     <bean id="shibboleth.JPAStorageService" class="org.opensaml.storage.impl.JPAStorageService"
-           p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
-           c:factory-ref="shibboleth.JPAStorageService.entityManagerFactory"/>
+<bean id="storageservice.JPAStorageService" 
+      class="org.opensaml.storage.impl.JPAStorageService"
+      p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
+      c:factory-ref="storageservice.JPAStorageService.EntityManagerFactory"/>
 
-     <bean id="shibboleth.JPAStorageService.entityManagerFactory"
-           class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-           <property name="packagesToScan" value="org.opensaml.storage.impl"/>
-           <property name="dataSource" ref="MyDataSource"/>
-           <property name="jpaVendorAdapter" ref="shibboleth.JPAStorageService.JPAVendorAdapter"/>
-           <property name="jpaDialect">
-             <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
-           </property>
-     </bean>
+<bean id="storageservice.JPAStorageService.EntityManagerFactory"
+      class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+      <property name="packagesToScan" value="org.opensaml.storage.impl"/>
+      <property name="dataSource" ref="storageservice.JPAStorageService.DataSource"/>
+      <property name="jpaVendorAdapter" ref="storageservice.JPAStorageService.JPAVendorAdapter"/>
+      <property name="jpaDialect">
+         <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
+      </property>
+</bean>
 
-     <bean id="shibboleth.JPAStorageService.JPAVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
-           <property name="database" value="MYSQL" />
-     </bean>
+<!-- DB-dependent Configuration -->
+
+<bean id="storageservice.JPAStorageService.JPAVendorAdapter" 
+      class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+      <property name="database" value="MYSQL" />
+</bean>
+
+<!-- Bean to store IdP data unrelated with persistent identifiers on 'storageservice' database -->
+
+<bean id="storageservice.JPAStorageService.DataSource"
+      class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" lazy-init="true"
+      p:driverClassName="org.mariadb.jdbc.Driver"
+      p:url="jdbc:mysql://localhost:3306/storageservice?autoReconnect=true"
+      p:username="###_SS-USERNAME-CHANGEME_###"
+      p:password="###_SS-DB-USER-PASSWORD-CHANGEME_###"
+      p:maxActive="10"
+      p:maxIdle="5"
+      p:maxWait="15000"
+      p:testOnBorrow="true"
+      p:validationQuery="select 1"
+      p:validationQueryTimeout="5" />
      ```
-     (and modify the "**USER_DB_NAME**" and "**PASSWORD**" for your "**shibboleth**" DB)
+     (and modify the "###_SS-USERNAME-CHANGEME_###" and "**PASSWORD**" for your "###_SS-DB-USER-PASSWORD-CHANGEME_###" DB)
 
    * Modify the IdP configuration file:
      * ```vim /opt/shibboleth-idp/conf/idp.properties```
