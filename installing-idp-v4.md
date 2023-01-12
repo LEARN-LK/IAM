@@ -285,6 +285,7 @@ If you do this installation in Lab setup please skip to implementing https with 
    Enter email address (used for urgent renewal and security notices) (Enter 'c' to
    cancel): YOU@YOUR-DOMAIN
 
+
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    Please read the Terms of Service at
    https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf. You must
