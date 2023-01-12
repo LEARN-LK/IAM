@@ -769,8 +769,8 @@ and add this piece of code to the tail before the ending \</beans\>:
       <value>%{idp.home}/conf/attribute-resolver-LEARN.xml</value>
 ```
 
-* Restart Tomcat8: 
-      ```service tomcat8 restart```
+* Restart Jetty: 
+      ```service restart jetty```
 
 31. Enable the SAML2 support by changing the ```idp-metadata.xml```:
 
