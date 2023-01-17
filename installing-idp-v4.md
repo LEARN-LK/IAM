@@ -927,7 +927,7 @@ and add this piece of code to the tail before the ending \</beans\>:
 ### Configure Attribute Filters to release the mandatory attributes:
 
 37. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
-    * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown tomcat8 /opt/shibboleth-idp/tmp/httpClientCache```
+    * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown jetty /opt/shibboleth-idp/tmp/httpClientCache```
 
 38. Append your ```services.xml``` with:
     * ```vim /opt/shibboleth-idp/conf/services.xml```
