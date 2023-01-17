@@ -1122,9 +1122,9 @@ Then remove the temporary additions on idp.conf and restart the apache service.
    
 ### Appendix: Useful logs to find problems
 
-1. Tomcat 8 Logs:
-   * ```cd /var/log/tomcat8```
-   * ```vim catalina.out```
+1. Jetty 9 Logs:
+   * ```cd /var/log/jetty```
+
 
 2. Shibboleth IdP Logs:
    * ```cd /opt/shibboleth-idp/logs```
