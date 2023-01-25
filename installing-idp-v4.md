@@ -586,16 +586,16 @@ and add this piece of code to the tail before the ending \</beans\>:
      ```xml
 	    <!-- DB-independent Configuration -->
 
-	<bean id="storageservice.JPAStorageService" 
+	<bean id="shibboleth.JPAStorageService" 
 	      class="org.opensaml.storage.impl.JPAStorageService"
 	      p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
-	      c:factory-ref="storageservice.JPAStorageService.EntityManagerFactory"/>
+	      c:factory-ref="shibboleth.JPAStorageService.EntityManagerFactory"/>
 
-	<bean id="storageservice.JPAStorageService.EntityManagerFactory"
+	<bean id="shibboleth.JPAStorageService.EntityManagerFactory"
 	      class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
 	      <property name="packagesToScan" value="org.opensaml.storage.impl"/>
-	      <property name="dataSource" ref="storageservice.JPAStorageService.DataSource"/>
-	      <property name="jpaVendorAdapter" ref="storageservice.JPAStorageService.JPAVendorAdapter"/>
+	      <property name="dataSource" ref="shibboleth.JPAStorageService.DataSource"/>
+	      <property name="jpaVendorAdapter" ref="shibboleth.JPAStorageService.JPAVendorAdapter"/>
 	      <property name="jpaDialect">
 		 <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
 	      </property>
@@ -603,17 +603,17 @@ and add this piece of code to the tail before the ending \</beans\>:
 
 	<!-- DB-dependent Configuration -->
 
-	<bean id="storageservice.JPAStorageService.JPAVendorAdapter" 
+	<bean id="shibboleth.JPAStorageService.JPAVendorAdapter" 
 	      class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
 	      <property name="database" value="MYSQL" />
 	</bean>
 
 	<!-- Bean to store IdP data unrelated with persistent identifiers on 'storageservice' database -->
 
-	<bean id="storageservice.JPAStorageService.DataSource"
+	<bean id="shibboleth.JPAStorageService.DataSource"
 	      class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" lazy-init="true"
 	      p:driverClassName="org.mariadb.jdbc.Driver"
-	      p:url="jdbc:mysql://localhost:3306/storageservice?autoReconnect=true"
+	      p:url="jdbc:mysql://localhost:3306/shibboleth?autoReconnect=true"
 	      p:username="###_SS-USERNAME-CHANGEME_###"
 	      p:password="###_SS-DB-USER-PASSWORD-CHANGEME_###"
 	      p:maxActive="10"
@@ -630,10 +630,10 @@ and add this piece of code to the tail before the ending \</beans\>:
      * ```vim /opt/shibboleth-idp/conf/idp.properties```
 
        ```xml
-       idp.session.StorageService = storageservice.JPAStorageService
-       idp.consent.StorageService = storageservice.JPAStorageService
-       idp.replayCache.StorageService = storageservice.JPAStorageService
-       idp.artifact.StorageService = storageservice.JPAStorageService
+       idp.session.StorageService = shibboleth.JPAStorageService
+       idp.consent.StorageService = shibboleth.JPAStorageService
+       idp.replayCache.StorageService = shibboleth.JPAStorageService
+       idp.artifact.StorageService = shibboleth.JPAStorageService
        # Track information about SPs logged into
        idp.session.trackSPSessions = true
        # Support lookup by SP for SAML logout
