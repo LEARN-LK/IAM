@@ -978,7 +978,11 @@ and add this piece of code to the tail before the ending \</beans\>:
      idp.consent.maxStoredRecords = -1
      idp.consent.storageRecordLifetime = P1Y
 ```
-     
+    
+```
+	/opt/shibboleth-idp/bin/module.sh -t idp.intercept.Consent || /opt/shibboleth-idp/bin/module.sh -e idp.intercept.Consent
+	  
+```
    * Restart the Jetty service by service Jetty restart
 
    * By changing idp.consent.maxStoredRecords will remove the limit on the number of consent records held (by default, 10) by setting the limit to -1 (no limit)
