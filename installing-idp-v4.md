@@ -583,45 +583,62 @@ bin/build.sh
 
 and add this piece of code to the tail before the ending \</beans\>:
 
-     ```xml
-	    <!-- DB-independent Configuration -->
+     ```
 
-	<bean id="shibboleth.JPAStorageService" 
-	      class="org.opensaml.storage.impl.JPAStorageService"
-	      p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
-	      c:factory-ref="shibboleth.JPAStorageService.EntityManagerFactory"/>
+<!-- DB-independent Configuration -->
 
-	<bean id="shibboleth.JPAStorageService.EntityManagerFactory"
-	      class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-	      <property name="packagesToScan" value="org.opensaml.storage.impl"/>
-	      <property name="dataSource" ref="shibboleth.JPAStorageService.DataSource"/>
-	      <property name="jpaVendorAdapter" ref="shibboleth.JPAStorageService.JPAVendorAdapter"/>
-	      <property name="jpaDialect">
-		 <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
-	      </property>
-	</bean>
+    <bean id="storageservice.JPAStorageService" 
+          class="org.opensaml.storage.impl.JPAStorageService"
+          p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
+          c:factory-ref="storageservice.JPAStorageService.EntityManagerFactory"/>
 
-	<!-- DB-dependent Configuration -->
+    <bean id="storageservice.JPAStorageService.EntityManagerFactory"
+          class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+          <property name="packagesToScan" value="org.opensaml.storage.impl"/>
+            <!-- <property name="dataSource" ref="storageservice.JPAStorageService.DataSource"/> -->
+          <property name="dataSource" ref="MyDataSource"/>
+          <property name="jpaVendorAdapter" ref="storageservice.JPAStorageService.JPAVendorAdapter"/>
+          <property name="jpaDialect">
+             <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
+          </property>
+    </bean>
 
-	<bean id="shibboleth.JPAStorageService.JPAVendorAdapter" 
-	      class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
-	      <property name="database" value="MYSQL" />
-	</bean>
+<!-- DB-dependent Configuration -->
 
-	<!-- Bean to store IdP data unrelated with persistent identifiers on 'storageservice' database -->
+    <bean id="storageservice.JPAStorageService.JPAVendorAdapter" 
+          class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+          <property name="database" value="MYSQL" />
+    </bean>
 
-	<bean id="shibboleth.JPAStorageService.DataSource"
-	      class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" lazy-init="true"
-	      p:driverClassName="org.mariadb.jdbc.Driver"
-	      p:url="jdbc:mysql://localhost:3306/shibboleth?autoReconnect=true"
-	      p:username="###_SS-USERNAME-CHANGEME_###"
-	      p:password="###_SS-DB-USER-PASSWORD-CHANGEME_###"
-	      p:maxActive="10"
-	      p:maxIdle="5"
-	      p:maxWait="15000"
-	      p:testOnBorrow="true"
-	      p:validationQuery="select 1"
-	      p:validationQueryTimeout="5" />   
+<!-- Bean to store IdP data unrelated with persistent identifiers on 'storageservice' database -->
+
+    <bean id="storageservice.JPAStorageService.DataSource" 
+          class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close" lazy-init="true"
+          p:driverClassName="org.mariadb.jdbc.Driver"
+          p:url="jdbc:mysql://127.0.0.1:3306/storageservice?useSSL=false&amp;autoReconnect=true&amp;allowPublicKeyRetrieval=true"
+          p:username="shibboleth"
+          p:password="Learn@123"
+          p:maxTotal="10"
+          p:maxIdle="5"
+          p:maxWaitMillis="15000"
+          p:testOnBorrow="true"
+          p:validationQuery="select 1"
+          p:validationQueryTimeout="5" />
+
+
+    <bean id="MyDataSource" 
+          class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close" lazy-init="true"
+          p:driverClassName="org.mariadb.jdbc.Driver"
+          p:url="jdbc:mysql://127.0.0.1:3306/storageservice?useSSL=false&amp;autoReconnect=true&amp;allowPublicKeyRetrieval=true"
+          p:username="shibboleth"
+          p:password="Learn@123"
+          p:maxTotal="10"
+          p:maxIdle="5"
+          p:maxWaitMillis="15000"
+          p:testOnBorrow="true"
+          p:validationQuery="select 1"
+          p:validationQueryTimeout="5" />
+	 
 	```
 
      (and modify the "###_SS-USERNAME-CHANGEME_###" and "**PASSWORD**" for your "###_SS-DB-USER-PASSWORD-CHANGEME_###" DB)
