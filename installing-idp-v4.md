@@ -979,7 +979,7 @@ and add this piece of code to the tail before the ending \</beans\>:
      idp.consent.storageRecordLifetime = P1Y
 ```
      
-   * Restart the Tomcat service by service tomcat8 restart
+   * Restart the Jetty service by service Jetty restart
 
    * By changing idp.consent.maxStoredRecords will remove the limit on the number of consent records held (by default, 10) by setting the limit to -1 (no limit)
 
@@ -1094,7 +1094,7 @@ Alternatively, it is also possible to hide the whole toolbox (the whole <div cla
 }
 ```
 
-For your simplisity in developing, temporary add the following to Apache idp.conf file ( /etc/apache2/sites-available/idp.conf ) to server the requests directly by Apache (avoiding going through Tomcat and thus avoiding having to rebuild the WAR file after every change):insert the following right above the ***ProxyPass /idp*** directive:
+For your simplisity in developing, temporary add the following to Apache idp.conf file ( /etc/apache2/sites-available/idp.conf ) to server the requests directly by Apache (avoiding going through Jetty and thus avoiding having to rebuild the WAR file after every change):insert the following right above the ***ProxyPass /idp*** directive:
 
 ```apache
 ProxyPass /idp/images !
@@ -1110,11 +1110,11 @@ And, as default permissions on Apache 2.4 are more restrictive, grant also expli
    Require all granted
 </Directory>
 ```
-When done with changes to the images and css directories, remember to rebuild the WAR file and restart Tomcat:
+When done with changes to the images and css directories, remember to rebuild the WAR file and restart Jetty:
 
 ```bash
 /opt/shibboleth-idp/bin/build.sh
-service tomcat restart
+service jetty restart
 ```
 
 Then remove the temporary additions on idp.conf and restart the apache service.
