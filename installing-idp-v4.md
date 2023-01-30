@@ -647,10 +647,7 @@ and add this piece of code to the tail before the ending \</beans\>:
      * ```vim /opt/shibboleth-idp/conf/idp.properties```
 
        ```xml
-       idp.session.StorageService = shibboleth.JPAStorageService
-       idp.consent.StorageService = shibboleth.JPAStorageService
-       idp.replayCache.StorageService = shibboleth.JPAStorageService
-       idp.artifact.StorageService = shibboleth.JPAStorageService
+       idp.consent.StorageService = storageservice.JPAStorageService
        # Track information about SPs logged into
        idp.session.trackSPSessions = true
        # Support lookup by SP for SAML logout
