@@ -496,12 +496,12 @@ wget https://raw.githubusercontent.com/LEARN-LK/IAM/master/shib-ss-db.sql -O /ro
 fill missing data on shib-ss-db.sql before import
 ```
 mysql -u root < /root/shib-ss-db.sql
-     ```
+```
      
    * Restart mysql service:
      ```service mysql restart```
      
-     Rebuild IdP with the needed libraries:
+Rebuild IdP with the needed libraries:
 ```
 cd /opt/shibboleth-idp
 ln -s /usr/share/java/mariadb-java-client.jar edit-webapp/WEB-INF/lib
