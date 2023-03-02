@@ -22,7 +22,7 @@ Identity Provider is the party who provides authentication and authorization for
 
 ### Change Certificates in fr
 
-*[Change the Certificates for new IDP Version 4](change_keys_fr.md)
+* [Change the Certificates for new IDP Version 4](change_keys_fr.md)
 
 ### Allow Services
 
