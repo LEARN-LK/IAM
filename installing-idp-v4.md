@@ -17,7 +17,6 @@ All commands are to be run as **root** and you may use `sudo su`, to become root
 1. Become ROOT:
    * `sudo su -`
    
-
 2. Update packages:
    ```bash
    apt update && apt-get upgrade -y --no-install-recommends
@@ -95,7 +94,6 @@ Check that Java is working:
    * `cd /usr/local/src/shibboleth-identity-provider-4.x/bin`
    * `bash install.sh -Didp.host.name=$(hostname -f) -Didp.keysize=3072`
 
-  
    ```
    Source (Distribution) Directory: [/usr/local/src/shibboleth-identity-provider-4.x]
    Installation Directory: [/opt/shibboleth-idp]
@@ -285,7 +283,6 @@ If you do this installation in Lab setup please skip to implementing https with 
    Enter email address (used for urgent renewal and security notices) (Enter 'c' to
    cancel): YOU@YOUR-DOMAIN
 
-
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    Please read the Terms of Service at
    https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf. You must
@@ -386,7 +383,6 @@ If you do this installation in Lab setup please skip to implementing https with 
    * ```a2enmod proxy_http ssl headers alias include negotiation```
    * ```a2ensite idp-ssl.conf```
    
-
    Configure Apache2 to redirect all on HTTPS:
    * ```vim /etc/apache2/sites-enabled/000-default.conf```
    
@@ -404,7 +400,6 @@ If you use ACME (Let's Encrypt):
 
 ### Configure Shibboleth Identity Provider v4 to release the persistent-id (Stored mode)
 
-
 22. Test IdP by opening a terminal and running these commands:
    * ```cd /opt/shibboleth-idp/bin```
    * ```./status.sh``` (You should see some informations about the IdP installed)
@@ -420,7 +415,6 @@ Activate MariaDB database service:
 25. Create and prepare the "**shibboleth**" MySQL DB to host the values of the several **persistent-id** and **StorageRecords** MySQL DB to host other useful information about user consent:
 
     * `mysql_secure_installation`
-
 
 ```
 Securing the MySQL server deployment.
@@ -702,7 +696,10 @@ and add this piece of code to the tail before the ending \</beans\>:
 
 30. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
     * Download the attribute resolver provided by LEARN:
-      ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN.xml```
+      ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v4.xml```
+
+    * Download the attribute filter provided by LEARN:
+      ```wget https://fr.ac.lk/templates/attribute-filter-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-filter-LEARN-v4.xml```
 
 >If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
 >```xml
@@ -746,7 +743,17 @@ and add this piece of code to the tail before the ending \</beans\>:
 ```
   must become:
 ```xml
-      <value>%{idp.home}/conf/attribute-resolver-LEARN.xml</value>
+      <value>%{idp.home}/conf/attribute-resolver-LEARN-v4.xml</value>
+```
+
+And
+
+```xml
+      <value>%{idp.home}/conf/attribute-filter.xml</value>
+```
+  must become:
+```xml
+      <value>%{idp.home}/conf/attribute-filter-LEARN-v4.xml</value>
 ```
 
 * Restart Jetty: 
@@ -764,11 +771,8 @@ and add this piece of code to the tail before the ending \</beans\>:
 	     <mdui:UIInfo>
                 <mdui:DisplayName xml:lang="en">Your Institute Name</mdui:DisplayName>
                 <mdui:Description xml:lang="en">Enter a description of your IdP</mdui:Description>
-                <mdui:Logo height="60" width="80">https://idp.YOUR-DOMAIN/logo.png</mdui:Logo>
-                <mdui:Logo height="16" width="16">https://idp.YOUR-DOMAIN/logo16.png</mdui:Logo>
             </mdui:UIInfo>
       ```
-    * Upload example png files to /var/www/html as logo.png with 80x60 pixel and logo16.png with 16x16 pixel images.
     * Remove the endpoint:
 	  
 	  `<ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.YOUR-DOMAIN:8443/idp/profile/SAML1/SOAP/ArtifactResolution" index="1"/>`
@@ -801,8 +805,6 @@ and add this piece of code to the tail before the ending \</beans\>:
 
     * Remove all ":8443" from the existing URL (such port is not used anymore)
   * Finally remove all existing commented content from the whole document
-
-     
 
 32. Obtain your IdP metadata here:
     *  ```https://idp.YOUR-DOMAIN/idp/shibboleth```
@@ -891,13 +893,10 @@ and add this piece of code to the tail before the ending \</beans\>:
 
     * Retrive the Federation Certificate used to verify its signed metadata:
     *  ```wget https://fr.ac.lk/signedmetadata/metadata-signer -O /opt/shibboleth-idp/metadata/federation-cert.pem```
-
-    
   
 35. Reload service with id ```shibboleth.MetadataResolverService``` to retrieve the Federation Metadata:
     *  ```cd /opt/shibboleth-idp/bin```
     *  ```./reload-service.sh -id shibboleth.MetadataResolverService```
-
 
 36. The day after the Federation Operators approval you, check if you can login with your IdP on the following services:
     * https://sp-test.liaf.ac.lk    (Service Provider provided for testing the LEARN Federation)
@@ -909,47 +908,13 @@ and add this piece of code to the tail before the ending \</beans\>:
 37. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
     * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown jetty /opt/shibboleth-idp/tmp/httpClientCache```
 
-38. Append your ```services.xml``` with:
-    * ```vim /opt/shibboleth-idp/conf/services.xml```
-	
-	Add folowing before the closing ```</beans>``` Make sure to maintain proper indentation 
-
-      ```xml
-      <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-            c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/templates/attribute-filter-LEARN-Default.xml"
-            c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-Default.xml"/>
-      <bean id="Production-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-            c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/templates/attribute-filter-LEARN-Production.xml"
-            c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-Production.xml"/>
-      <bean id="ResearchAndScholarship" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-            c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/templates/attribute-filter-rs.xml"
-            c:backingFile="%{idp.home}/conf/attribute-filter-rs.xml"/>
-      <bean id="CodeOfConduct" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-            c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/templates/attribute-filter-coco.xml"
-            c:backingFile="%{idp.home}/conf/attribute-filter-coco.xml"/>
-      ```
-      Modify the **shibboleth.AttributeFilterResources** util:list
-```xml
-      <util:list id ="shibboleth.AttributeFilterResources">
-         <value>%{idp.home}/conf/attribute-filter.xml</value>
-         <ref bean="Default-Filter"/>
-         <ref bean="Production-Filter"/>
-	 <ref bean="ResearchAndScholarship"/>
-         <ref bean="CodeOfConduct"/>
-      </util:list>
-```
-
-39. Reload service with id `shibboleth.AttributeFilterService` to refresh the Attribute Filter followed by the IdP:
+38. Reload service with id `shibboleth.AttributeFilterService` to refresh the Attribute Filter followed by the IdP:
     *  `cd /opt/shibboleth-idp/bin`
     *  `./reload-service.sh -id shibboleth.AttributeFilterService`
 
 ### Enable Consent Module
 
-40. The consent module is shown when a user logs in to a service for the first time, and asks the user for permission to release the required (and desired) attributes to the service.
+39. The consent module is shown when a user logs in to a service for the first time, and asks the user for permission to release the required (and desired) attributes to the service.
 
     Edit `/opt/shibboleth-idp/conf/idp.properties` to uncomment and modify
 
@@ -972,7 +937,7 @@ and add this piece of code to the tail before the ending \</beans\>:
    * Once you restart the service , the filters defined in step 38 will allow LEARN Federated Services to be authenticated with your IDP.
 
 
-41. Now you will be allowed to login with your IdP on the following services:
+40. Now you will be allowed to login with your IdP on the following services:
     * https://sp-test.liaf.ac.lk   (Service Provider provided for testing the LIAF)
    
     If your authentication is successed, you should see a consent page asking permission to allow the service provider to read your user data and once you approve it must see the following attributes and similar values amoung the rest of the details.
@@ -993,7 +958,7 @@ and add this piece of code to the tail before the ending \</beans\>:
 	  
 ### Release Attributes for your Service Providers (SP) in Production Environment
 
-42. If you have any service provider (eg: Moodle) that supports SAML, you may use them to authenticate via your IDP. To do that, edit `/opt/shibboleth-idp/conf/attribute-filter.xml` to include service providers to authenticate your users for their services.
+41. If you have any service provider (eg: Moodle) that supports SAML, you may use them to authenticate via your IDP. To do that, edit `/opt/shibboleth-idp/conf/attribute-filter.xml` to include service providers to authenticate your users for their services.
 
    * Consult Service Provider guidelines and https://fr.ac.lk/templates/attribute-filter-LEARN-Production.xml on deciding what attributes you should release.
    * Instruction to add you moodle installations: https://moodle.org/auth/shibboleth/README.txt
@@ -1019,8 +984,6 @@ Eg:
 	</AttributeRule>
 </AttributeFilterPolicy>
 ```
-
-
 ### Customization and Branding
 
 The default install of the IdP login screen will display the Shibbolethlogo, a default prompt for username and password, and text saying that this screen should be customized. It is recommand to customize this page to have the proper institution logo and name. To give a consistent professional look, institution may customize the graphics to match the style of their,
@@ -1086,7 +1049,6 @@ ProxyPass /idp/css !
 Alias /idp/images /opt/shibboleth-idp/edit-webapp/images
 Alias /idp/css /opt/shibboleth-idp/edit-webapp/css
 ```
-
 And, as default permissions on Apache 2.4 are more restrictive, grant also explicitly access to the /opt/shibboleth-idp/edit-webapp directory: insert this at the very top of /etc/apache2/sites-available/idp.conf:
 
 ```apache
@@ -1100,15 +1062,12 @@ When done with changes to the images and css directories, remember to rebuild th
 /opt/shibboleth-idp/bin/build.sh
 service jetty restart
 ```
-
 Then remove the temporary additions on idp.conf and restart the apache service.
 
-   
 ### Appendix: Useful logs to find problems
 
 1. Jetty 9 Logs:
    * ```cd /var/log/jetty```
-
 
 2. Shibboleth IdP Logs:
    * ```cd /opt/shibboleth-idp/logs```
