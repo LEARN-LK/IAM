@@ -34,8 +34,6 @@ Answer the prompts appropriately, using the information below as a starting poin
   - Do you want the database to be removed when slapd is purged? (your choice. Choose ***Yes*** to allow a completely clean removal, choose ***No*** to save your data even when the software is removed)
   - Move old database? ***Yes***
 
-
-
 ### Create the Certificate Templates
 
 To encrypt our connections, we'll need to configure a certificate authority and use it to sign the keys for the LDAP server(s) in our infrastructure. So for our single server setup, we will need two sets of key/certificate pairs: one for the certificate authority itself and one that is associated with the LDAP service.
@@ -293,8 +291,6 @@ And you should see
 ldap_bind: Inappropriate authentication (48)
 	additional info: anonymous bind disallowed
 ```
-
-
 ### Load eduPerson Schema.
 
 Get the schema downloaded from [Eduperson.ldif](https://raw.githubusercontent.com/LEARN-LK/IAM/master/eduperson-201602.ldif)
@@ -303,7 +299,6 @@ Or the latest from `https://spaces.at.internet2.edu/display/macedir/LDIFs`
 ```bash
 wget https://raw.githubusercontent.com/LEARN-LK/IAM/master/eduperson-201602.ldif
 ```
-
 Load it using:
 
 ```bash
@@ -460,7 +455,7 @@ sudo ldapsearch -H ldapi:// -Y EXTERNAL -b "cn=schema,cn=config" -s one -Q -LLL 
 * List Users
 
 ```
- ldapsearch -h localhost -D "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk" -W -b "dc=YOUR-DOMAIN,dc=ac,dc=lk"
+ ldapsearch -D "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk" -W -b "dc=YOUR-DOMAIN,dc=ac,dc=lk"
  ```
  
 * View/backup ldap (to ldif)
