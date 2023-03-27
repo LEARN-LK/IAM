@@ -81,9 +81,9 @@ Check that Java is working:
 
 1. Download the Shibboleth Identity Provider v4.x.y (replace '4.x.y' with the latest version found [here](https://shibboleth.net/downloads/identity-provider/)):
    * `cd /usr/local/src`
-   * `wget http://shibboleth.net/downloads/identity-provider/4.x.y/shibboleth-identity-provider-4.x.y.tar.gz`
-   * `tar -xzf shibboleth-identity-provider-4.*.tar.gz`
-   * `cd shibboleth-identity-provider-4.*.`
+   * `wget http://shibboleth.net/downloads/identity-provider/latest4/shibboleth-identity-provider-4.3.0.tar.gz`
+   * `tar -xzf shibboleth-identity-provider-4.3.0.tar.gz`
+   * `cd shibboleth-identity-provider-4.3.0`
 
 2. Generate Passwords for later use in the installation, You will need two password strings, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION### for step 7.
    * ```tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo```
@@ -230,10 +230,10 @@ Jetty is a Web server and a Java Servlet container. It will be used to run the I
 
 If you do this installation in Lab setup please skip to implementing https with self-signed certificates as described in **step 13**.
 
-10. Disable default apache configuration:
+1. Disable default apache configuration:
    * ```a2dissite 000-default```
    
-11. Create a new configuration file as `idp.conf` with the following:
+2. Create a new configuration file as `idp.conf` with the following:
    * ```vim /etc/apache2/sites-available/idp.conf```
   
    ```apache
@@ -266,19 +266,19 @@ If you do this installation in Lab setup please skip to implementing https with 
         ProxyPassReverse /idp http://localhost:8080/idp retry=5
 
 </IfModule>
-   ```
+   
    Enable idp_proxy file 
    * ``` a2ensite idp-proxy.conf ```
    
    Restart the Apache service:
    * ```service apache2 restart```
 
-12. Install Letsencrypt and enable HTTPS:
+3. Install Letsencrypt and enable HTTPS:
 
    * ```apt install python3-certbot-apache```
    * ```certbot --apache -d idp.YOUR-DOMAIN```
    
-   ```
+   
    Plugins selected: Authenticator apache, Installer apache
    Enter email address (used for urgent renewal and security notices) (Enter 'c' to
    cancel): YOU@YOUR-DOMAIN
@@ -326,7 +326,7 @@ If you do this installation in Lab setup please skip to implementing https with 
 
    ```
 
-13. (OPTIONAL) If you haven't follow the letsencrypt method Create a Certificate and a Key self-signed for HTTPS
+4. (OPTIONAL) If you haven't follow the letsencrypt method Create a Certificate and a Key self-signed for HTTPS
 
    * ```mkdir /root/certificates```
    * ```openssl req -x509 -newkey rsa:4096 -keyout /root/certificates/idp-key-server.key -out /root/certificates/idp-cert-server.crt -nodes -days 1095```
@@ -394,17 +394,17 @@ If you do this installation in Lab setup please skip to implementing https with 
    ``` 
    * ```service apache2 restart```
 
-If you use ACME (Let's Encrypt):
+5.If you use ACME (Let's Encrypt):
 
 * ``` ln -s /etc/letsencrypt/live/<SERVER_FQDN>/chain.pem /etc/ssl/certs/ACME-CA.pem ```
 
 ### Configure Shibboleth Identity Provider v4 to release the persistent-id (Stored mode)
 
-22. Test IdP by opening a terminal and running these commands:
+1. Test IdP by opening a terminal and running these commands:
    * ```cd /opt/shibboleth-idp/bin```
    * ```./status.sh``` (You should see some informations about the IdP installed)
 
-23. Install **MySQL Connector Java** and other useful libraries for MySQL DB (if you don't have them already):
+2. Install **MySQL Connector Java** and other useful libraries for MySQL DB (if you don't have them already):
 
    * ```apt install default-mysql-server libmariadb-java libcommons-dbcp-java libcommons-pool-java --no-install-recommends```
 
@@ -412,7 +412,7 @@ Activate MariaDB database service:
 
 * ```systemctl start mysql.service```
 
-25. Create and prepare the "**shibboleth**" MySQL DB to host the values of the several **persistent-id** and **StorageRecords** MySQL DB to host other useful information about user consent:
+3. Create and prepare the "**shibboleth**" MySQL DB to host the values of the several **persistent-id** and **StorageRecords** MySQL DB to host other useful information about user consent:
 
     * `mysql_secure_installation`
 
@@ -482,12 +482,12 @@ Success.
 All done!
 ```
 
-   * log in to your MySQL Server:
+4. * log in to your MySQL Server:
     Create StorageRecords table on storageservice database:
 ```
 wget https://raw.githubusercontent.com/LEARN-LK/IAM/master/shib-ss-db.sql -O /root/shib-ss-db.sql
 ```
-fill missing data on shib-ss-db.sql before import
+5.fill missing data on shib-ss-db.sql before import
 ```
 mysql -u root < /root/shib-ss-db.sql
 ```
@@ -495,7 +495,7 @@ mysql -u root < /root/shib-ss-db.sql
    * Restart mysql service:
      ```service mysql restart```
      
-Rebuild IdP with the needed libraries:
+6.Rebuild IdP with the needed libraries:
 ```
 cd /opt/shibboleth-idp
 ln -s /usr/share/java/mariadb-java-client.jar edit-webapp/WEB-INF/lib
@@ -504,7 +504,7 @@ ln -s /usr/share/java/commons-pool.jar edit-webapp/WEB-INF/lib
 bin/build.sh
 ```
 
-26. Enable the generation of the ```persistent-id``` (this replace the deprecated attribute *eduPersonTargetedID*)
+7. Enable the generation of the ```persistent-id``` (this replace the deprecated attribute *eduPersonTargetedID*)
    
    * Find and modify the following variables with the given content on,
      * ```vim /opt/shibboleth-idp/conf/saml-nameid.properties```
@@ -538,7 +538,7 @@ bin/build.sh
      <ref bean="c14n/SAML2Persistent" />
      ```
        
-27. Enable **JPAStorageService** for the **StorageService** of the user consent:
+8. Enable **JPAStorageService** for the **StorageService** of the user consent:
    * ```vim /opt/shibboleth-idp/conf/global.xml``` 
 
 and add this piece of code to the tail before the ending \</beans\>:
@@ -617,7 +617,7 @@ and add this piece of code to the tail before the ending \</beans\>:
        (This will indicate to IdP to store the data collected by User Consent into the "**StorageRecords**" table)
 
 
-28. Connect the openLDAP to the IdP to allow the authentication of the users:
+9. Connect the openLDAP to the IdP to allow the authentication of the users:
     * Login to your openLDAP server as root or with sudo permission.
     * use ```openssl x509 -outform der -in /etc/ssl/certs/ldap_server.pem -out /etc/ssl/certs/ldap_server.crt``` to convert the ldap `.pem` certificate to a `.cert`.
     * copy the ldap_server.crt to  ```/opt/shibboleth-idp/credentials``` of your `idp` server
@@ -683,7 +683,7 @@ and add this piece of code to the tail before the ending \</beans\>:
 > Make sure to change ***dc=YOUR-DOMAIN,dc=ac,dc=lk*** according to your domain
 
 
-29. Enrich IDP logs with the authentication error occurred on LDAP:
+10. Enrich IDP logs with the authentication error occurred on LDAP:
    * ```vim /opt/shibboleth-idp/conf/logback.xml```
 
      ```xml
@@ -693,8 +693,8 @@ and add this piece of code to the tail before the ending \</beans\>:
      <!-- Logs on LDAP user authentication -->
      <logger name="org.ldaptive.auth.Authenticator" level="INFO" />
      ```
-
-30. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
+Note: According to your requirements, change the log level
+11. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
     * Download the attribute resolver provided by LEARN:
       ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v4.xml```
 
@@ -759,7 +759,7 @@ And
 * Restart Jetty: 
       ```service restart jetty```
 
-31. Enable the SAML2 support by changing the ```idp-metadata.xml```:
+12. Enable the SAML2 support by changing the ```idp-metadata.xml```:
 
 * ```vim /opt/shibboleth-idp/metadata/idp-metadata.xml```
   * From the `<IDPSSODescriptor>` session:
@@ -806,10 +806,10 @@ And
     * Remove all ":8443" from the existing URL (such port is not used anymore)
   * Finally remove all existing commented content from the whole document
 
-32. Obtain your IdP metadata here:
+13. Obtain your IdP metadata here:
     *  ```https://idp.YOUR-DOMAIN/idp/shibboleth```
 
-33. Register you IdP on LIAF:
+14. Register you IdP on LIAF:
     * ```https://liaf.ac.lk/```
     * Once your membership is approved, you will be sent a federation registry joining link where the form will ask lot of questions to identify your provider. Therefore, answer all of them as per the following,
 
@@ -847,7 +847,7 @@ And
 
     * Your Federation operator will review your application and will proceed with the registration
 
-34. Configure the IdP to retrieve the Federation Metadata:
+15. Configure the IdP to retrieve the Federation Metadata:
     * ```cd /opt/shibboleth-idp/conf```
     * ```vim metadata-providers.xml``` 
 	
@@ -894,27 +894,27 @@ And
     * Retrive the Federation Certificate used to verify its signed metadata:
     *  ```wget https://fr.ac.lk/signedmetadata/metadata-signer -O /opt/shibboleth-idp/metadata/federation-cert.pem```
   
-35. Reload service with id ```shibboleth.MetadataResolverService``` to retrieve the Federation Metadata:
+16. Reload service with id ```shibboleth.MetadataResolverService``` to retrieve the Federation Metadata:
     *  ```cd /opt/shibboleth-idp/bin```
     *  ```./reload-service.sh -id shibboleth.MetadataResolverService```
 
-36. The day after the Federation Operators approval you, check if you can login with your IdP on the following services:
+17. The day after the Federation Operators approval you, check if you can login with your IdP on the following services:
     * https://sp-test.liaf.ac.lk    (Service Provider provided for testing the LEARN Federation)
    
     To be able to log-in, you should continue with the rest of the guide.
 
 ### Configure Attribute Filters to release the mandatory attributes:
 
-37. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
+1. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
     * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown jetty /opt/shibboleth-idp/tmp/httpClientCache```
 
-38. Reload service with id `shibboleth.AttributeFilterService` to refresh the Attribute Filter followed by the IdP:
+2. Reload service with id `shibboleth.AttributeFilterService` to refresh the Attribute Filter followed by the IdP:
     *  `cd /opt/shibboleth-idp/bin`
     *  `./reload-service.sh -id shibboleth.AttributeFilterService`
 
 ### Enable Consent Module
 
-39. The consent module is shown when a user logs in to a service for the first time, and asks the user for permission to release the required (and desired) attributes to the service.
+1. The consent module is shown when a user logs in to a service for the first time, and asks the user for permission to release the required (and desired) attributes to the service.
 
     Edit `/opt/shibboleth-idp/conf/idp.properties` to uncomment and modify
 
@@ -937,7 +937,7 @@ And
    * Once you restart the service , the filters defined in step 38 will allow LEARN Federated Services to be authenticated with your IDP.
 
 
-40. Now you will be allowed to login with your IdP on the following services:
+2. Now you will be allowed to login with your IdP on the following services:
     * https://sp-test.liaf.ac.lk   (Service Provider provided for testing the LIAF)
    
     If your authentication is successed, you should see a consent page asking permission to allow the service provider to read your user data and once you approve it must see the following attributes and similar values amoung the rest of the details.
