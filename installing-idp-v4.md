@@ -244,15 +244,16 @@ If you do this installation in Lab setup please skip to implementing https with 
    </VirtualHost>
    ```
    
-   Enable Apache2 modules:
+3. Enable Apache2 modules:
    * ```a2enmod proxy_http ssl headers alias include negotiation```
    
    Enable IDP site config:
    * ```a2ensite idp```
    
-   Create the Apache2 configuration file for IdP:
-   * ```vim /etc/apache2/sites-available/idp-proxy.conf``
+4. Create the Apache2 configuration file for IdP:
+   * ```vim /etc/apache2/sites-available/idp-proxy.conf```
    
+
    ```
    <IfModule mod_proxy.c>
   ProxyPreserveHost On
@@ -266,14 +267,16 @@ If you do this installation in Lab setup please skip to implementing https with 
         ProxyPassReverse /idp http://localhost:8080/idp retry=5
 
 </IfModule>
-   
-   Enable idp_proxy file 
+   ```
+5. Enable idp_proxy file 
    * ``` a2ensite idp-proxy.conf ```
    
    Restart the Apache service:
    * ```service apache2 restart```
 
-3. Install Letsencrypt and enable HTTPS:
+if you are going to use Letsencrypt
+
+5.1 Install Letsencrypt and enable HTTPS:
 
    * ```apt install python3-certbot-apache```
    * ```certbot --apache -d idp.YOUR-DOMAIN```
@@ -325,8 +328,11 @@ If you do this installation in Lab setup please skip to implementing https with 
    Congratulations! You have successfully enabled https://idp.YOUR-DOMAIN
 
    ```
+   If you use ACME (Let's Encrypt):
 
-4. (OPTIONAL) If you haven't follow the letsencrypt method Create a Certificate and a Key self-signed for HTTPS
+* ``` ln -s /etc/letsencrypt/live/<SERVER_FQDN>/chain.pem /etc/ssl/certs/ACME-CA.pem ```
+
+5.2. (OPTIONAL) If you haven't follow the letsencrypt method Create a Certificate and a Key self-signed for HTTPS
 
    * ```mkdir /root/certificates```
    * ```openssl req -x509 -newkey rsa:4096 -keyout /root/certificates/idp-key-server.key -out /root/certificates/idp-cert-server.crt -nodes -days 1095```
@@ -393,10 +399,6 @@ If you do this installation in Lab setup please skip to implementing https with 
    </VirtualHost>
    ``` 
    * ```service apache2 restart```
-
-5.If you use ACME (Let's Encrypt):
-
-* ``` ln -s /etc/letsencrypt/live/<SERVER_FQDN>/chain.pem /etc/ssl/certs/ACME-CA.pem ```
 
 ### Configure Shibboleth Identity Provider v4 to release the persistent-id (Stored mode)
 
@@ -487,7 +489,10 @@ All done!
 ```
 wget https://raw.githubusercontent.com/LEARN-LK/IAM/master/shib-ss-db.sql -O /root/shib-ss-db.sql
 ```
-5.fill missing data on shib-ss-db.sql before import
+5. Open the `shib-ss-db.sql` and change the username and password as your preference
+`vi shib-ss-db.sql`
+
+6.fill missing data on shib-ss-db.sql before import
 ```
 mysql -u root < /root/shib-ss-db.sql
 ```
@@ -495,7 +500,7 @@ mysql -u root < /root/shib-ss-db.sql
    * Restart mysql service:
      ```service mysql restart```
      
-6.Rebuild IdP with the needed libraries:
+7.Rebuild IdP with the needed libraries:
 ```
 cd /opt/shibboleth-idp
 ln -s /usr/share/java/mariadb-java-client.jar edit-webapp/WEB-INF/lib
@@ -504,7 +509,7 @@ ln -s /usr/share/java/commons-pool.jar edit-webapp/WEB-INF/lib
 bin/build.sh
 ```
 
-7. Enable the generation of the ```persistent-id``` (this replace the deprecated attribute *eduPersonTargetedID*)
+8. Enable the generation of the ```persistent-id``` (this replace the deprecated attribute *eduPersonTargetedID*)
    
    * Find and modify the following variables with the given content on,
      * ```vim /opt/shibboleth-idp/conf/saml-nameid.properties```
@@ -537,14 +542,12 @@ bin/build.sh
      ```xml
      <ref bean="c14n/SAML2Persistent" />
      ```
-       
-8. Enable **JPAStorageService** for the **StorageService** of the user consent:
+ 9. Enable **JPAStorageService** for the **StorageService** of the user consent:
    * ```vim /opt/shibboleth-idp/conf/global.xml``` 
 
 and add this piece of code to the tail before the ending \</beans\>:
 
      ```
-
 <!-- DB-independent Configuration -->
 
     <bean id="storageservice.JPAStorageService" 
@@ -617,12 +620,12 @@ and add this piece of code to the tail before the ending \</beans\>:
        (This will indicate to IdP to store the data collected by User Consent into the "**StorageRecords**" table)
 
 
-9. Connect the openLDAP to the IdP to allow the authentication of the users:
+10. Connect the openLDAP to the IdP to allow the authentication of the users:
     * Login to your openLDAP server as root or with sudo permission.
     * use ```openssl x509 -outform der -in /etc/ssl/certs/ldap_server.pem -out /etc/ssl/certs/ldap_server.crt``` to convert the ldap `.pem` certificate to a `.cert`.
     * copy the ldap_server.crt to  ```/opt/shibboleth-idp/credentials``` of your `idp` server
+    (HINT : you can use `scp` from ldap server to idp server to obtain the crt file)
     * Next, edit ```vim /opt/shibboleth-idp/conf/ldap.properties``` with one of the following solutions.
-
 
      * Solution 1: LDAP + STARTTLS: (recommended)
 
@@ -642,7 +645,6 @@ and add this piece of code to the tail before the ending \</beans\>:
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
        idp.authn.LDAP.returnAttributes                 = *
        ```
-
      * Solution 2: LDAP + TLS:
 
        ```xml
@@ -679,11 +681,9 @@ and add this piece of code to the tail before the ending \</beans\>:
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
        idp.authn.LDAP.returnAttributes                 = *
        ```
-
 > Make sure to change ***dc=YOUR-DOMAIN,dc=ac,dc=lk*** according to your domain
 
-
-10. Enrich IDP logs with the authentication error occurred on LDAP:
+11. Enrich IDP logs with the authentication error occurred on LDAP:
    * ```vim /opt/shibboleth-idp/conf/logback.xml```
 
      ```xml
@@ -694,7 +694,7 @@ and add this piece of code to the tail before the ending \</beans\>:
      <logger name="org.ldaptive.auth.Authenticator" level="INFO" />
      ```
 Note: According to your requirements, change the log level
-11. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
+12. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
     * Download the attribute resolver provided by LEARN:
       ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v4.xml```
 
@@ -925,8 +925,7 @@ And
 ```
     
 ```
-	/opt/shibboleth-idp/bin/module.sh -t idp.intercept.Consent || /opt/shibboleth-idp/bin/module.sh -e idp.intercept.Consent
-	  
+	/opt/shibboleth-idp/bin/module.sh -t idp.intercept.Consent || /opt/shibboleth-idp/bin/module.sh -e idp.intercept.Consent	  
 ```
    * Restart the Jetty service by service Jetty restart
 
@@ -944,13 +943,13 @@ And
 	  
 ```
 	affiliation = staff@learn.ac.lk
-	cn = Thilina Pathirana
-	eppn = thilina@learn.ac.lk
+	cn = Deepthi Gunasekara
+	eppn = deepthi@learn.ac.lk
 	givenName = Thilina
-	mail = thilina@learn.ac.lk
+	mail = deepthi@learn.ac.lk
 	schacHomeOrganization = learn.ac.lk
-	sn = Pathirana
-	uid = thilina
+	sn = Deepthi
+	uid = Gunasekara
 	unscoped-affiliation = staff
 ```	  
    If you did not get any of those details or the consent page, please contact LEARN TAC for further support.
@@ -1024,7 +1023,6 @@ root.footer = Copyright University of Example
 Depending on branding requirements, it may be sufficient to edit the CSS files in /opt/shibboleth-idp/edit-webapp/css, or it may be necessary to start editing the template pages.
 
 Please note that the login page and most other pages use /opt/shibboleth-idp/edit-webapp/css/main.css, the consent module uses /opt/shibboleth-idp/edit-webapp/css/consent.css with different element names.
-
 
 Besides the logo, the login page (and several other pages) display a toolbox on the right with placeholders for links to password-reset and help-desk pages, these can be customized by adding following to the `/opt/shibboleth-idp/messages/messages.properties`
 
