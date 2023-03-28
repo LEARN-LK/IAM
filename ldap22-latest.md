@@ -483,8 +483,9 @@ slapadd -f backup.ldif
 ```
 3.Ensure the data files are owned by the ldap user:
 ```
-chown -R ldap.ldap /var/lib/ldap/*
+chown -R openldap.openldap /var/lib/ldap/*
 ```
+(Hint : You can verify the user by checking passwd file)
 4. Restart the LDAP server:
 ```
 service restart slapd.service
