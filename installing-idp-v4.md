@@ -254,21 +254,20 @@ If you do this installation in Lab setup please skip to implementing https with 
    * ```vim /etc/apache2/sites-available/idp-proxy.conf```
    
 
-   ```
+   ```apache
    <IfModule mod_proxy.c>
-   ```
-   ```
-  ProxyPreserveHost On
-  RequestHeader set X-Forwarded-Proto "https"
 
-  <Location /idp>
-    Require all granted
-  </Location>
+     ProxyPreserveHost On
+     RequestHeader set X-Forwarded-Proto "https"
 
-        ProxyPass /idp http://localhost:8080/idp retry=5
-        ProxyPassReverse /idp http://localhost:8080/idp retry=5
+     <Location /idp>
+       Require all granted
+     </Location>
 
-</IfModule>
+     ProxyPass /idp http://localhost:8080/idp retry=5
+     ProxyPassReverse /idp http://localhost:8080/idp retry=5
+
+   </IfModule>
    ```
 5. Enable idp_proxy file 
    * ``` a2ensite idp-proxy.conf ```
