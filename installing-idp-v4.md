@@ -256,6 +256,8 @@ If you do this installation in Lab setup please skip to implementing https with 
 
    ```
    <IfModule mod_proxy.c>
+   ```
+   ```
   ProxyPreserveHost On
   RequestHeader set X-Forwarded-Proto "https"
 
