@@ -328,7 +328,7 @@ if you are going to use Letsencrypt
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    Congratulations! You have successfully enabled https://idp.YOUR-DOMAIN
 
-   ```
+   
    If you use ACME (Let's Encrypt):
 
 * ``` ln -s /etc/letsencrypt/live/<SERVER_FQDN>/chain.pem /etc/ssl/certs/ACME-CA.pem ```
