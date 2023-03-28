@@ -644,6 +644,7 @@ and add this piece of code to the tail before the ending \</beans\>:
        idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
        idp.authn.LDAP.returnAttributes                 = *
+       idp.attribute.resolver.LDAP.exportAttributes    =
        ```
      * Solution 2: LDAP + TLS:
 
@@ -662,6 +663,7 @@ and add this piece of code to the tail before the ending \</beans\>:
        idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap_server.truststore
        idp.authn.LDAP.returnAttributes                 = *
+       idp.attribute.resolver.LDAP.exportAttributes    =
        ```
 
      * Solution 3: plain LDAP
@@ -680,6 +682,7 @@ and add this piece of code to the tail before the ending \</beans\>:
        idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
        #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
        idp.authn.LDAP.returnAttributes                 = *
+       idp.attribute.resolver.LDAP.exportAttributes    =
        ```
 > Make sure to change ***dc=YOUR-DOMAIN,dc=ac,dc=lk*** according to your domain
 
