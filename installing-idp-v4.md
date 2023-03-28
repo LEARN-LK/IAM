@@ -415,6 +415,15 @@ Activate MariaDB database service:
 
 * ```systemctl start mysql.service```
 
+Run the following ALTER USER command to change the root user’s authentication method to mysql_native_password
+
+```ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'YOUR_PASSWORD';```
+
+After making this change, exit the MySQL prompt:
+
+```mysql> exit```
+Now you can run mysql_secure_installation again and the error should be gone.
+
 3. Create and prepare the "**shibboleth**" MySQL DB to host the values of the several **persistent-id** and **StorageRecords** MySQL DB to host other useful information about user consent:
 
     * `mysql_secure_installation`
