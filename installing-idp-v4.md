@@ -415,6 +415,8 @@ Activate MariaDB database service:
 
 * ```systemctl start mysql.service```
 
+Then type ```mysql``` on your terminal and hit ENTER.
+
 Run the following ALTER USER command to change the root user’s authentication method to mysql_native_password
 
 ```ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'YOUR_PASSWORD';```
@@ -438,29 +440,7 @@ and improve security. It checks the strength of password
 and allows the users to set only those passwords which are
 secure enough. Would you like to setup VALIDATE PASSWORD plugin?
 
-Press y|Y for Yes, any other key for No: y
-
-There are three levels of password validation policy:
-
-LOW    Length >= 8
-MEDIUM Length >= 8, numeric, mixed case, and special characters
-STRONG Length >= 8, numeric, mixed case, special characters and dictionary file
-
-Please enter 0 = LOW, 1 = MEDIUM and 2 = STRONG: 1
-Please set the password for root here.
-
-New password:
-
-Re-enter new password:
-
-Estimated strength of the password: 50
-Do you wish to continue with the password provided?(Press y|Y for Yes, any other key for No) : y
-By default, a MySQL installation has an anonymous user,
-allowing anyone to log into MySQL without having to have
-a user account created for them. This is intended only for
-testing, and to make the installation go a bit smoother.
-You should remove them before moving into a production
-environment.
+Press y|Y for Yes, any other key for No: n
 
 Remove anonymous users? (Press y|Y for Yes, any other key for No) : y
 Success.
@@ -557,7 +537,7 @@ bin/build.sh
 
 and add this piece of code to the tail before the ending \</beans\>:
 
-     ```
+```
 <!-- DB-independent Configuration -->
 
     <bean id="storageservice.JPAStorageService" 
@@ -612,7 +592,7 @@ and add this piece of code to the tail before the ending \</beans\>:
           p:validationQuery="select 1"
           p:validationQueryTimeout="5" />
 	 
-	```
+```
 
      (and modify the "###_SS-USERNAME-CHANGEME_###" and "**PASSWORD**" for your "###_SS-DB-USER-PASSWORD-CHANGEME_###" DB)
 
