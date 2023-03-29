@@ -615,6 +615,9 @@ and add this piece of code to the tail before the ending \</beans\>:
     * use ```openssl x509 -outform der -in /etc/ssl/certs/ldap_server.pem -out /etc/ssl/certs/ldap_server.crt``` to convert the ldap `.pem` certificate to a `.cert`.
     * copy the ldap_server.crt to  ```/opt/shibboleth-idp/credentials``` of your `idp` server
     (HINT : you can use `scp` from ldap server to idp server to obtain the crt file)
+    Log in to your ldap and then,
+    ```scp ldap_server.crt <your idp user>@<your idp ip>:/path_to_copy```
+    
     * Next, edit ```vim /opt/shibboleth-idp/conf/ldap.properties``` with one of the following solutions.
 
      * Solution 1: LDAP + STARTTLS: (recommended)
