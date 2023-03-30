@@ -732,22 +732,6 @@ Note: According to your requirements, change the log level
       * urn:schac:homeOrganizationType:int:public-research-institution
       * urn:schac:homeOrganizationType:int:private-research-institution
 
-*modify ```relying-party.xml``` file after  ```<util:list id="shibboleth.RelyingPartyOverrides">``` line
-```
-        <!-- begins here -->
-        <bean parent="RelyingPartyByName" c:relyingPartyIds="https://proxy.liaf.ac.lk/Saml2/proxy_saml2_backend.xml">
-            <property name="profileConfigurations">
-                <list>
-                    <bean parent="SAML2.SSO" p:encryptAssertions="false" p:postAuthenticationFlows="attribute-release" />
-                    <ref bean="SAML2.Logout" />
-                    <ref bean="SAML2.AttributeQuery" />
-                    <ref bean="SAML2.ArtifactResolution" />
-                    <ref bean="Liberty.SSOS" />
-                </list>
-            </property>
-        </bean>
-       <!--ends here -->
-```
 * Modify `services.xml` file: `vim /opt/shibboleth-idp/conf/services.xml`,
 ```xml
       <value>%{idp.home}/conf/attribute-resolver.xml</value>
@@ -756,7 +740,6 @@ Note: According to your requirements, change the log level
 ```xml
       <value>%{idp.home}/conf/attribute-resolver-LEARN-v4.xml</value>
 ```
-
 And
 
 ```xml
@@ -766,7 +749,6 @@ And
 ```xml
       <value>%{idp.home}/conf/attribute-filter-LEARN-v4.xml</value>
 ```
-
 * Restart Jetty: 
       ```service restart jetty```
 
