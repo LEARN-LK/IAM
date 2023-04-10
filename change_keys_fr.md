@@ -1,6 +1,6 @@
-If you are using a different DNs for the new IDP, you will have to contact LEARN TAC and disable the entity id you are using after verifying that the new IDP works fine.
+If you are using a different domain scope for the new IDP, you will have to contact LEARN TAC and disable the entity id you are using after verifying that the new IDP works fine.
 
-If you are using the same DNS, since the entity id is same(https://idp.YOUR_DOMAIN/idp/shibboleth), it will be enough to change the idp keys to new keys.
+If you are using the same domain scope, since the entity id is same(https://idp.YOUR_DOMAIN/idp/shibboleth), it will be enough to change the idp keys to new keys.
 
 Every institute has a administrator for the IDP,(If the Administrator is not there for the assistance, please contact LEARN TAC and do the needful to get the Admin previllages for the IDP)
 
