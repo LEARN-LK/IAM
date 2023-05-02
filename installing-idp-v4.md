@@ -504,7 +504,7 @@ bin/build.sh
    * Find and modify the following variables with the given content on,
      * ```vim /opt/shibboleth-idp/conf/saml-nameid.properties```
      
-```xml
+     ```xml
      idp.persistentId.sourceAttribute = uid
      
      idp.persistentId.salt = ### result of 'openssl rand -base64 36'###
@@ -514,7 +514,7 @@ bin/build.sh
      idp.persistentId.dataSource = MyDataSource
      
      idp.persistentId.computed = shibboleth.ComputedPersistentIdGenerator
-```
+     ```
 
    * Enable the **SAML2PersistentGenerator**:
      * ```vim /opt/shibboleth-idp/conf/saml-nameid.xml```
@@ -691,10 +691,10 @@ and add this piece of code to the tail before the ending \</beans\>:
      ```
 Note: According to your requirements, change the log level
 12. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
-    * Download the attribute resolver provided by LEARN:
+  Download the attribute resolver provided by LEARN:
       ```wget https://fr.ac.lk/templates/attribute-resolver-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v4.xml```
 
-    * Download the attribute filter provided by LEARN:
+  Download the attribute filter provided by LEARN:
       ```wget https://fr.ac.lk/templates/attribute-filter-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-filter-LEARN-v4.xml```
 
 >If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
