@@ -13,6 +13,7 @@ Identity Provider is the party who provides authentication and authorization for
 ### Install eduroam
 
 * [Freeradius based eduroam IRS on Ubuntu 20.04](eduroam-IRS.md)
+* [Freeradius based eduroam IRS on Ubuntu 22.04](eduroam-IRS-22.md)
 
 ### Install Federated Identity System
 
