@@ -96,6 +96,13 @@ Check that Java is working:
 
      echo $JAVA_HOME
      ```
+### Install Shibboleth Identity Provider v5.0.0
+
+1. Download the Shibboleth Identity Provider v5.0.0 (The latest version found [here](https://shibboleth.net/downloads/identity-provider/)):
+   * `cd /usr/local/src`
+   * `wget http://shibboleth.net/downloads/identity-provider/latest5/shibboleth-identity-provider-5.0.0.tar.gz`
+   * `tar -xzf shibboleth-identity-provider-5.0.0.tar.gz`
+   * `cd shibboleth-identity-provider-5.0.0`
 ------------------------------ to be updated ------------------------------
 
 
@@ -103,13 +110,7 @@ Check that Java is working:
    
 
 
-### Install Shibboleth Identity Provider v5.0.0
 
-1. Download the Shibboleth Identity Provider v4.x.y (replace '4.x.y' with the latest version found [here](https://shibboleth.net/downloads/identity-provider/)):
-   * `cd /usr/local/src`
-   * `wget http://shibboleth.net/downloads/identity-provider/latest4/shibboleth-identity-provider-4.3.0.tar.gz`
-   * `tar -xzf shibboleth-identity-provider-4.3.0.tar.gz`
-   * `cd shibboleth-identity-provider-4.3.0`
 
 2. Generate Passwords for later use in the installation, You will need two password strings, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION### for step 7.
    * ```tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo```
