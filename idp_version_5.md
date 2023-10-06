@@ -148,6 +148,7 @@ Check that Java is working:
 
 
 -----------------------------------------------------------------------
+
 ### Install Jetty 11 Web Server
 Jetty is a Web server and a Java Servlet container. It will be used to run the IdP application through its WAR file.
 
