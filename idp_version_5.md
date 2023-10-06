@@ -110,19 +110,8 @@ Check that Java is working:
 3. Run the installer `install.sh`:
    > According to [NSA and NIST](https://www.keylength.com/en/compare/), RSA with 3072 bit-modulus is the minimum to protect up to TOP SECRET over than 2030.
 
------------------------------- to be updated ------------------------------
-
-
-
-   
-
-
-
-
-
-
    * `cd /usr/local/src/shibboleth-identity-provider-5.0.0/bin`
-   * `bash install.sh -Didp.host.name=$(hostname -f) -Didp.keysize=3072`
+   * `bash install.sh`
 
    ```
    Source (Distribution) Directory: [/usr/local/src/shibboleth-identity-provider-4.x]
@@ -146,9 +135,6 @@ Check that Java is working:
      
    From this point the variable **idp.home** refers to the directory: ```/opt/shibboleth-idp```
 
-
------------------------------------------------------------------------
-
 ### Install Jetty 11 Web Server
 Jetty is a Web server and a Java Servlet container. It will be used to run the IdP application through its WAR file.
 
@@ -168,6 +154,9 @@ Jetty is a Web server and a Java Servlet container. It will be used to run the I
    ```bash
    ln -nsf jetty-distribution-11.0.0.beta1 jetty-src
    ```
+
+------------------------------ to be updated ------------------------------
+
 
 4. Create the system user `jetty` that can run the web server (without home directory):
    ```bash
