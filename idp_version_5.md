@@ -121,7 +121,7 @@ Check that Java is working:
 
 
 
-   * `cd /usr/local/src/shibboleth-identity-provider-4.x/bin`
+   * `cd /usr/local/src/shibboleth-identity-provider-5.0.0/bin`
    * `bash install.sh -Didp.host.name=$(hostname -f) -Didp.keysize=3072`
 
    ```
