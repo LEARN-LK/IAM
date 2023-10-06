@@ -1,5 +1,4 @@
-This is going to be updated
-
+# This Manual is being updated
 
 # Shibboleth IdP v5.0.0 on Ubuntu Linux LTS 22.04
 
@@ -8,11 +7,7 @@ Based on [Shibboleth official manual](https://shibboleth.atlassian.net/wiki/spac
 LEARN concluded a workshop on Federated Identity with the introduction of Shibboleth IDP and SP to IAM infrastructure on member institutions. 
 
 Installation assumes you have already installed Ubuntu Server 22.04 with default configuration and has a public IP connectivity with DNS setup
-
-Lets Assume your server hostname as **idp.YOUR-DOMAIN**
-
-All commands are to be run as **root** and you may use `sudo su`, to become root
-
+ ---------------------------------------------------------------------
 ## Before You Begin
 
 We are using :
@@ -31,9 +26,11 @@ The following common configurations, and versions often in use with prior IdP ve
 * Jetty 10 or earlier
 * Tomcat 9.5 or earlier
 
-
   ---------------------------------------------------------------------
 ## Install Instructions
+Lets Assume your server hostname as **idp.YOUR-DOMAIN**
+
+All commands are to be run as **root** and you may use `sudo su`, to become root
 
 ### Install software requirements
 
@@ -49,19 +46,20 @@ The following common configurations, and versions often in use with prior IdP ve
    ```bash
    apt install vim wget gnupg ca-certificates openssl apache2 ntp libservlet3.1-java liblogback-java --no-install-recommends
    ```
-   
 4. Install Amazon Corretto JDK:
-   ```bash
-   wget -O- https://apt.corretto.aws/corretto.key | apt-key add -
+```
+wget -O- https://apt.corretto.aws/corretto.key | sudo apt-key add - 
+ sudo add-apt-repository 'deb https://apt.corretto.aws stable main'
+```
+After the repo has been added, you can install Corretto 17 by running this command:
+```
+ sudo apt-get update; sudo apt-get install -y java-17-amazon-corretto-jdk
+```
+Verify Your Installation
 
-   apt-get install software-properties-common
+In the terminal, run the following command to verify the installation.
 
-   add-apt-repository 'deb https://apt.corretto.aws stable main'
-
-   apt-get update; apt-get install -y java-11-amazon-corretto-jdk
-
-   java -version
-   ```
+```java -version```
 Check that Java is working:
    ```bash
    update-alternatives --config java
@@ -87,20 +85,25 @@ Check that Java is working:
      ```
 
    * `hostnamectl set-hostname <HOSTNAME>`
-   
 4. Set the variable `JAVA_HOME` in `/etc/environment`:
    * Set JAVA_HOME:
      ```bash
-     echo 'JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto' > /etc/environment
-
+     echo 'JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto' > /etc/environment
+     
      source /etc/environment
 
-     export JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto
+     export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
 
      echo $JAVA_HOME
      ```
+------------------------------ to be updated ------------------------------
 
-### Install Shibboleth Identity Provider v4.x
+
+
+   
+
+
+### Install Shibboleth Identity Provider v5.0.0
 
 1. Download the Shibboleth Identity Provider v4.x.y (replace '4.x.y' with the latest version found [here](https://shibboleth.net/downloads/identity-provider/)):
    * `cd /usr/local/src`
