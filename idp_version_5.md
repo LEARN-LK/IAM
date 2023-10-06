@@ -146,7 +146,9 @@ Check that Java is working:
      
    From this point the variable **idp.home** refers to the directory: ```/opt/shibboleth-idp```
 
-### Install Jetty 9 Web Server
+
+-----------------------------------------------------------------------
+### Install Jetty 11 Web Server
 Jetty is a Web server and a Java Servlet container. It will be used to run the IdP application through its WAR file.
 
 1. Become ROOT:
@@ -156,14 +158,14 @@ Jetty is a Web server and a Java Servlet container. It will be used to run the I
    ```bash
    cd /usr/local/src
    
-   wget https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/9.4.43.v20210629/jetty-distribution-9.4.43.v20210629.tar.gz
+   wget https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/11.0.0.beta1/jetty-distribution-11.0.0.beta1.tar.gz
    
-   tar xzvf jetty-distribution-9.4.43.v20210629.tar.gz
+   tar xzvf jetty-distribution-11.0.0.beta1.tar.gz
    ```
 
 3. Create the `jetty-src` folder as a symbolic link. It will be useful for future Jetty updates:
    ```bash
-   ln -nsf jetty-distribution-9.4.43.v20210629 jetty-src
+   ln -nsf jetty-distribution-11.0.0.beta1 jetty-src
    ```
 
 4. Create the system user `jetty` that can run the web server (without home directory):
