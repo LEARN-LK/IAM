@@ -103,6 +103,13 @@ Check that Java is working:
    * `wget http://shibboleth.net/downloads/identity-provider/latest5/shibboleth-identity-provider-5.0.0.tar.gz`
    * `tar -xzf shibboleth-identity-provider-5.0.0.tar.gz`
    * `cd shibboleth-identity-provider-5.0.0`
+
+2. Generate Passwords for later use in the installation, You will need two password strings, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION### for step 7.
+   * ```tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo```
+
+3. Run the installer `install.sh`:
+   > According to [NSA and NIST](https://www.keylength.com/en/compare/), RSA with 3072 bit-modulus is the minimum to protect up to TOP SECRET over than 2030.
+
 ------------------------------ to be updated ------------------------------
 
 
@@ -112,11 +119,7 @@ Check that Java is working:
 
 
 
-2. Generate Passwords for later use in the installation, You will need two password strings, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION### for step 7.
-   * ```tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo```
 
-3. Run the installer `install.sh`:
-   > According to [NSA and NIST](https://www.keylength.com/en/compare/), RSA with 3072 bit-modulus is the minimum to protect up to TOP SECRET over than 2030.
 
    * `cd /usr/local/src/shibboleth-identity-provider-4.x/bin`
    * `bash install.sh -Didp.host.name=$(hostname -f) -Didp.keysize=3072`
