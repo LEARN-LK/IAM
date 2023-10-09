@@ -114,7 +114,7 @@ Check that Java is working:
    * `bash install.sh`
 
    ```
-   Source (Distribution) Directory: [/usr/local/src/shibboleth-identity-provider-4.x]
+   Source (Distribution) Directory: [/usr/local/src/shibboleth-identity-provider-5.0.0]
    Installation Directory: [/opt/shibboleth-idp]
    Hostname: [localhost.localdomain]
    idp.YOUR-DOMAIN
@@ -154,9 +154,6 @@ Jetty is a Web server and a Java Servlet container. It will be used to run the I
    ```bash
    ln -nsf jetty-distribution-11.0.0.beta1 jetty-src
    ```
-
------------------------------- to be updated ------------------------------
-
 
 4. Create the system user `jetty` that can run the web server (without home directory):
    ```bash
@@ -214,6 +211,9 @@ Jetty is a Web server and a Java Servlet container. It will be used to run the I
     If you receive an error likes "*Job for jetty.service failed because the control process exited with error code. See "systemctl status jetty.service" and "journalctl -xe" for details.*", try this:
       * `rm /var/run/jetty.pid`
       * `systemctl start jetty.service`
+
+
+------------------------------ to be updated ------------------------------
 
 ## Configuration Instructions
 
