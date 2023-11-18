@@ -63,7 +63,8 @@ Edit the Relaying Party configuration by `vim /opt/shibboleth-idp/conf/relying-p
             </property>
         </bean>
 ```
-Next Restart Tomcat 8: ```service tomcat8 restart```
+Next Restart Tomcat 8(If you are using Shibboleth V3.x.x): ```service tomcat8 restart```
+Restart Jetty(If you are using ShibbolethV4+): ```service jetty restart```
     
     
 Now you can use the sign in feature of https://learn.zoom.us with your IDP through LIAF.
