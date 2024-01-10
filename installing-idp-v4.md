@@ -484,7 +484,7 @@ wget https://raw.githubusercontent.com/LEARN-LK/IAM/master/shib-ss-db.sql -O /ro
 
 6.fill missing data on shib-ss-db.sql before import
 ```
-mysql -u root < /root/shib-ss-db.sql
+mysql -u root -p < /root/shib-ss-db.sql
 ```
      
    * Restart mysql service:
