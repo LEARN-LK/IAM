@@ -44,7 +44,7 @@ Identity Provider is the party who provides authentication and authorization for
 
 ## If you are a Federation Operator looking to install Resource Registry,
 
-* [Jagger RR3 Tool](rr3.md)
+* [Jagger RR3 Tool](rr3_ubuntu18.md)
 
 
 >If you have any questions please contact LEARN TAC. 
