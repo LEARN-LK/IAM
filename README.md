@@ -5,7 +5,7 @@ All about creating Identity Access Management within NREN
 ## If you are an Identity Provider
 Identity Provider is the party who provides authentication and authorization for selected services. They are the owners of the identity data and
 
-### First Step
+### Install LDAP
 
 * [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](Ldap-with-eduperson.md)
 * [Install the OpenLDAP Server on Ubuntu 22.04 LTS with eduPerson Schema](ldap22-latest.md)
