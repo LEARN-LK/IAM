@@ -1,8 +1,14 @@
-# Installation of Jagger Tool in Ubuntu 18.04
+# Installation of Jagger Tool in Ubuntu 22.04
 
-This will guide through basic installation of HEANET's product, jagger in Ubuntu 18.04 based on [Jagger Documentation](https://jagger.heanet.ie/jaggerdocadmin/installation.html) and Terry Smith's (@trsau) [Google Doc for Backfire project](https://docs.google.com/document/d/1vvSbGPoF7L1VQKwfaLeN2HMC9TPtk3jeZN8XLxNTerQ)
+This will guide through basic installation of HEANET's product, jagger in Ubuntu 18.04 based on [Jagger Documentation](https://jagger.heanet.ie/jaggerdocadmin/installation.html)
 
-This guide assumes you have pre installed Ubuntu 18.04 server with default configurations and have a public IP connectivity including DNS setup.
+This guide assumes you have pre installed Ubuntu 22.04 server with default configurations and have a public IP connectivity including DNS setup.
+Requirements:
+ * User with sudo privilleges
+ * Add FQDN to your hosts file `vi /etc/hosts`
+
+Add as follows
+`<Public IP address> <FQDN for your server>`
 
 All Commands will be run as the root user. You may use `sudo su` to become root.
 
