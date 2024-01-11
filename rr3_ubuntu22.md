@@ -24,7 +24,7 @@ All Commands will be run as the root user. You may use `sudo su` to become root.
 
 ### 2. Install Mysql server
 
-   * `apt install mysql-server`
+   * `apt install mariadb-server`
 
 ### 3. Securing mysql
 
@@ -103,13 +103,13 @@ All done!
 
 edit php settings as
 
-   * `vim /etc/php/7.X/apache2/php.ini`
+   * `vim /etc/php/8.1/apache2/php.ini`
 ```php
 date.timezone = Asia/Colombo
 memory_limit = 256M
 max_execution_time = 60
 ```
-   * `vim /etc/php/7.2/cli/php.ini`
+   * `vim /etc/php/8.1/cli/php.ini`
 
 ```php
 date.timezone = Asia/Colombo
@@ -123,37 +123,33 @@ max_execution_time = 60
    * `apt install php-xml`
    * `apt install php-memcached`
    * `apt install php-amqplib`
+   * `apt install php8.1-bcmath`
+   * `apt install php-amqplib`
    * `service apache2 restart`
 
-
 follow these steps to install php7.X deprecated php-mcrypt [from here](https://gist.github.com/arzzen/1209aa4a430bd95db3090a3399e6c35f)
-
 
 ### 5. Install composer
 
    * `curl -sS https://getcomposer.org/installer | php`
    * `cp composer.phar /usr/local/bin/composer`
 
-
 ### 6. Install memcached 
 
    * `apt-get install memcached`
-
 
 ### 7. Install Gearman
 
    * `apt-get install gearman-job-server`
    * `apt-get install php-gearman`
 
-
 ### 8. Get CodeIgniter
 
    * `cd /opt`
-   * `wget https://github.com/bcit-ci/CodeIgniter/archive/3.1.9.zip`
+   * `wget https://github.com/bcit-ci/CodeIgniter/archive/3.1.13.zip`
    * `apt install unzip`
-   * `unzip 3.1.9.zip`
-   * `mv CodeIgniter-3.1.9 codeigniter`
-
+   * `unzip 3.1.13.zip`
+   * `mv CodeIgniter-3.1.13 codeigniter`
 
 ### 9. Download and prepare Jagger RR3
 
@@ -180,8 +176,6 @@ You may also want to set production environment. To do it find the line
 and change to
 
 `define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'production ');`
-
-
 
 #### Configure Apache Virtual Host
 
