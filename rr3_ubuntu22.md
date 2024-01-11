@@ -195,8 +195,8 @@ Edit `rr3.conf` with following
 ```apache
 <VirtualHost *:80>
  
-        ServerName YOUR-DOMAIN
-        ServerAdmin YOUR-Email
+        ServerName HOSTNAME.YOUR-DOMAIN.ac.lk 
+        ServerAdmin noc@YOUR-DOMAIN.ac.lk 
         DocumentRoot /opt/rr3/
         Alias /rr3 /opt/rr3
 <Directory /opt/rr3>
@@ -215,7 +215,6 @@ Edit `rr3.conf` with following
 
         ErrorLog ${APACHE_LOG_DIR}/error.log
         CustomLog ${APACHE_LOG_DIR}/access.log combined
-
 </VirtualHost>
 ```
 
