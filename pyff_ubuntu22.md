@@ -1,4 +1,4 @@
-### Installing Pyff
+### Installing Pyff(Not the finalized document)
 
 Start by installing some basic OS packages
 
@@ -63,4 +63,4 @@ Creating necessary directories:
 `mkdir scripts`
 
 
- 
+ Please refer: http://pyff.io/
