@@ -1,6 +1,6 @@
 # Installation of Jagger Tool in Ubuntu 22.04
 
-This will guide through basic installation of HEANET's product, jagger in Ubuntu 18.04 based on [Jagger Documentation](https://jagger.heanet.ie/jaggerdocadmin/installation.html)
+This will guide through basic installation of LEARN Federation Registry in Ubuntu 18.04 based on [Jagger Documentation](https://github.com/LEARN-LK/IAM/blob/master/rr3_ubuntu18.md)
 
 This guide assumes you have pre installed Ubuntu 22.04 server with default configurations and have a public IP connectivity including DNS setup.
 Requirements:
