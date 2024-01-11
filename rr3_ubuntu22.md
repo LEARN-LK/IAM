@@ -494,7 +494,6 @@ Once the default user is created switch **OFF** the setup mode on `config_rr.php
 $config['rr_setup_allowed'] = FALSE;
 ```
 
-## Metadata signing
+Next : [Metadata signing with pyff](pyff_ubuntu22.md)
 
-Please refer: http://pyff.io/
 
