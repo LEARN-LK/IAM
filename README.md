@@ -7,13 +7,13 @@ Identity Provider is the party who provides authentication and authorization for
 
 ### Install LDAP
 
-* [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](Ldap-with-eduperson.md)
 * [Install the OpenLDAP Server on Ubuntu 22.04 LTS with eduPerson Schema](ldap22-latest.md)
+* [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](Ldap-with-eduperson.md)
 
 ### Install eduroam
 
-* [Freeradius based eduroam IRS on Ubuntu 20.04](eduroam-IRS.md)
 * [Freeradius based eduroam IRS on Ubuntu 22.04](eduroam-IRS-22.md)
+* [Freeradius based eduroam IRS on Ubuntu 20.04](eduroam-IRS.md)
 
 ### Install Federated Identity System
 
@@ -44,7 +44,8 @@ Identity Provider is the party who provides authentication and authorization for
 
 ## If you are a Federation Operator looking to install Resource Registry,
 
-* [Jagger RR3 Tool](rr3_ubuntu18.md)
+* [Jagger RR3 Tool - Ubuntu 22](rr3_ubuntu22.md)
+* [Jagger RR3 Tool - Ubuntu 18](rr3_ubuntu18.md)
 
 
 >If you have any questions please contact LEARN TAC. 
