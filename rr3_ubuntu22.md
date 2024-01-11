@@ -403,6 +403,34 @@ In the future after every update you will need to run
 ./doctrine orm:generate-proxies
 
 ```
+### If you are migrating the setup
+
+Restore the mysql dump in to the new server database;
+
+#### Database Creation 
+
+Log in to MYSQL as root
+
+   * `mysql -u root -p`
+
+```sql
+CREATE DATABASE rr3 CHARACTER SET utf8 COLLATE utf8_general_ci;
+GRANT ALL ON rr3.* to rr3user@'localhost' IDENTIFIED BY 'rr3@PasS';
+FLUSH PRIVILEGES;
+```
+After editing composer.json for `doctrine`
+
+```bash
+composer update
+```
+Then execute,
+
+```bash
+./doctrine orm:schema-tool:update --force
+./doctrine orm:generate-proxies
+
+```
+
 ### Install Letsencypt and enable https
 
 ```bash
@@ -442,7 +470,6 @@ Enabled Apache ssl module
 Deploying Certificate to VirtualHost /etc/apache2/sites-available/rr3-le-ssl.conf
 Enabling available site: /etc/apache2/sites-available/rr3-le-ssl.conf
 
-
 Please choose whether or not to redirect HTTP traffic to HTTPS, removing HTTP access.
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 1: No redirect - Make no further changes to the webserver configuration.
@@ -460,11 +487,7 @@ Congratulations! You have successfully enabled https://YOUR-DOMAIN
 
 Open page **https://YOUR-DOMAIN/rr3/setup** and fill the form.
 
-
-
-
 Once the default user is created switch **OFF** the setup mode on `config_rr.php` by
-
 
 ```php
 $config['rr_setup_allowed'] = FALSE;
