@@ -405,8 +405,6 @@ In the future after every update you will need to run
 ```
 ### If you are migrating the setup
 
-Restore the mysql dump in to the new server database;
-
 #### Database Creation 
 
 Log in to MYSQL as root
@@ -418,6 +416,9 @@ CREATE DATABASE rr3 CHARACTER SET utf8 COLLATE utf8_general_ci;
 GRANT ALL ON rr3.* to rr3user@'localhost' IDENTIFIED BY 'rr3@PasS';
 FLUSH PRIVILEGES;
 ```
+
+Restore the mysql dump in to the new server database;
+
 After editing composer.json for `doctrine`
 
 ```bash
