@@ -73,7 +73,6 @@ Create these executable files inside `scripts` directory
 ```bash
 #!/bin/bash
 
-#wget https://fr-training.ac.lk/rr3/metadata/federation/FR-training/metadata.xml -O /opt/pyff/metadata.xml
 . /opt/pyff/bin/activate
 
 pyff --loglevel=INFO /opt/pyff/fed.md
