@@ -59,8 +59,28 @@ Insert following lines in the file
 Creating necessary directories:
 
 `cd /opt/pyff/`
+
 `mkdir output`
+
 `mkdir scripts`
 
+Create these executable files inside `scripts` directory
 
- Please refer: http://pyff.io/
+`cd /opt/pyf/scripts/`
+
+`vim signedmetadata.sh`
+
+```bash
+#!/bin/bash
+
+#wget https://fr-training.ac.lk/rr3/metadata/federation/FR-training/metadata.xml -O /opt/pyff/metadata.xml
+. /opt/pyff/bin/activate
+
+pyff --loglevel=INFO /opt/pyff/fed.md
+
+deactivate
+
+chmod 644 /opt/pyff/output/meta-signed.xml
+
+```
+ Please refer: (http://pyff.io/)
