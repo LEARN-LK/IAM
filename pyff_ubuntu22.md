@@ -82,6 +82,6 @@ deactivate
 chmod 644 /opt/pyff/output/meta-signed.xml
 
 ```
-Next : [Setting UP Embedded Discovery Service (EDS) on the same Jagger installation node](SettingUPEmbeddedDiscoveryService_ubuntu 22.md)
+Next : [Configure EDS](SettingUPEmbeddedDiscoveryService_ubuntu22.md)
 
 Please refer: (http://pyff.io/)
