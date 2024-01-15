@@ -1,12 +1,12 @@
-### Installing Pyff(Not the finalized document)
+## Installing Pyff(Not the finalized document)
 
-Start by installing some basic OS packages
+#### Start by installing some basic OS packages
 
 `apt-get install build-essential python3-dev libxml2-dev libxslt1-dev libyaml-dev`
 
 `apt-get install python3-lxml python3-yaml python3-eventlet python3-setuptools`
 
- Installing python virtual environment
+#### Installing python virtual environment
 
  `apt-get install python3-virtualenv`
 
@@ -15,7 +15,7 @@ Create a directory for pyff
 `cd /opt/ `
 `mkdir pyff `
 
-Installing pyff
+#### Installing pyff
 
  `virtualenv /opt/pyff`
 
@@ -25,7 +25,7 @@ Installing pyff
 
  `deactivate`
 
-Create `fed.md` file(you can make an empty directory and store the md files and if you do so, please change the absolute path in commands accordingly)
+#### Create `fed.md` file(you can make an empty directory and store the md files and if you do so, please change the absolute path in commands accordingly)
 
 `cd /opt/pyff`
 
@@ -56,7 +56,7 @@ Insert following lines in the file
 #- stats
 ```
 
-Creating necessary directories:
+#### Creating necessary directories:
 
 `cd /opt/pyff/`
 
@@ -64,7 +64,7 @@ Creating necessary directories:
 
 `mkdir scripts`
 
-Create these executable files inside `scripts` directory
+#### Create these executable files inside `scripts` directory
 
 `cd /opt/pyf/scripts/`
 
@@ -82,4 +82,5 @@ deactivate
 chmod 644 /opt/pyff/output/meta-signed.xml
 
 ```
+Next : [Setting UP Embedded Discovery Service (EDS) on the same Jagger installation (Federation Registory) node](Setting UP Embedded Discovery Service (EDS).md)
  Please refer: (http://pyff.io/)
