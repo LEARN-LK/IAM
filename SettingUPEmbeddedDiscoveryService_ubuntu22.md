@@ -1,4 +1,4 @@
-## Setting UP Embedded Discovery Service (EDS) on the same Jagger installation (Federation Registory) node - Ubuntu 22.04
+## Setting UP Embedded Discovery Service (EDS) on the same Jagger installation (Federation Registory) node - Ubuntu 22.04 (Not finalized document)
 
 1. Install dependancies to overcome issues with libcurl libraries. ( Credits: [EDS configuration](SettingUPEmbeddedDiscoveryService.md)
    * ```bash
@@ -15,7 +15,7 @@
    
      ```bash
      [Service]
-     Environment="LD_PRELOAD=libcurl3.so.4.5.0"
+     Environment="LD_PRELOAD=libcurl3.so.4.7.0"
      ```
    
 2. Install Shibboleth SP:
