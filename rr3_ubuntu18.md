@@ -475,3 +475,4 @@ $config['rr_setup_allowed'] = FALSE;
 
 Please refer: http://pyff.io/
 
+Check : [Configure EDS](SettingUPEmbeddedDiscoveryService.md)
