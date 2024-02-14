@@ -1,7 +1,5 @@
 # Install the OpenLDAP Server on Ubuntu 22.04 LTS with eduPerson Schema
 
-To be updated
-
 It is assumed that you have already install your Ubuntu server with a public IP address and a registered Domain Name (**ldap.YOUR-DOMAIN.ac.lk**). 
 
 Modify /etc/hosts and append: (Make sure not to remove exsisting entries)
@@ -33,6 +31,8 @@ Answer the prompts appropriately, using the information below as a starting poin
   - Database backend to use: ***HDB*** (out of the two choices, this has the most functionality)
   - Do you want the database to be removed when slapd is purged? (your choice. Choose ***Yes*** to allow a completely clean removal, choose ***No*** to save your data even when the software is removed)
   - Move old database? ***Yes***
+
+
 
 ### Create the Certificate Templates
 
@@ -291,14 +291,14 @@ And you should see
 ldap_bind: Inappropriate authentication (48)
 	additional info: anonymous bind disallowed
 ```
+
+
 ### Load eduPerson Schema.
 
 Get the schema downloaded from [Eduperson.ldif](https://raw.githubusercontent.com/LEARN-LK/IAM/master/eduperson-201602.ldif)
 
 Or the latest from `https://spaces.at.internet2.edu/display/macedir/LDIFs`
-```bash
-wget https://raw.githubusercontent.com/LEARN-LK/IAM/master/eduperson-201602.ldif
-```
+
 Load it using:
 
 ```bash
@@ -309,9 +309,6 @@ Also Lets load The SChema for Academia, SCHAC.
 Get the schema downloaded from [SCHAC.ldif](https://raw.githubusercontent.com/LEARN-LK/IAM/master/schac-20150413.ldif)
 
 Or the latest from `https://wiki.refeds.org/display/STAN/SCHAC+Releases`
-```bash
-wget https://raw.githubusercontent.com/LEARN-LK/IAM/master/schac-20150413.ldif
-```
 
 Load it using:
 
@@ -455,7 +452,7 @@ sudo ldapsearch -H ldapi:// -Y EXTERNAL -b "cn=schema,cn=config" -s one -Q -LLL 
 * List Users
 
 ```
- ldapsearch -D "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk" -W -b "dc=YOUR-DOMAIN,dc=ac,dc=lk"
+ ldapsearch -h localhost -D "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk" -W -b "dc=YOUR-DOMAIN,dc=ac,dc=lk"
  ```
  
 * View/backup ldap (to ldif)
@@ -465,29 +462,5 @@ sudo slapcat
 
 sudo slapcat > backup.ldif
 ```
-To back up an LDAP directory, export the directory using the slapcat utility:
-```
-slapcat -b "dc=ldap,dc=example,dc=com" -l backup.ldif
-```
-Additional:
 
-To rebuild the directory from an export, follow these steps:
-
-1.Stop the LDAP server:
-```
-service stop slapd.service
-```
-2.Import the file using slapadd:
-```
-slapadd -f backup.ldif
-```
-3.Ensure the data files are owned by the ldap user:
-```
-chown -R openldap.openldap /var/lib/ldap/*
-```
-(Hint : You can verify the user by checking passwd file)
-4. Restart the LDAP server:
-```
-service restart slapd.service
-```
 >Next: Installing an UI for LDAP: https://github.com/LEARN-LK/IAM/blob/master/LDAP-UI.md
