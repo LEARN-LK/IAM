@@ -47,8 +47,6 @@ Identity Provider is the party who provides authentication and authorization for
 * [Jagger RR3 Tool - Ubuntu 22](rr3_ubuntu22.md)
 * [Jagger RR3 Tool - Ubuntu 18](rr3_ubuntu18.md)
 
-#### How to use Jagger Dashboard
 
-* [Jagger Dashboard](how to use Jagger Dashboard.pdf)
 
 >If you have any questions please contact LEARN TAC. 
