@@ -1,4 +1,4 @@
-# This Manual is being updated
+# This Manual is being updated - recommend to install shibboleth v4
 
 # Shibboleth IdP v5.0.0 on Ubuntu Linux LTS 22.04
 
