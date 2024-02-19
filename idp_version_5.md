@@ -104,10 +104,7 @@ Check that Java is working:
    * `tar -xzf shibboleth-identity-provider-5.0.0.tar.gz`
    * `cd shibboleth-identity-provider-5.0.0`
 
-2. Generate Passwords for later use in the installation, You will need two password strings, ###PASSWORD-FOR-BACKCHANNEL### and ###PASSWORD-FOR-COOKIE-ENCRYPTION### for step 7.
-   * ```tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo```
-
-3. Run the installer `install.sh`:
+2. Run the installer `install.sh`:
    > According to [NSA and NIST](https://www.keylength.com/en/compare/), RSA with 3072 bit-modulus is the minimum to protect up to TOP SECRET over than 2030.
 
    * `cd /usr/local/src/shibboleth-identity-provider-5.0.0/bin`
@@ -121,10 +118,6 @@ Check that Java is working:
    SAML EntityID: [https://idp.YOUR-DOMAIN/idp/shibboleth]
    Attribute Scope: [localdomain]
    YOUR-DOMAIN
-   Backchannel PKCS12 Password: ###PASSWORD-FOR-BACKCHANNEL###
-   Re-enter password:           ###PASSWORD-FOR-BACKCHANNEL###
-   Cookie Encryption Key Password: ###PASSWORD-FOR-COOKIE-ENCRYPTION###
-   Re-enter password:              ###PASSWORD-FOR-COOKIE-ENCRYPTION###
    ```
   
    By starting from this point, the variable **idp.home** refers to the directory: `/opt/shibboleth-idp`
