@@ -6,6 +6,7 @@ Base FreeRADIUS Installation
 1. Change user to root ...
 
 $ sudo su -
+
 2. Add repository to notify latest version. It is ver 3.0 in this document.
 
 Note: if you don&#39;t add repository, previous version (ver 2.x) can be installed.
