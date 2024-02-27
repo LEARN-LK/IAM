@@ -107,7 +107,7 @@ access-accept; 0
 
 Go to install location and do the changes.
 ```
-cd /etc/freeradius/3.0/
+cd /etc/freeradius/
 mv mods-config/attr_filter/pre-proxy mods-config/attr_filter/pre-proxy.orig
 mv mods-config/attr_filter/post-proxy mods-config/attr_filter/post-proxy.orig
 ```
@@ -241,7 +241,7 @@ cui_require_operator_name = "yes"
 Create required certificates,
 
 ```
-cd /etc/freeradius/3.0/certs/
+cd /etc/freeradius/certs/
 ```
 
 edit `[certificate_authority] ` of `/etc/freeradius/3.0/certs/ca.cnf` as needed.
@@ -260,7 +260,7 @@ service freeradius restart
 Create virtual server for eduroam as
 
 ```
-cd /etc/freeradius/3.0/
+cd /etc/freeradius/
 vim sites-available/eduroam
 ```
 ```
@@ -667,7 +667,7 @@ apt-get install freeradius-ldap
 Configure LDAP parameters
 
 ```
-vim /etc/freeradius/3.0/mods-available/ldap
+vim /etc/freeradius/mods-available/ldap
 ```
 Add or Modify the appopriate lines
 
@@ -682,7 +682,7 @@ edir_autz = yes
 
 Enable LDAP Module & Restart Freeradius
 ```
-ln -s /etc/freeradius/3.0/mods-available/ldap /etc/freeradius/3.0/mods-enabled/ldap
+ln -s /etc/freeradius/mods-available/ldap /etc/freeradius/mods-enabled/ldap
 service freeradius restart
 ```
 
