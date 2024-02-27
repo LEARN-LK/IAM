@@ -4,6 +4,28 @@ It is assumed that this installation will be carried on a fresh installation of 
 
 Update your server
 
+
+FreeRADIUS 3.2 on Ubuntu Jammy 22.04
+
+Add the NetworkRADIUS PGP public key:
+
+```
+install -d -o root -g root -m 0755 /etc/apt/keyrings
+curl -s 'https://packages.networkradius.com/pgp/packages%40networkradius.com' | \
+    sudo tee /etc/apt/keyrings/packages.networkradius.com.asc > /dev/null
+```
+
+Add an APT preferences file to ensure all freeradius packages are installed from the Network RADIUS repository:
+```
+printf 'Package: /freeradius/\nPin: origin "packages.networkradius.com"\nPin-Priority: 999\n' | \
+    sudo tee /etc/apt/preferences.d/networkradius > /dev/null
+```
+Add the APT sources list:
+```
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.networkradius.com.asc] http://packages.networkradius.com/freeradius-3.2/ubuntu/jammy jammy main" | \
+    sudo tee /etc/apt/sources.list.d/networkradius.list > /dev/null
+```
+Finally, update the APT database and install the packages:
 ```
 apt update
 
@@ -18,7 +40,7 @@ apt dist-upgrade
 You need to become root by `sudo su` and proceed. 
 
 ```
-apt install freeradius freeradius-utils
+apt install freeradius 
 
 apt install git libssl-dev devscripts pkg-config libnl-3-dev libnl-genl-3-dev
 ```
@@ -40,7 +62,7 @@ cp ./eapol_test/eapol_test /usr/local/bin/
 command `eapol_test` should work now...
 
 
- Next, `vim /etc/freeradius/3.0/users`  and modify to enable bob and test realm user
+ Next, `vim /etc/freeradius/users`  and modify to enable bob and test realm user
 
 ```
 #
