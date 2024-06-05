@@ -4,7 +4,11 @@ It is assumed that this installation will be carried on a fresh installation of 
 
 Update your server
 
+```
+sudo apt update
 
+sudo apt upgrade
+```
 FreeRADIUS 3.2 on Ubuntu Jammy 22.04
 
 Add the NetworkRADIUS PGP public key:
@@ -27,11 +31,7 @@ echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.networkradius.com.asc
 ```
 Finally, update the APT database and install the packages:
 ```
-apt update
-
-apt upgrade
-
-apt dist-upgrade
+sudo apt update
 
 ```
 
@@ -40,81 +40,85 @@ apt dist-upgrade
 You need to become root by `sudo su` and proceed. 
 
 ```
-apt install freeradius 
+sudo apt install freeradius 
 
-apt install git libssl-dev devscripts pkg-config libnl-3-dev libnl-genl-3-dev
+sudo apt install git libssl-dev devscripts pkg-config libnl-3-dev libnl-genl-3-dev
 ```
 
-Build eapol tool
-
-```
-
-git clone --depth 1 --no-single-branch https://github.com/FreeRADIUS/freeradius-server.git
-
-cd freeradius-server/scripts/ci/
-
-./eapol_test-build.sh
-
-cp ./eapol_test/eapol_test /usr/local/bin/
-
-```
-
-command `eapol_test` should work now...
-
-
- Next, `vim /etc/freeradius/users`  and modify to enable bob and test realm user
+ Next, `sudo vim /etc/freeradius/users`  and modify to enable bob and test realm user
 
 ```
 #
 #bob     Cleartext-Password := "hello"
 #       Reply-Message := "Hello, %{User-Name}"
 #
-eduroamtest         Cleartext-Password := "test@eduroam.lk"
+eduroamtest         Cleartext-Password := "EduTestP@33"
 ####
 ```
+
 After the user modification following radtests should succeed.
 ```
-service freeradius restart
+sudo systemctl restart freeradius.service
 radtest -t mschap -x eduroamtest  test@eduroam.lk 127.0.0.1:1812 10000 testing123
 ```
 
-### Install rad_eap_test
+### Build eapol tool
 
 ```
-cd ~
+git clone --depth 1 --no-single-branch https://github.com/FreeRADIUS/freeradius-server.git
 
-mkdir rad_eap_test
+cd freeradius-server/scripts/ci/
 
-cd rad_eap_test
+./eapol_test-build.sh
 
-wget https://raw.githubusercontent.com/CESNET/rad_eap_test/master/rad_eap_test
+sudo cp ./eapol_test/eapol_test /usr/local/bin/
 
-chmod +x rad_eap_test
-
-cp rad_eap_test /usr/local/bin
 ```
 
-After the user modification, following tests should succeed.
+You can now test the above radius local user authentication with eapol_test as below. For eapol_test command you need to create a configuration file which describes the network connection properties. Let's create a configuration file.
+
 ```
-service freeradius restart
-rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u eduroamtest -p test@eduroam.lk -m WPA-EAP -e PEAP
+sudo vim peap-mschapv2-local.conf
 ```
-You will recieve, 
+
+Add the below code,
 ```
-access-accept; 0
+network={
+        ssid="eduroam"
+        key_mgmt=WPA-EAP
+        eap=PEAP
+        identity="EduTestP@33"
+#       anonymous_identity="@eduroam.lk"
+        password="EduTest"
+        phase2="auth=MSCHAPV2"
+
+        #  Uncomment the following to perform server certificate validation.
+#       ca_cert="/etc/raddb/certs/ca.der"
+}
+```
+
+And execute the eapol_test as below,
+```
+eapol_test -c peap-mschapv2-local.conf -p 1812 -s testing123
+```
+
+If the authentication is successful you should recieve at the end, 
+```
+MPPE keys OK: 1  mismatch: 0
+SUCCESS
 ```
 ### Freeradius Settings
 
 Go to install location and do the changes.
 ```
 cd /etc/freeradius/
-mv mods-config/attr_filter/pre-proxy mods-config/attr_filter/pre-proxy.orig
-mv mods-config/attr_filter/post-proxy mods-config/attr_filter/post-proxy.orig
+sudo cp mods-config/attr_filter/pre-proxy mods-config/attr_filter/pre-proxy.orig
+sudo cp mods-config/attr_filter/post-proxy mods-config/attr_filter/post-proxy.orig
 ```
-Create a new file for `pre-proxy` with following content:
 
+Edit the file `pre-proxy` with following content:
 ```
-vi mods-config/attr_filter/pre-proxy
+sudo vim mods-config/attr_filter/pre-proxy
 ```
  
 ```
@@ -133,9 +137,9 @@ DEFAULT
         Chargeable-User-Identity =* ANY
 ```
 
-Create a new file for `post-proxy` with following content:
+Edit the file `post-proxy` with following content:
 ```
-vi mods-config/attr_filter/post-proxy
+sudo vim mods-config/attr_filter/post-proxy
 ```
 
 ```
@@ -162,14 +166,15 @@ DEFAULT
         Chargeable-User-Identity =* ANY
 ```
 
-Modify the eap module as follows,
+Backup the eap module configuration file as follows,
 
 ```
-mv mods-available/eap mods-available/eap.orig
+sudo cp mods-available/eap mods-available/eap.orig
 
-vi mods-available/eap
+sudo vim mods-available/eap
 ```
 
+Now modify the configuration file to make the below changes. Don't delete any additional configurations not show below. Also some of the below configurations also might be the same as them in your configuration file, hence need to change the selected parts only.
 ```
 eap {
                 default_eap_type = peap     # change to your organisation's preferred eap type (tls, ttls, peap, mschapv2)
@@ -218,10 +223,10 @@ eap {
 
         }
 ```
-Modify the linelog module as follows,
+You need to modify the linelog module as follows too,
 
 ```
-vi mods-available/linelog
+sudo vim mods-available/linelog
 ```
 Modify the following lines containing `Access-Accept` and `Access-Reject`
 
@@ -232,36 +237,54 @@ Access-Reject = "%T eduroam-auth#ORG=%{request:Realm}#USER=%{User-Name}#CSI=%{%{
 
 Modify the cui policy as follows,
 ```
-vi policy.d/cui
+sudo vim policy.d/cui
 ```
 ```
 cui_hash_key = "SOMELONGCHARACTERstring"
 cui_require_operator_name = "yes"
 ```
+
 Create required certificates,
 
 ```
 cd /etc/freeradius/certs/
 ```
 
-edit `[certificate_authority] ` of `/etc/freeradius/3.0/certs/ca.cnf` as needed.
-
-edit `[server]` of `/etc/freeradius/3.0/certs/server.cnf` as needed.
-
-Then,
+edit `[certificate_authority] ` of `/etc/freeradius/certs/ca.cnf` similar to the below. Make changes to reflect your institute.
 ```
+countryName             = LK
+stateOrProvinceName     = Central
+localityName            = Peradeniya
+organizationName        = Lanka Education and Research Network
+emailAddress            = admin@learn.ac.lk
+commonName              = "LEARN Certificate Authority"
+```
+
+edit `[server]` of `/etc/freeradius/certs/server.cnf` similar to the below as well. Make changes to reflect your institute.
+```
+[server]
+countryName             = LK
+stateOrProvinceName     = Central
+localityName            = Peradeniya
+organizationName        = Lanka Education and Research Network
+emailAddress            = irs.admin@learn.ac.lk
+commonName              = "irs.learn.ac.lk"
+```
+
+Then build the certificates,
+```
+cd /etc/freeradius/certs
 make ca.pem
 make server.pem
 chown freerad:freerad *
 
-service freeradius restart
 ```
 
 Create virtual server for eduroam as
 
 ```
 cd /etc/freeradius/
-vim sites-available/eduroam
+sudo vim sites-available/eduroam
 ```
 ```
 ######################################################################
@@ -333,7 +356,7 @@ authorize {
 	}
 	files
 
-#	-ldap
+	-ldap
 
 }
 
@@ -405,7 +428,7 @@ post-proxy {
 Create virtual server for eduroam-inner-tunnel.
 
 ```
-vim sites-available/eduroam-inner-tunnel
+sudo vim sites-available/eduroam-inner-tunnel
 ```
 
 ```
@@ -493,13 +516,21 @@ server blackhole {
 }
 ```
 
-Now you should contact your National Roaming Operator and get your shared keys.
+Next you need to enable the created virtual-server sites above and also remove the unwanted,
+```
+cd sites-enabled
+rm default
+rm inner-tunnel
+ln -s ../sites-available/eduroam-inner-tunnel eduroam-inner-tunnel
+ln -s ../sites-available/eduroam eduroam
+ln -s ../sites-available/blackhole blackhole
+```
 
 Then modify proxy.conf
 
 ```
-mv proxy.conf proxy.conf.orig
-vi proxy.conf
+sudo cp proxy.conf proxy.conf.orig
+sudo vim proxy.conf
 ```
 
 ```
@@ -637,22 +668,31 @@ client FLR2 {
 }
 
 ```
+Now you should contact your National Roaming Operator and get your shared keys.
+
 You may also need to add all clients directly connecting to the radius, such as AP's and controllers...
-
-Next,
-
+To add an Aruba access points add something like below.
 ```
-cd sites-enabled
-rm default
-rm inner-tunnel
-ln -s ../sites-available/eduroam-inner-tunnel eduroam-inner-tunnel
-ln -s ../sites-available/eduroam eduroam
-ln -s ../sites-available/blackhole blackhole
-service freeradius restart
+client aruba_aps {
+        ipaddr = 192.248.4.224/27
+        secret = ArubaAPSECRET
+        Operator-Name = 1YOUR-DOMAIN
+        add_cui = yes
+        limit {
+          max_connections = 10
+        }
+
+}
 ```
+
+Now restart the radius server.
+```
+sudo systemctl restart freeradius.service
+```
+
 After the restart, following tests should succeed.
 ```
-rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u eduroamtest -p test@eduroam.lk -m WPA-EAP -e PEAP
+eapol_test -c peap-mschapv2-local.conf -p 1812 -s testing123
 ```
 You may also test some of the test roaming accounts provided by your upstream NRO.
 
@@ -667,14 +707,14 @@ apt-get install freeradius-ldap
 Configure LDAP parameters
 
 ```
-vim /etc/freeradius/mods-available/ldap
+sudo vim /etc/freeradius/mods-available/ldap
 ```
 Add or Modify the appopriate lines
 
 ```
 server = 'LDAP-Server-FQDN'
 identity = 'cn=admin,dc=inst,dc=ac,dc=lk' #bind User
-password = irsldap
+password = 'YOUR_LDAP_PASSWORD'
 base_dn = 'ou=people,dc=inst,dc=ac,dc=lk'
 edir_autz = yes
 ```
@@ -686,9 +726,24 @@ ln -s /etc/freeradius/mods-available/ldap /etc/freeradius/mods-enabled/ldap
 service freeradius restart
 ```
 
+Network configuration file for the ldap connectivity may look like below.
+```
+network={
+        ssid="eduroam"
+        key_mgmt=WPA-EAP
+        eap=PEAP
+        identity="user@YOUR-DOMAIN"
+#       anonymous_identity="@eduroam.lk"
+        password="USER-PASSWORD"
+        phase2="auth=MSCHAPV2"
+        #  Uncomment the following to perform server certificate validation.
+#       ca_cert="/etc/raddb/certs/ca.der"
+}
+```
+
 Test ldap user authentication:
 ```
-rad_eap_test -H 127.0.0.1 -P 1812 -S testing123  -u user@YOUR-DOMAIN -p user_pass -m WPA-EAP -e PEAP
+eapol_test -c peap-mschapv2-ldap.conf -p 1812 -s testing123
 ```
 
 ### Troubleshoot:
