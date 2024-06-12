@@ -59,7 +59,7 @@ eduroamtest         Cleartext-Password := "EduTestP@33"
 After the user modification following radtests should succeed.
 ```
 sudo systemctl restart freeradius.service
-radtest -t mschap -x eduroamtest  test@eduroam.lk 127.0.0.1:1812 10000 testing123
+radtest -t mschap -x eduroamtest  EduTestP@33 127.0.0.1:1812 10000 testing123
 ```
 
 ### Build eapol tool
