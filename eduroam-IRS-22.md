@@ -189,7 +189,7 @@ eap {
                         private_key_file = ${certdir}/server.key
                         certificate_file = ${certdir}/server.pem
                         ca_file = ${cadir}/ca.pem
-                        dh_file = ${certdir}/dh
+                        #dh_file = ${certdir}/dh
                         random_file = /dev/urandom
                         fragment_size = 1024
                         include_length = yes
