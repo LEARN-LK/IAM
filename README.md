@@ -42,10 +42,12 @@ Identity Provider is the party who provides authentication and authorization for
 * [Shibboleth SPv3 on Ubuntu Linux LTS 20.04](SPv3%20installation%20on%20Ubuntu%2020.04.md)
 * [Shibboleth SP on Ubuntu Linux LTS 18.04](SP_Ubuntu1804.md)
 
-## If you are a Federation Operator looking to install Resource Registry,
+## If you are a Federation Operator looking to install Resource Registry
 
 * [Jagger RR3 Tool - Ubuntu 22](rr3_ubuntu22.md)
 * [Jagger RR3 Tool - Ubuntu 18](rr3_ubuntu18.md)
+
+## If you are a Federation Operator looking to install Eduroam Tools
 
 
 
