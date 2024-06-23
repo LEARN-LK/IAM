@@ -26,3 +26,21 @@ All of the services are packaged as Docker containers, so are not tightly linked
 
 ## Basic Setup
 
+On each of the VMs, start by cloning the git repository:
+
+git clone https://github.com/REANNZ/etcbd-public
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
