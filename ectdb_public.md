@@ -81,25 +81,27 @@ Note that this option is not included in the file template, add it manually if t
 
 Please generate this value with: ```openssl rand -base64 48```
 
-- ```ADMINTOOL_DEBUG```: for troubleshooting, uncomment the existing line: ```ADMINTOOL_DEBUG=True``` - but remember to comment it out again (or change to False or blank) after done with the troubleshooting.
+- ```ADMINTOOL_DEBUG```: for troubleshooting, uncomment the existing line:
+- ```ADMINTOOL_DEBUG=True``` - but remember to comment it out again (or change to False or blank) after done with the troubleshooting.
 
-```ADMINTOOL_LOGIN_METHODS```: enter a space-separated list of login methods to enable.
+- ```ADMINTOOL_LOGIN_METHODS```: enter a space-separated list of login methods to enable.
 
 Choose from:
-```shibboleth```: SAML Login with Shibboleth SP via an identity federation. Not supported yet.
-```locallogin```: Local accounts on the admin tool instance.
+- ```shibboleth```: SAML Login with Shibboleth SP via an identity federation. Not supported yet.
+- ```locallogin```: Local accounts on the admin tool instance.
 Note that local accounts can later be created by logging into the Admintool at https://admin.example.org/admin/ as the administrator (with the username and password created here), and selecting Users from the list of tables to administer, and creating the user with the Add user button.
-```google-oauth2```: Login with a Google account. Only works for applications registered with Google - see below on enabling Google login.
-```yahoo```: Login with a Yahoo account. No registration needed.
-```amazon```: Login with an Amazon account. Registration needed.
-```docker```: Login with a Docker account. Registration needed.
-```dropbox-oauth2```: Login with a Dropbox account. Registration needed.
-```facebook```: Login with a Facebook account. Registration needed.
-```launchpad```: Login with an UbuntuOne/Launchpad account. No registration needed.
-```linkedin-oatuh2```: Login with a LinkedIn account. Registration needed.
-```meetup```: Login with a MeetUp account. Registration needed.
-```twitter```: Login with a Twitter account. Registration needed.
+- ```google-oauth2```: Login with a Google account. Only works for applications registered with Google - see below on enabling Google login.
+- ```yahoo```: Login with a Yahoo account. No registration needed.
+- ```amazon```: Login with an Amazon account. Registration needed.
+- ```docker```: Login with a Docker account. Registration needed.
+- ```dropbox-oauth2```: Login with a Dropbox account. Registration needed.
+- ```facebook```: Login with a Facebook account. Registration needed.
+- ```launchpad```: Login with an UbuntuOne/Launchpad account. No registration needed.
+- ```linkedin-oatuh2```: Login with a LinkedIn account. Registration needed.
+- ```meetup```: Login with a MeetUp account. Registration needed.
+- ```twitter```: Login with a Twitter account. Registration needed.
 Please note that many of these login methods require registration with the target site, and also need configuring the API key and secret received as part of the registration. Please see the Python Social Auth Backends documentation for the exact settings required.
+
 Additional settings: it is also possible to pass any arbitrary settings for the Admintool (or its underlying module) by prefixing the setting with ```ADMINTOOL_EXTRA_SETTINGS_. ```This would be relevant for passing configuration entries to the login methods configured above - especially ```SECRET``` and ```KEY``` settings for login methods requiring these. Example: to pass settings required by Twitter, add them as:
 
   ```ADMINTOOL_EXTRA_SETTINGS_SOCIAL_AUTH_TWITTER_KEY=93randomClientId```
@@ -189,8 +191,14 @@ Run the setup script:
 
 Please note: the ```icinga-setup.sh``` script should be run only once. Repeated runs of the script would lead to unpredictable results (some database structures populated multiple times). Also, for most of the configuration variables (except those listed below), re-running the script is not necessary - restarting the containers should be sufficient (```docker-compose up -d)```. The following variables would are the ones where a container restart would NOT be sufficient:
 
-- ```ICINGAWEB2_ADMIN_USERNAME```,``` ICINGAWEB2_ADMIN_PASSWORD```: if any of these values has changed after running icinga-setup.sh, change the value also in the account definition in the management interface at - ```https://monitoring.example.org/icingaweb2/```(if you have already changed the ports.if not ```https://monitoring.example.org:8443/icingaweb2/```) (navigate to Configuration => Authentication => Users => select the account).
-```ICINGA_DB_USER```, ```ICINGA_DB_NAME```, ```ICINGA_DB_PASSWORD```, ```ICINGA_DB_HOST```, ```ICINGAWEB2_DB_USER```, ```ICINGAWEB2_DB_NAME```, ```ICINGAWEB2_DB_PASSWORD```,``` ICINGAWEB2_DB_HOST```: changing these values after database initialization is an advanced topic beyond the scope of this document. Please see the Troubleshooting section below.
+- ```ICINGAWEB2_ADMIN_USERNAME```,``` ICINGAWEB2_ADMIN_PASSWORD```: if any of these values has changed after running icinga-setup.sh, change the value also in the account definition in the management interface at - ```https://monitoring.example.org/icingaweb2/```
+
+(if you have already changed the ports.if not ```https://monitoring.example.org:8443/icingaweb2/```) (navigate to Configuration => Authentication => Users => select the account).
+
+```ICINGA_DB_USER```, ```ICINGA_DB_NAME```, ```ICINGA_DB_PASSWORD```, ```ICINGA_DB_HOST```, ```ICINGAWEB2_DB_USER```, ```ICINGAWEB2_DB_NAME```, ```ICINGAWEB2_DB_PASSWORD```,``` ICINGAWEB2_DB_HOST```: changing these values after database initialization is an advanced topic beyond the scope of this document. 
+
+Please see the Troubleshooting section below.
+
 Note: at this point, Icinga will be executing checks against all Radius servers as configured. It is essential to also configure the Radius servers to accept the Icinga host as a Radius client - with the secret as configured in the Admintool.
 
 Note: Icinga will be using the configuration as generated by the Admintool. When the settings change in Admintool, Icinga would only see the changes next time it fetches the configuration. This defaults to happen every hour. To trigger an immediate reload, either restart the container, or send it the "Hang-up" (HUP) signal:
