@@ -71,7 +71,7 @@ Note that this option is not included in the file template, add it manually if t
 
 - ```MAP_CENTER_LAT```, ```MAP_CENTER_LONG``` - pick your location
 
-- ```REALM_EXISTING_DATA_URL```: In a real deployment, leave this set to blank (REALM_EXISTING_DATA_URL=) to start with an empty database. In a test deployment, you can point to an existing database to load the initial data (e.g., https://<existing_admintool>/general/institution.xml).
+- ```REALM_EXISTING_DATA_URL```: In a real deployment, leave this set to blank (```REALM_EXISTING_DATA_URL=```) to start with an empty database. In a test deployment, you can point to an existing database to load the initial data (e.g., ```https://<existing_admintool>/general/institution.xml```).
 
 - ```GOOGLE_KEY/GOOGLE_SECRET``` - provide Key + corresponding secret for an API credential (see below on configuring these settings)
 
@@ -125,10 +125,14 @@ Run the setup script:
 
 Please note: the ```admintool-setup.sh``` script should be run only once. Repeated runs of the script would lead to unpredictable results (some database structures populated multiple times). Also, for most of the configuration variables (except those listed below), re-running the script is not necessary - restarting the containers should be sufficient (```docker-compose up -d```). The following variables would are the ones where a container restart would NOT be sufficient:
 
-```SITE_PUBLIC_HOSTNAME```: if this value has changed after running admintool-setup.sh, besides restarting the containers, change the value also in the Sites entry in the management interface at https://admin.example.org/admin/
+```SITE_PUBLIC_HOSTNAME```: if this value has changed after running admintool-setup.sh, besides restarting the containers, change the value also in the Sites entry in the management interface at ```https://admin.example.org/admin/```
+
 ```REALM_COUNTRY_CODE```, ```NRO_INST_NAME```: if any of these values has changed after running admintool-setup.sh, besides restarting the containers, change the value also in the Realms entry in the management interface at ```https://admin.example.org/admin/```
+
 ```ADMIN_USERNAME```, ```ADMIN_EMAIL```, ```ADMIN_PASSWORD```: if any of these values has changed after running admintool-setup.sh, besides restarting the containers, change the value also in the account definition in the Users table in the management interface at ```https://admin.example.org/admin/```
+
 ```DB_USER```, ```DB_NAME```, ```DB_PASSWORD```, ```DB_HOST```: changing these values after database initialization is an advanced topic beyond the scope of this document. Please see the Troubleshooting section below.
+
 ```REALM_EXISTING_DATA_URL```: changing this value after database initialization is an advanced topic beyond the scope of this document. Please see the Troubleshooting section below.
 
 ## Installing proper SSL certificates for Admintool
@@ -166,9 +170,13 @@ If the Admintool is using a self-signed automatically generated certificate, we 
 
 Copying this certificate into the Icinga configuration volume so that wget can access the certificate:
 
-Note that at this stage, the volume for the Icinga external configuration has not been created yet, so we need to jump the gun and create it explicitly (otherwise, the volumes get created automatically by docker-compose up): ```docker volume create --name icinga_icinga-external-conf```
+Note that at this stage, the volume for the Icinga external configuration has not been created yet, so we need to jump the gun and create it explicitly (otherwise, the volumes get created automatically by docker-compose up): 
 
-Copy the certficiate (by running the "cp" command in a container mounting both volumes): ```docker run --rm --name debian-cp -v admintool_apache-certs:/admintool-apache-certs -v icinga_icinga-external-conf:/icinga_icinga-external-conf debian:jessie cp /admintool-apache-certs/server.crt /icinga_icinga-external-conf/```
+```docker volume create --name icinga_icinga-external-conf```
+
+Copy the certficiate (by running the "cp" command in a container mounting both volumes): 
+
+```docker run --rm --name debian-cp -v admintool_apache-certs:/admintool-apache-certs -v icinga_icinga-external-conf:/icinga_icinga-external-conf debian:jessie cp /admintool-apache-certs/server.crt /icinga_icinga-external-conf/```
 
 And instructing wget to trust this certificate: ```WGET_EXTRA_OPTS=--ca-certificate=/etc/icinga2/externalconf/server.crt```
 
@@ -242,7 +250,17 @@ The setup script also creates an index pattern in Kibana, telling Kibana where t
 
 Note that the --force flag deletes all Kibana settings - but the initial ones get loaded again by the setup script. And the actual data in ElasicSearch stays intact.
 
+## Accessing services
 
+The Admintool can be accessed at https://admin.example.org/
+
+The management interface of the Admnintool can be accessed at https://admin.example.org/admin/
+
+The management interface of the monitoring tools (Icingaweb2) can be accessed at https://monitoring.example.org:8443/icingaweb2/
+
+The web interface of the metrics tools (Kibana) can be accessed at https://metrics.example.org:9443/
+
+(Note: if you have deployed containers in seperate servers, and changed the ports accordingly,chnage the port numbers accordingly)
 
 
 
