@@ -49,8 +49,6 @@ Identity Provider is the party who provides authentication and authorization for
 
 ## If you are a Federation Operator looking to install Eduroam Tools
 
-* [Eduroam Tools - Ubuntu 22 + Docker](ectdb_public.md)
-
-
+* [Eduroam Tools - Ubuntu 22 + Docker](https://github.com/LEARN-LK/etcbd-public/tree/master)
 
 >If you have any questions please contact LEARN TAC. 
