@@ -87,9 +87,9 @@ network={
         ssid="eduroam"
         key_mgmt=WPA-EAP
         eap=PEAP
-        identity="EduTestP@33"
+        identity="eduroamtest"
 #       anonymous_identity="@eduroam.lk"
-        password="EduTest"
+        password="EduTestP@33"
         phase2="auth=MSCHAPV2"
 
         #  Uncomment the following to perform server certificate validation.
@@ -171,7 +171,7 @@ Backup the eap module configuration file as follows,
 ```
 sudo cp mods-available/eap mods-available/eap.orig
 
-sudo vim mods-available/eap
+sudo vim mods-enabled/eap
 ```
 
 Now modify the configuration file to make the below changes. Don't delete any additional configurations not show below. Also some of the below configurations also might be the same as them in your configuration file, hence need to change the selected parts only.
@@ -183,8 +183,6 @@ eap {
                 cisco_accounting_username_bug = no
 
                 tls-config tls-eduroam {
-                        certdir = ${confdir}/certs
-                        cadir = ${confdir}/certs
                         private_key_password = whatever
                         private_key_file = ${certdir}/server.key
                         certificate_file = ${certdir}/server.pem
@@ -226,7 +224,7 @@ eap {
 You need to modify the linelog module as follows too,
 
 ```
-sudo vim mods-available/linelog
+sudo vim mods-enabled/linelog
 ```
 Modify the following lines containing `Access-Accept` and `Access-Reject`
 
@@ -234,6 +232,9 @@ Modify the following lines containing `Access-Accept` and `Access-Reject`
 Access-Accept = "%T eduroam-auth#ORG=%{request:Realm}#USER=%{User-Name}#CSI=%{%{Calling-Station-Id}:-Unknown Caller Id}#NAS=%{%{Called-Station-Id}:-Unknown Access Point}#NAS-IP=%{%{NAS-IP-Address}:-Unknown}#OPERATOR=%{%{Operator-Name}:-Unknown}#CUI=%{%{reply:Chargeable-User-Identity}:-Unknown}#RESULT=OK#" 
 Access-Reject = "%T eduroam-auth#ORG=%{request:Realm}#USER=%{User-Name}#CSI=%{%{Calling-Station-Id}:-Unknown Caller Id}#NAS=%{%{Called-Station-Id}:-Unknown Access Point}#NAS-IP=%{%{NAS-IP-Address}:-Unknown}#OPERATOR=%{%{Operator-Name}:-Unknown}#CUI=%{%{reply:Chargeable-User-Identity}:-Unknown}#MSG=%{%{reply:Reply-Message}:-No Failure Reason}#RESULT=FAIL#"
 ```
+
+Chargeable-User-Identity (CUI) is a non-human readable (“opaque”) cryptographic hash that is targeted to the service provider. Each service provider therefore receives a different opaque value for the same user. This allows service providers to recognize a user as one that they have seen before, without knowing who the user is; while preventing service providers from colluding to track users. This enables legitimate purposes, such as blocking malfunctioning devices and generating accurate usage statistics. 
+The CUI value is computed as a SHA1 hash of concatenated (inner) User-Name, optional Operator-Name and a local salt value. This salt is random string and we have to set this salt in the cui_hash_key attribute.
 
 Modify the cui policy as follows,
 ```
