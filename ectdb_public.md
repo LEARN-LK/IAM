@@ -1,5 +1,5 @@
 ## Eduroam tools container-based deployment: Overall considerations
-Based on (REANNZ/ectdb-public)(https://github.com/REANNZ/etcbd-public]
+Based on (REANNZ/ectdb-public)[https://github.com/REANNZ/etcbd-public]
 
 The ancilliary tools package consists of three separate sets of tools:
 
