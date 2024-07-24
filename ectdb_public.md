@@ -19,7 +19,7 @@ All of the services are packaged as Docker containers, so are not tightly linked
 
 - The system should be running a recent version of Linux supported by Docker(Manual is tested on Ubuntu 22
 - The system can be either a virtual machine or a physical (real hardware) system.)
-- The system should have at least 5GB of disk space (recommended 10GB) available under /var/lib/docker (on the /var partition or on the root filesystem if not partitioned).
+- The system should have at least 5GB of disk space (recommended 10GB) available under `/var/lib/docker` (on the `/var` partition or on the root filesystem if not partitioned).
 - The system should have at least 4GB of RAM (recommended 8GB) available.
 - Docker (Install and configure Docker - [Manual](https://github.com/REANNZ/etcbd-public/blob/master/Docker-setup.md))
 - Mailserver - Some of the tools (admintool and monitoring) will need to send outgoing email. Please make sure you have the details of an SMTP ready - either one provided by your systems administrator, or one running on the local system.
@@ -63,7 +63,7 @@ Note that this option is not included in the file template, add it manually if t
 
 - ```NRO_INST_TWITER``` (OPTIONAL): the Social Media (Twitter) handle of the NRO institution
 
-- ```NRO_FEDERATION_NAME```: the name of the AAI federation the Admintool is connected to (if available to the NRO). Leave unmodified if no AAI federation exists locally.
+- ```NRO_FEDERATION_NAME```: the name of the federation the Admintool is connected to (if available to the NRO).
 
 - ```FEDERATION_DOC_URL```: URL to the federation policy document / documentation about the federation.
 
@@ -136,8 +136,8 @@ Please note: the ```admintool-setup.sh``` script should be run only once. Repeat
 ```REALM_EXISTING_DATA_URL```: changing this value after database initialization is an advanced topic beyond the scope of this document. Please see the Troubleshooting section below.
 
 ## Installing proper SSL certificates for Admintool
-to-be-updated
 
+We strongly recommend operating the Admintool with proper SSL certificates. 
 
 ## Preparing Icinga configuration in Admintool
 
@@ -358,18 +358,6 @@ The setup script also creates an index pattern in Kibana, telling Kibana where t
 
 Note that the --force flag deletes all Kibana settings - but the initial ones get loaded again by the setup script. And the actual data in ElasicSearch stays intact.
 
-## Accessing services
-
-The Admintool can be accessed at https://admin.example.org/
-
-The management interface of the Admnintool can be accessed at https://admin.example.org/admin/
-
-The management interface of the monitoring tools (Icingaweb2) can be accessed at https://monitoring.example.org:8443/icingaweb2/
-
-The web interface of the metrics tools (Kibana) can be accessed at https://metrics.example.org:9443/
-
-(Note: if you have deployed containers in seperate servers, and changed the ports accordingly,chnage the port numbers accordingly)
-
 ## Feeding Radius logs from NRS servers (freeradius) into metrics tools (ELK)
 
 The main benefits in having the metrics tools is in using them to explore the usage data from the eduroam Radius servers.
@@ -422,6 +410,17 @@ After updating the files driving the tools:
 - Restart the containers from updated images: ```docker-compose up -d```
 - Optionally, watch the logs (leave with Ctrl-C): ```docker-compose logs -f```
 
+## Accessing services
+
+The Admintool can be accessed at https://admin.example.org/
+
+The management interface of the Admnintool can be accessed at https://admin.example.org/admin/
+
+The management interface of the monitoring tools (Icingaweb2) can be accessed at https://monitoring.example.org:8443/icingaweb2/
+
+The web interface of the metrics tools (Kibana) can be accessed at https://metrics.example.org:9443/
+
+(Note: if you have deployed containers in seperate servers, and changed the ports accordingly,chnage the port numbers accordingly)
 ## Troubleshooting
 
 Especially when experimenting with the setup, it may happen that the tools get into an undefined and inoperative state.
