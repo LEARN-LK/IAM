@@ -186,7 +186,7 @@ eap {
                         private_key_password = whatever
                         private_key_file = ${certdir}/server.key
                         certificate_file = ${certdir}/server.pem
-                        ca_file = ${cadir}/ca.pem
+                        #ca_file = ${cadir}/ca.pem
                         #dh_file = ${certdir}/dh
                         random_file = /dev/urandom
                         fragment_size = 1024
@@ -245,7 +245,33 @@ cui_hash_key = "SOMELONGCHARACTERstring"
 cui_require_operator_name = "yes"
 ```
 
-Create required certificates,
+### Creating Certificates
+
+Certificates can be obtained using a service like LetsEncrypt or Commercial provider. We can also create certificates using a private CA.You need to only follow a one method.
+
+#### Create certificates using LetsEncrypt
+
+{{{
+apt-get install certbot
+addgroup certs
+adduser freerad certs
+
+certbot certonly  --standalone  --cert-name SERVER_DOMAIN  -d SERVER_DOMAIN
+}}}
+
+certificates will be created at /etc/letsencrypt/live/SERVER_DOMAIN/. Server certificate along with CA certificates will be in a file named fullchain.pem and private key will be in privkey.pem.
+
+Now you need to edit eap module configuration file and replace the lines below as given.
+
+{{{
+nano mods-enabled/eap
+}}}
+{{{
+private_key_file = /etc/letsencrypt/live/irs.learn.ac.lk/privkey.pem
+certificate_file = /etc/letsencrypt/live/irs.learn.ac.lk/fullchain.pem
+}}}
+
+#### Create Certificates Using Private CA
 
 ```
 cd /etc/freeradius/certs/
