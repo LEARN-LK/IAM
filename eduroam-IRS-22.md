@@ -251,25 +251,25 @@ Certificates can be obtained using a service like LetsEncrypt or Commercial prov
 
 #### Create certificates using LetsEncrypt
 
-{{{
+```
 apt-get install certbot
 addgroup certs
 adduser freerad certs
 
 certbot certonly  --standalone  --cert-name SERVER_DOMAIN  -d SERVER_DOMAIN
-}}}
+```
 
 certificates will be created at /etc/letsencrypt/live/SERVER_DOMAIN/. Server certificate along with CA certificates will be in a file named fullchain.pem and private key will be in privkey.pem.
 
 Now you need to edit eap module configuration file and replace the lines below as given.
 
-{{{
+```
 nano mods-enabled/eap
-}}}
-{{{
+```
+```
 private_key_file = /etc/letsencrypt/live/irs.learn.ac.lk/privkey.pem
 certificate_file = /etc/letsencrypt/live/irs.learn.ac.lk/fullchain.pem
-}}}
+```
 
 #### Create Certificates Using Private CA
 
