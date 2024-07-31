@@ -556,6 +556,7 @@ ln -s ../sites-available/blackhole blackhole
 Then modify proxy.conf
 
 ```
+cd /etc/freeradius
 sudo cp proxy.conf proxy.conf.orig
 sudo vim proxy.conf
 ```
