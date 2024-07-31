@@ -184,9 +184,9 @@ eap {
 
                 tls-config tls-eduroam {
                         private_key_password = whatever
-                        private_key_file = ${certdir}/server.key
+                        private_key_file = ${certdir}/server.pem
                         certificate_file = ${certdir}/server.pem
-                        #ca_file = ${cadir}/ca.pem
+                        ca_file = ${cadir}/ca.pem
                         #dh_file = ${certdir}/dh
                         random_file = /dev/urandom
                         fragment_size = 1024
@@ -256,10 +256,10 @@ apt-get install certbot
 addgroup certs
 adduser freerad certs
 
-certbot certonly  --standalone  --cert-name SERVER_DOMAIN  -d SERVER_DOMAIN
+certbot certonly  --standalone  --cert-name SERVER_FQDN  -d SERVER_FQDN
 ```
 
-certificates will be created at /etc/letsencrypt/live/SERVER_DOMAIN/. Server certificate along with CA certificates will be in a file named fullchain.pem and private key will be in privkey.pem.
+certificates will be created at /etc/letsencrypt/live/SERVER_FQDN/. Server certificate along with CA certificates will be in a file named fullchain.pem and private key will be in privkey.pem.
 
 Now you need to edit eap module configuration file and replace the lines below as given.
 
@@ -267,8 +267,8 @@ Now you need to edit eap module configuration file and replace the lines below a
 nano mods-enabled/eap
 ```
 ```
-private_key_file = /etc/letsencrypt/live/irs.learn.ac.lk/privkey.pem
-certificate_file = /etc/letsencrypt/live/irs.learn.ac.lk/fullchain.pem
+private_key_file = /etc/letsencrypt/live/SERVER_FQDN/privkey.pem
+certificate_file = /etc/letsencrypt/live/SERVER_FQDN/fullchain.pem
 ```
 
 #### Create Certificates Using Private CA
@@ -281,10 +281,10 @@ edit `[certificate_authority] ` of `/etc/freeradius/certs/ca.cnf` similar to the
 ```
 countryName             = LK
 stateOrProvinceName     = Central
-localityName            = Peradeniya
-organizationName        = Lanka Education and Research Network
-emailAddress            = admin@learn.ac.lk
-commonName              = "LEARN Certificate Authority"
+localityName            = Somewhere
+organizationName        = Univerity of ABC
+emailAddress            = admin@YOUR_DOMAIN
+commonName              = "Univerity of ABC Certificate Authority"
 ```
 
 edit `[server]` of `/etc/freeradius/certs/server.cnf` similar to the below as well. Make changes to reflect your institute.
@@ -292,10 +292,10 @@ edit `[server]` of `/etc/freeradius/certs/server.cnf` similar to the below as we
 [server]
 countryName             = LK
 stateOrProvinceName     = Central
-localityName            = Peradeniya
-organizationName        = Lanka Education and Research Network
-emailAddress            = irs.admin@learn.ac.lk
-commonName              = "irs.learn.ac.lk"
+localityName            = Somewhere
+organizationName        = Univerity of ABC
+emailAddress            = irs.admin@YOUR_DOMAIN
+commonName              = "irs.YOUR_DOMAIN"
 ```
 
 Then build the certificates,
@@ -370,7 +370,7 @@ authorize {
 	filter_username
         if (("%{client:shortname}" != "FLR1")||("%{client:shortname}" != "FLR2")) {
                    update request {
-                           Operator-Name := "1YOUR-DOMAIN"
+                           Operator-Name := "1YOUR_DOMAIN"
                             # the literal number "1" above is an important prefix! Do not change it!
          }
         }
@@ -600,7 +600,7 @@ home_server_pool EDUROAM {
 
 
 # Your IdP realm
-realm YOUR-DOMAIN {
+realm YOUR_DOMAIN {
        # nostrip #uncomment to remove striping of realm from username
 }
 
@@ -678,7 +678,7 @@ client FLR1 {
 	secret          = FLR_EDUROAM_SECRET
         shortname       = FLR1
 	nas_type	 = other
-	Operator-Name = 1YOUR-DOMAIN
+	Operator-Name = 1YOUR_DOMAIN
 	add_cui = yes
     virtual_server = eduroam
 }
@@ -689,7 +689,7 @@ client FLR2 {
         secret          = FLR_EDUROAM_SECRET
         shortname       = FLR2
         nas_type        = other
-        Operator-Name = 1YOUR-DOMAIN
+        Operator-Name = 1YOUR_DOMAIN
         add_cui = yes
     virtual_server = eduroam
 }
@@ -703,7 +703,7 @@ To add an Aruba access points add something like below.
 client aruba_aps {
         ipaddr = 192.248.4.224/27
         secret = ArubaAPSECRET
-        Operator-Name = 1YOUR-DOMAIN
+        Operator-Name = 1YOUR_DOMAIN
         add_cui = yes
         limit {
           max_connections = 10
@@ -739,7 +739,7 @@ sudo vim /etc/freeradius/mods-available/ldap
 Add or Modify the appopriate lines
 
 ```
-server = 'LDAP-Server-FQDN'
+server = 'LDAP_SERVER_FQDN'
 identity = 'cn=admin,dc=inst,dc=ac,dc=lk' #bind User
 password = 'YOUR_LDAP_PASSWORD'
 base_dn = 'ou=people,dc=inst,dc=ac,dc=lk'
@@ -759,7 +759,7 @@ network={
         ssid="eduroam"
         key_mgmt=WPA-EAP
         eap=PEAP
-        identity="user@YOUR-DOMAIN"
+        identity="user@YOUR_DOMAIN"
 #       anonymous_identity="@eduroam.lk"
         password="USER-PASSWORD"
         phase2="auth=MSCHAPV2"
