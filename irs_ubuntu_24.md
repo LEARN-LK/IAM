@@ -26,7 +26,7 @@ printf 'Package: /freeradius/\nPin: origin "packages.networkradius.com"\nPin-Pri
 ```
 Add the APT sources list:
 ```
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.networkradius.com.asc] http://packages.networkradius.com/freeradius-3.2/ubuntu/jammy jammy main" | \
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.networkradius.com.asc] http://packages.networkradius.com/freeradius-3.2/ubuntu/noble noble main" | \
     sudo tee /etc/apt/sources.list.d/networkradius.list > /dev/null
 ```
 Finally, update the APT database and install the packages:
