@@ -11,7 +11,7 @@ Identity Provider is the party who provides authentication and authorization for
 * [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](Ldap-with-eduperson.md)
 
 ### Install eduroam
-
+* [Freeradius based eduroam IRS on Ubuntu 24.04](irs_ubuntu_24.md)
 * [Freeradius based eduroam IRS on Ubuntu 22.04](eduroam-IRS-22.md)
 * [Freeradius based eduroam IRS on Ubuntu 20.04](eduroam-IRS.md)
 
@@ -29,7 +29,7 @@ Identity Provider is the party who provides authentication and authorization for
 ### Allow Services
 
 * [LEARN Video Conferencing via Zoom](Enable%20Zoom%20Video%20Conferencing.md)
-*  [LEARN Video Conferencing via VCR - Virtual Class Room](vcr_enabling.md)
+* [LEARN Video Conferencing via VCR - Virtual Class Room](vcr_enabling.md)
 
 ## If you are a Service Provider
 
