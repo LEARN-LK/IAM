@@ -112,8 +112,8 @@ SUCCESS
 Go to install location and do the changes.
 ```
 cd /etc/freeradius/
-sudo cp mods-config/attr_filter/pre-proxy mods-config/attr_filter/pre-proxy.orig
-sudo cp mods-config/attr_filter/post-proxy mods-config/attr_filter/post-proxy.orig
+sudo mv mods-config/attr_filter/pre-proxy mods-config/attr_filter/pre-proxy.orig
+sudo mv mods-config/attr_filter/post-proxy mods-config/attr_filter/post-proxy.orig
 ```
 
 Edit the file `pre-proxy` with following content:
@@ -169,7 +169,7 @@ DEFAULT
 Backup the eap module configuration file as follows,
 
 ```
-sudo cp mods-available/eap mods-available/eap.orig
+sudo mv mods-available/eap mods-available/eap.orig
 
 sudo vim mods-enabled/eap
 ```
@@ -278,6 +278,9 @@ cd /etc/freeradius/certs/
 ```
 
 edit `[certificate_authority] ` of `/etc/freeradius/certs/ca.cnf` similar to the below. Make changes to reflect your institute.
+
+`vi /etc/freeradius/certs/ca.cnf`
+
 ```
 countryName             = LK
 stateOrProvinceName     = Central
@@ -288,6 +291,9 @@ commonName              = "Univerity of ABC Certificate Authority"
 ```
 
 edit `[server]` of `/etc/freeradius/certs/server.cnf` similar to the below as well. Make changes to reflect your institute.
+
+`vi /etc/freeradius/certs/server.cnf`
+
 ```
 [server]
 countryName             = LK
@@ -304,7 +310,6 @@ cd /etc/freeradius/certs
 make ca.pem
 make server.pem
 chown freerad:freerad *
-
 ```
 
 Create virtual server for eduroam as
@@ -557,7 +562,7 @@ Then modify proxy.conf
 
 ```
 cd /etc/freeradius
-sudo cp proxy.conf proxy.conf.orig
+sudo mv proxy.conf proxy.conf.orig
 sudo vim proxy.conf
 ```
 
