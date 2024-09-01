@@ -919,11 +919,11 @@ And
             c:backingFile="%{idp.home}/conf/attribute-filter-LEARNv4-Production.xml"/>
       <bean id="ResearchAndScholarship" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
             c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-rs.xml"
+            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-rsv4.xml"
             c:backingFile="%{idp.home}/conf/attribute-filter-rs.xml"/>
       <bean id="CodeOfConduct" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
             c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-coco.xml"
+            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-cocov4.xml"
             c:backingFile="%{idp.home}/conf/attribute-filter-coco.xml"/>
       ```
       Modify the **shibboleth.AttributeFilterResources** util:list
