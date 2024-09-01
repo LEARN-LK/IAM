@@ -911,29 +911,15 @@ And
       ```xml
       <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
             c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARNv4-Default.xml"
-            c:backingFile="%{idp.home}/conf/attribute-filter-LEARNv4-Default.xml"/>
-      <bean id="Production-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-            c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARNv4-Production.xml"
-            c:backingFile="%{idp.home}/conf/attribute-filter-LEARNv4-Production.xml"/>
-      <bean id="ResearchAndScholarship" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-            c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-rsv4.xml"
-            c:backingFile="%{idp.home}/conf/attribute-filter-rs.xml"/>
-      <bean id="CodeOfConduct" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-            c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-cocov4.xml"
-            c:backingFile="%{idp.home}/conf/attribute-filter-coco.xml"/>
+            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml"
+            c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-v4.xml"/>
       ```
       Modify the **shibboleth.AttributeFilterResources** util:list
 ```xml
       <util:list id ="shibboleth.AttributeFilterResources">
-         <value>%{idp.home}/conf/attribute-filter.xml</value>
+       <!--  <value>%{idp.home}/conf/attribute-filter.xml</value> -->
          <ref bean="Default-Filter"/>
-         <ref bean="Production-Filter"/>
-	 <ref bean="ResearchAndScholarship"/>
-         <ref bean="CodeOfConduct"/>
+
       </util:list>
 ```
 
