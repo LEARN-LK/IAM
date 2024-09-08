@@ -239,7 +239,7 @@ Save and close the file.
 You should now be able to upgrade your connections to use STARTTLS by passing the '''-Z''' option when using the OpenLDAP utilities. You can force STARTTLS upgrade by passing it twice. Test this by typing:
 
 ```
-sudo ldapwhoami -H ldap:// -x -ZZ
+sudo ldapwhoami -H ldap:// -x 
 ```
 This forces a STARTTLS upgrade. If this is successful, you should see:
 ```
