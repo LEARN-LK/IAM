@@ -282,7 +282,7 @@ sudo ldapmodify -H ldapi:// -Y EXTERNAL -f ldap_disable_bind_anon.ldif
 We can check again,
 
 ```
-sudo ldapwhoami -H ldap:// -x -ZZ
+sudo ldapwhoami -H ldap:// -x 
 ```
 
 And you should see 
