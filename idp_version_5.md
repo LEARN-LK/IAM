@@ -73,11 +73,11 @@ Check that Java is working:
 4. Set the variable `JAVA_HOME` in `/etc/environment`:
    * Set JAVA_HOME:
      ```bash
-     echo 'JAVA_HOME= /usr/lib/jvm/java-17-openjdk-amd64' > /etc/environment
+     echo 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' > /etc/environment
      
      source /etc/environment
 
-     export JAVA_HOME= /usr/lib/jvm/java-17-openjdk-amd64
+     export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
      echo $JAVA_HOME
      ```
