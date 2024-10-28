@@ -1030,7 +1030,7 @@ Eg:
 
 ```java
 idp.title = University of Example Login Service
-idp.logo = /images/logo.jpg
+idp.logo = edit-webapp/images/placeholder-logo.png
 idp.logo.alt-text = University of Example logo
 idp.footer = Copyright University of Example
 root.footer = Copyright University of Example
