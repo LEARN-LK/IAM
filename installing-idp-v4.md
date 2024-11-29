@@ -752,7 +752,7 @@ And
       <value>%{idp.home}/conf/attribute-filter-LEARN-v4.xml</value>
 ```
 * Restart Jetty: 
-      ```service restart jetty```
+      ```service jetty restart```
 
 12. Enable the SAML2 support by changing the ```idp-metadata.xml```:
 
