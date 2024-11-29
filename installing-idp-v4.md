@@ -942,7 +942,7 @@ And
 ```
 	/opt/shibboleth-idp/bin/module.sh -t idp.intercept.Consent || /opt/shibboleth-idp/bin/module.sh -e idp.intercept.Consent	  
 ```
-   * Restart the Jetty service by service Jetty restart
+   * Restart the Jetty service by `service jetty restart`
 
    * By changing idp.consent.maxStoredRecords will remove the limit on the number of consent records held (by default, 10) by setting the limit to -1 (no limit)
 
