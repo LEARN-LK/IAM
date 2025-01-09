@@ -431,7 +431,7 @@ eduPersonEntitlement: urn:mace:dir:entitlement:common-lib-terms
 
 Save the above as a ldif file and add it to your directory as
 
-`sudo ldapadd -H ldap:// -x -D "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk" -W -Z -f path_to_file.ldif`
+`sudo ldapadd -H ldap:// -x -D "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk" -W  -f path_to_file.ldif`
 
 >You may use https://github.com/LEARN-LK/IAM/tree/master/CSV_to_LDIF to create ldif with bulk user data
 
