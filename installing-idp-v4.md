@@ -691,13 +691,32 @@ and add this piece of code to the tail before the ending \</beans\>:
      ```
 Note: According to your requirements, change the log level
 12. Build the **attribute-resolver.xml** to define which attributes your IdP can manage. Here you can find the **attribute-resolver-LEARN.xml** provided by LEARN:
+
   Download the attribute resolver provided by LEARN:
   
 ```wget https://fr.ac.lk/signedmetadata/files/attribute-resolver-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v4.xml```
 
-  Download the attribute filter provided by LEARN:
-  
- ```wget https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-filter-LEARN-v4.xml```
+  The attribute filter provided by LEARN:
+
+  Append your ```services.xml``` with:
+    * ```vim /opt/shibboleth-idp/conf/services.xml```
+	
+	Add folowing before the closing ```</beans>``` Make sure to maintain proper indentation 
+
+      ```xml
+      <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
+            c:client-ref="shibboleth.FileCachingHttpClient"
+            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml"
+            c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-v4.xml"/>
+      ```
+      Modify the **shibboleth.AttributeFilterResources** util:list
+```xml
+      <util:list id ="shibboleth.AttributeFilterResources">
+       <!--  <value>%{idp.home}/conf/attribute-filter.xml</value> -->
+         <ref bean="Default-Filter"/>
+
+      </util:list>
+```
 
 >If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
 >```xml
