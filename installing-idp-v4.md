@@ -698,18 +698,21 @@ Note: According to your requirements, change the log level
 
   The attribute filter provided by LEARN:
 
-  Append your ```services.xml``` with:
-    * ```vim /opt/shibboleth-idp/conf/services.xml```
-	
-	Add folowing before the closing ```</beans>``` Make sure to maintain proper indentation 
+Append your ```services.xml``` with:
 
-      ```xml
+```vim /opt/shibboleth-idp/conf/services.xml```
+	
+Add folowing before the closing ```</beans>``` Make sure to maintain proper indentation 
+
+```xml
       <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
             c:client-ref="shibboleth.FileCachingHttpClient"
             c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml"
             c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-v4.xml"/>
-      ```
-      Modify the **shibboleth.AttributeFilterResources** util:list
+```
+
+Modify the **shibboleth.AttributeFilterResources** util:list
+
 ```xml
       <util:list id ="shibboleth.AttributeFilterResources">
        <!--  <value>%{idp.home}/conf/attribute-filter.xml</value> -->
@@ -717,7 +720,10 @@ Note: According to your requirements, change the log level
 
       </util:list>
 ```
-
+Reload service with id `shibboleth.AttributeFilterService` to refresh the Attribute Filter followed by the IdP:
+    *  `cd /opt/shibboleth-idp/bin`
+    *  `./reload-service.sh -id shibboleth.AttributeFilterService`
+    
 >If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
 >```xml
 >    <!-- LDAP Connector -->
@@ -921,30 +927,6 @@ And
 
 1. Make sure that you have the "```tmp/httpClientCache```" used by "```shibboleth.FileCachingHttpClient```":
     * ```mkdir -p /opt/shibboleth-idp/tmp/httpClientCache ; chown jetty /opt/shibboleth-idp/tmp/httpClientCache```
-
-2. Append your ```services.xml``` with:
-    * ```vim /opt/shibboleth-idp/conf/services.xml```
-	
-	Add folowing before the closing ```</beans>``` Make sure to maintain proper indentation 
-
-      ```xml
-      <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
-            c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml"
-            c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-v4.xml"/>
-      ```
-      Modify the **shibboleth.AttributeFilterResources** util:list
-```xml
-      <util:list id ="shibboleth.AttributeFilterResources">
-       <!--  <value>%{idp.home}/conf/attribute-filter.xml</value> -->
-         <ref bean="Default-Filter"/>
-
-      </util:list>
-```
-
-3. Reload service with id `shibboleth.AttributeFilterService` to refresh the Attribute Filter followed by the IdP:
-    *  `cd /opt/shibboleth-idp/bin`
-    *  `./reload-service.sh -id shibboleth.AttributeFilterService`
 
 ### Enable Consent Module
 
