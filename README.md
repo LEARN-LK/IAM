@@ -62,4 +62,8 @@ Identity Provider is the party who provides authentication and authorization for
 
 * [Satosa](Satosa-Proxy-to-Zoom.md)
 
+## EduVPN
+
+* [EduVPN - Ubuntu 24.04](eduvpn_2025.md)
+
 >If you have any questions please contact LEARN TAC.
