@@ -7,17 +7,17 @@ Identity Provider is the party who provides authentication and authorization for
 
 ### Install LDAP
 
-* [Install the OpenLDAP Server on Ubuntu 24.04 LTS with eduPerson Schema](eduroam/irs_ubuntu_24.md)
-* [Install the OpenLDAP Server on Ubuntu 22.04 LTS with eduPerson Schema](eduroam/eduroam-IRS-22.md)
-* [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](eduroam/eduroam-IRS.md)
+* [Install the OpenLDAP Server on Ubuntu 24.04 LTS with eduPerson Schema](ldap/installation_manuals/ldap_ubuntu_24.md)
+* [Install the OpenLDAP Server on Ubuntu 22.04 LTS with eduPerson Schema](ldap/installation_manuals/ldap22-latest.md)
+* [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](ldap/installation_manuals/Ldap-with-eduperson.md)
 
 ### Install eduroam
 
 #### Freeradius
 
-* [Freeradius based eduroam IRS on Ubuntu 24.04](irs_ubuntu_24.md)
-* [Freeradius based eduroam IRS on Ubuntu 22.04](eduroam-IRS-22.md)
-* [Freeradius based eduroam IRS on Ubuntu 20.04](eduroam-IRS.md)
+* [Freeradius based eduroam IRS on Ubuntu 24.04](eduroam/irs_ubuntu_24.md)
+* [Freeradius based eduroam IRS on Ubuntu 22.04](eduroam/eduroam-IRS-22.md)
+* [Freeradius based eduroam IRS on Ubuntu 20.04](eduroam/eduroam-IRS.md)
 
 #### Radsecproxy
 * [Radsecproxy based eduroam on Ubuntu 24.04](radsecproxy_ubuntu24.md)
