@@ -24,8 +24,8 @@ Identity Provider is the party who provides authentication and authorization for
 
 ### Allow Services
 
-* [LEARN Video Conferencing via Zoom](Enable%20Zoom%20Video%20Conferencing.md)
-* [LEARN Video Conferencing via VCR - Virtual Class Room](vcr_enabling.md)
+* [LEARN Video Conferencing via Zoom](allowing_services_IDP/Enable_Zoom_Video_Conferencing.md)
+* [LEARN Video Conferencing via VCR - Virtual Class Room](allowing_services_IDP/vcr_enabling.md)
 
 ## If you are a Service Provider
 
