@@ -375,7 +375,7 @@ Email Address []:
         </bean>
 ```
 
-Ref: [Guide on enabling Zoom Service - LIAF](https://github.com/LEARN-LK/IAM/blob/master/Enable%20Zoom%20Video%20Conferencing.md)
+Ref: [Guide on enabling Zoom Service - LIAF](allowing_services_IDP/Enable_Zoom_Video_Conferencing.md)
 
 
 ### Troubleshoot
