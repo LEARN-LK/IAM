@@ -48,8 +48,8 @@ Identity Provider is the party who provides authentication and authorization for
 
 ## If you are a Federation Operator looking to install Resource Registry
 
-* [Jagger RR3 Tool - Ubuntu 22](rr3_ubuntu22.md)
-* [Jagger RR3 Tool - Ubuntu 18](rr3_ubuntu18.md)
+* [Jagger RR3 Tool - Ubuntu 22](Federation_Regitry_Jagger/rr3_ubuntu22.md)
+* [Jagger RR3 Tool - Ubuntu 18](Federation_Regitry_Jagger/rr3_ubuntu18.md)
 
 ## If you are a Federation Operator looking to install Eduroam Tools
 
