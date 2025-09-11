@@ -20,14 +20,14 @@ Identity Provider is the party who provides authentication and authorization for
 * [Freeradius based eduroam IRS on Ubuntu 20.04](eduroam/eduroam-IRS.md)
 
 #### Radsecproxy
-* [Radsecproxy based eduroam on Ubuntu 24.04](radsecproxy_ubuntu24.md)
+* [Radsecproxy based eduroam on Ubuntu 24.04](eduroam/radsecproxy/radsecproxy_ubuntu24.md)
 
 ### Install Federated Identity System
 
 * [Shibboleth IdP v5.1.4 on Ubuntu Linux LTS 24.04 ](https://github.com/LEARN-LK/shibboleth-idp5-installer)
-* [Shibboleth IdP v4+ on Ubuntu Linux LTS 22.04](installing-idp-v4.md)
-* [Shibboleth IdP v3.4.6 on Ubuntu Linux LTS 18.04](Shibboleth3.4.6-Ubuntu18.04.md)
-* [Shibboleth IdP v3.3.2 on Ubuntu Linux LTS 18.04](IDPonUbuntu.md)
+* [Shibboleth IdP v4+ on Ubuntu Linux LTS 22.04](shibboleth_IDP/installing-idp-v4.md)
+* [Shibboleth IdP v3.4.6 on Ubuntu Linux LTS 18.04](shibboleth_IDP/Shibboleth3.4.6-Ubuntu18.04.md)
+* [Shibboleth IdP v3.3.2 on Ubuntu Linux LTS 18.04](shibboleth_IDP/IDPonUbuntu.md)
 
 ### Change Certificates in fr(Federation Registry)
 
