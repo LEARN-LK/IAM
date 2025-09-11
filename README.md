@@ -8,8 +8,8 @@ Identity Provider is the party who provides authentication and authorization for
 ### Install LDAP
 
 * [Install the OpenLDAP Server on Ubuntu 24.04 LTS with eduPerson Schema](eduroam/irs_ubuntu_24.md)
-* [Install the OpenLDAP Server on Ubuntu 22.04 LTS with eduPerson Schema](eduroam/ldap22-latest.md)
-* [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](eduroam/Ldap-with-eduperson.md)
+* [Install the OpenLDAP Server on Ubuntu 22.04 LTS with eduPerson Schema](eduroam/eduroam-IRS-22.md)
+* [Install the OpenLDAP Server on Ubuntu 18.04 LTS with eduPerson Schema](eduroam/eduroam-IRS.md)
 
 ### Install eduroam
 
