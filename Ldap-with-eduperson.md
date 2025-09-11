@@ -295,7 +295,7 @@ ldap_bind: Inappropriate authentication (48)
 
 ### Load eduPerson Schema.
 
-Get the schema downloaded from [Eduperson.ldif](https://raw.githubusercontent.com/LEARN-LK/IAM/master/eduperson-201602.ldif)
+Get the schema downloaded from [Eduperson.ldif](https://raw.githubusercontent.com/LEARN-LK/IAM/refs/heads/master/ldap/schema/eduperson-201602.ldif)
 
 Or the latest from `https://spaces.at.internet2.edu/display/macedir/LDIFs`
 
@@ -306,7 +306,7 @@ sudo ldapadd -Y EXTERNAL -H ldapi:/// -f eduperson-201602.ldif
 ```
 
 Also Lets load The SChema for Academia, SCHAC.
-Get the schema downloaded from [SCHAC.ldif](https://raw.githubusercontent.com/LEARN-LK/IAM/master/schac-20150413.ldif)
+Get the schema downloaded from [SCHAC.ldif](https://raw.githubusercontent.com/LEARN-LK/IAM/refs/heads/master/ldap/schema/schac-20150413.ldif)
 
 Or the latest from `https://wiki.refeds.org/display/STAN/SCHAC+Releases`
 
