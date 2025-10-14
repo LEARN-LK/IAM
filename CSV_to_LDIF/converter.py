@@ -81,7 +81,7 @@ def main(argv):
                 x += "\neduPersonPrincipalName: " + row['uid'] + "@" + maildomain
                 x += "\neduPersonAffiliation: " + row.setdefault('eduPersonAffiliation', 'none')
                 x += "\neduPersonOrgUnitDN: " + domain
-                x += "\neduPersonEntitlement: urn:mace:dir:entitlement:common-lib-terms\n"
+                x += "\neduPersonEntitlement: urn:mace:dir:entitlement:common-lib-terms:learn-vcr\n"
                 x += "\n"
                 outf.write(x)
 
