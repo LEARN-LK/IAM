@@ -264,7 +264,7 @@ certificates will be created at /etc/letsencrypt/live/SERVER_FQDN/. Server certi
 Now you need to edit eap module configuration file and replace the lines below as given.
 
 ```
-nano mods-enabled/eap
+vi mods-enabled/eap
 ```
 ```
 private_key_file = /etc/letsencrypt/live/SERVER_FQDN/privkey.pem
