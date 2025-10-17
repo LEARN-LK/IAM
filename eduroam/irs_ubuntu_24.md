@@ -278,7 +278,7 @@ chown -R freerad:certs live
 chown -R freerad:certs archive
 ```
 
-Otherwise the freeradius service will not be started and will trigger an error saying `no permission to provatekey`
+Otherwise the freeradius service will not be started and will trigger an error saying `no permission to privatekey`
 
 #### Create Certificates Using Private CA
 
