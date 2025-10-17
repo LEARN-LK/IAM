@@ -270,6 +270,15 @@ nano mods-enabled/eap
 private_key_file = /etc/letsencrypt/live/SERVER_FQDN/privkey.pem
 certificate_file = /etc/letsencrypt/live/SERVER_FQDN/fullchain.pem
 ```
+Then assign the owenership to `freerad:certs` in `/etc/letsencrypt/<DNS>/live` and `/etc/letsencrypt/<DNS>/archive`
+
+```
+cd /etc/letsencrypt/<DNS>/
+chown -R freerad:certs live
+chown -R freerad:certs archive
+```
+
+Otherwise the freeradius service will not be started and will trigger an error saying `no permission to provatekey`
 
 #### Create Certificates Using Private CA
 
