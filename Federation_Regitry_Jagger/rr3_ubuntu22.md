@@ -1,6 +1,6 @@
 # Installation of Jagger Tool in Ubuntu 22.04
 
-This will guide through basic installation of LEARN Federation Registry in Ubuntu 18.04 based on [Jagger Documentation](https://github.com/LEARN-LK/IAM/blob/master/rr3_ubuntu18.md)
+This will guide through basic installation of LEARN Federation Registry in Ubuntu 18.04 based on [Jagger Documentation](https://github.com/LEARN-LK/IAM/blob/master/Federation_Regitry_Jagger/rr3_ubuntu18.md)
 
 This guide assumes you have pre installed Ubuntu 22.04 server with default configurations and have a public IP connectivity including DNS setup.
 Requirements:
