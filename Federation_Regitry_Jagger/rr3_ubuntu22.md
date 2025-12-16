@@ -496,4 +496,6 @@ $config['rr_setup_allowed'] = FALSE;
 
 Next : [Metadata signing with pyff](pyff_ubuntu22.md)
 
+More info : https://github.com/IdentityPython/pyFF
+
 
