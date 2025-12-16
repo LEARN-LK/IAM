@@ -494,7 +494,7 @@ Once the default user is created switch **OFF** the setup mode on `config_rr.php
 $config['rr_setup_allowed'] = FALSE;
 ```
 
-Next : [Metadata signing with pyff](pyff_ubuntu22.md)
+Next : [Metadata signing with pyff](https://github.com/LEARN-LK/IAM/blob/master/pyff_ubuntu22.md)
 
 More info : https://github.com/IdentityPython/pyFF
 
