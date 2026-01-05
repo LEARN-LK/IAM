@@ -786,7 +786,7 @@ Test ldap user authentication:
 ```
 eapol_test -c peap-mschapv2-ldap.conf -p 1812 -s testing123
 ```
-
+If you are using AD to authenticate the users, follow the steps in the [guide](https://github.com/LEARN-LK/IAM/blob/master/allowing_services_IDP/AD_for_IDP_and_eduroam.md#in-your-institutional-eduroam-server)
 ### Troubleshoot:
 
 Log Path: `/var/logs/freeradius/`
