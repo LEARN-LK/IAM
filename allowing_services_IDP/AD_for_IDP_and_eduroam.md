@@ -1,6 +1,6 @@
-### If you are using Active Directory instead of LDAP, please use the following steps
+### IN your IDP, if you are using Active Directory instead of LDAP, please use the following steps
 
-in ldap.properties file
+Modify the lines in ldap.properties file as follows
 
 ```
 idp.authn.LDAP.baseDN                           = dc=YOUR-DOMAIN,dc=ac,dc=lk
@@ -9,7 +9,8 @@ idp.authn.LDAP.bindDN                           = CN=Administrator,CN=Users,DC=Y
 idp.authn.LDAP.dnFormat                         = %s@YOUR-DOMAIN.ac.lk
 ```
 
-in attribute-resolver.xml file
+Modify the lines as in attribute-resolver.xml file
+
 ```
     <AttributeDefinition id="uid" xsi:type="Simple">
             <InputDataConnector ref="ldap" attributeNames="sAMAccountName" />
