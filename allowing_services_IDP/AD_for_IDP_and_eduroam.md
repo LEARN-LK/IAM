@@ -9,6 +9,8 @@ idp.authn.LDAP.baseDN                           = dc=YOUR-DOMAIN,dc=ac,dc=lk
 idp.authn.LDAP.userFilter                       = (sAMAccountName={user})
 idp.authn.LDAP.bindDN                           = CN=Administrator,CN=Users,DC=YOUR-DOMAIN,DC=ac,DC=lk
 idp.authn.LDAP.dnFormat                         = %s@YOUR-DOMAIN.ac.lk
+idp.attribute.resolver.LDAP.searchFilter = (sAMAccountName=$resolutionContext.principal)
+idp.authn.LDAP.subtreeSearch                   = true
 ```
 
 Modify the lines as in attribute-resolver.xml file
