@@ -69,6 +69,93 @@ This is the last thing that we need to adjust. Save and close the file to finish
 
 Disable anonymous bind (recommended) : `$servers->setValue('login','anon_bind',false);`
 
+5. Configure Nginx (Custom Port)
 
+   5.1 Create Nginx server block
+```
+server {
+listen 8080;
+server_name _;
 
+root /usr/share/phpldapadmin/htdocs;
+index index.php;
 
+access_log /var/log/nginx/phpldapadmin_access.log;
+error_log /var/log/nginx/phpldapadmin_error.log;
+
+location / {
+try_files $uri $uri/ =404;
+}
+
+location ~ \.php$ {
+include snippets/fastcgi-php.conf;
+fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+}
+
+location ~ /\. {
+deny all;
+}
+}
+```
+Adjust PHP socket if your version differs
+
+Enable site
+```
+sudo ln -s /etc/nginx/sites-available/phpldapadmin /etc/nginx/sites-enabled/
+sudo unlink /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Access phpLDAPadmin
+
+Open browser: `http://SERVER-IP:8080`
+
+Login using LDAP bind DN and password: `cn=admin,dc=example,dc=org`
+
+Optional: HTTPS on Custom Port (8443)
+
+Generate self‑signed certificate:
+```
+sudo openssl req -x509 -nodes -days 365 \
+-newkey rsa:2048 \
+-keyout /etc/ssl/private/phpldapadmin.key \
+-out /etc/ssl/certs/phpldapadmin.crt
+```
+
+update Nginx: 
+
+```
+server {
+listen 8443 ssl;
+server_name _;
+
+ssl_certificate /etc/ssl/certs/phpldapadmin.crt;
+ssl_certificate_key /etc/ssl/private/phpldapadmin.key;
+
+root /var/lib/phpldapadmin/htdocs;
+index index.php;
+
+location ~ \.php$ {
+include snippets/fastcgi-php.conf;
+fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+}
+}
+```
+you can use Let'sencript and the change the certificate and key paths in the server block
+
+Troubleshooting:
+
+PHP errors : `sudo journalctl -u php8.3-fpm`
+Nginx logs : `tail -f /var/log/nginx/phpldapadmin_error.log`
+PHP LDAP module check : `php -m | grep ldap`
+
+Additional :
+
+Instead of pointing directly to /usr/share
+
+`sudo ln -s /usr/share/phpldapadmin/htdocs /var/www/phpldapadmin`
+
+then in Nginx
+
+`root /var/www/phpldapadmin;`
