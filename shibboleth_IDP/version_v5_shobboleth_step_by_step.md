@@ -215,9 +215,58 @@ The content should looks to something like :
 
 ## Install the logging module
 
+In the beginning of this chapter, in the file idp.ini, there is a reference to the logging-logback module.
+You need to be sure that the module is installed :
 
+`java -jar /usr/local/src/jetty-src/start.jar --add-module=logging-logback`
 
+java -jar /usr/local/src/jetty-src/start.jar --base=$JETTY_BASE --add-module=logging-logback
 
+## Check the loaded modules in $JETTY_BASE/modules/idp.mod
+The section [depend] should looks to something like :
+
+```
+[depend]
+ee9-annotations
+ee9-deploy
+ext
+ee9-webapp
+http
+ee9-jsp
+ee9-jstl
+ee9-plus
+resources
+ee9-servlets
+```
+
+As the service is proxied by Apache, there is no need to enable https/ssl here, as it will be handled by Apache.
+It is also possible to make Jetty run directly (thus without be guarded by a proxy), but it is not a choice I've made here. If you want to make it run differently, adapt the setup according to your own choices (it will probably require that you install additional Jetty modules using the same kind of command used to install the logging module).
+
+### Create a systemd service file launcher for Jetty
+Depending on the version of your OS, you should adapt to your own configuration, here is an example to launch on Ubuntu 22\4.04 ; 
+create the file `/lib/systemd/system/jetty.service` containing following lines :
+
+```
+[Unit]
+Description=Jetty servlet for Shibboleth
+After=network.target auditd.service
+
+[Service]
+EnvironmentFile=-/etc/default/jetty
+ExecStart=java -jar /usr/local/src/jetty-src/start.jar jetty.home=/usr/local/src/jetty-src jetty.base=/opt/jetty-shibboleth
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+RestartPreventExitStatus=255
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
+Alias=jetty.service
+```
+Enable the service to start at boot :
+
+`systemctl enable jetty.service`
 
 
 
