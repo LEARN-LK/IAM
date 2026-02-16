@@ -633,8 +633,8 @@ Add folowing before the closing </beans> Make sure to maintain proper indentatio
 ```
       <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
             c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml"
-            c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-v4.xml"/>
+            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v5.xml"
+            c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-v5.xml"/>
 
 ```
   Modify the shibboleth.AttributeFilterResources util:list
