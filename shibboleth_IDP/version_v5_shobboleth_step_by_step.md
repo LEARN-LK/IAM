@@ -529,6 +529,7 @@ and add this piece of code to the tail before the ending </beans>:
 Modify the IdP configuration file:
 
 `vim /opt/shibboleth-idp/conf/idp.properties`
+
 ```
 idp.consent.StorageService = storageservice.JPAStorageService
 # Track information about SPs logged into
@@ -604,6 +605,7 @@ idp.attribute.resolver.LDAP.exportAttributes    =
 Make sure to change dc=YOUR-DOMAIN,dc=ac,dc=lk according to your domain
 
 Enrich IDP logs with the authentication error occurred on LDAP:
+`vim /opt/shibboleth-idp/conf/logback.xml`
 
 ```
 <!-- Logs LDAP related messages -->
