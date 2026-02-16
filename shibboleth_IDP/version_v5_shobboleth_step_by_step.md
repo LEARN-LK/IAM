@@ -159,8 +159,8 @@ JETTY_ARGS="jetty.ssl.port=8443"
    mkdir $JETTY_BASE/logs
    
    chown jetty:jetty /var/log/jetty $JETTY_BASE/logs
-   ```
 
+   ```
 
 Type in the following commands in your directory of choice (not in `$JETTY_BASE`):
 
@@ -267,6 +267,172 @@ Alias=jetty.service
 Enable the service to start at boot :
 
 `systemctl enable jetty.service`
+
+## Apache configuration
+
+Prerequisites : fully qualified registered domain name for the server
+
+Disable default apache configuration:
+
+`a2dissite 000-default`
+
+Create a new configuration file as idp.conf with the following:
+
+`vim /etc/apache2/sites-available/idp.conf`
+```
+<VirtualHost *:80>
+  ServerName idp.YOUR-DOMAIN.ac.lk
+  ServerAdmin admin@YOUR-DOMAIN.ac.lk
+  DocumentRoot /var/www/html
+</VirtualHost>
+```
+Enable Apache2 modules:
+
+`a2enmod proxy_http proxy ssl headers alias include negotiation rewrite`
+
+Enable IDP site config:
+
+`a2ensite idp`
+
+Create the Apache2 configuration file for IdP:
+
+`vim /etc/apache2/sites-available/idp-proxy.conf`
+```
+<IfModule mod_proxy.c>
+
+  ProxyPreserveHost On
+  RequestHeader set X-Forwarded-Proto "https"
+
+  <Location /idp>
+    Require all granted
+  </Location>
+
+  ProxyPass /idp http://localhost:8080/idp retry=5
+  ProxyPassReverse /idp http://localhost:8080/idp retry=5
+
+</IfModule>
+```
+Enable idp_proxy file
+
+`a2ensite idp-proxy.conf`
+
+Restart the Apache service:
+
+`service apache2 restart`
+
+if you are going to use Letsencrypt
+
+### Install Letsencrypt and enable HTTPS:
+
+`apt install python3-certbot-apache`
+
+`certbot --apache -d idp.YOUR-DOMAIN.ac.lk`
+
+```
+Plugins selected: Authenticator apache, Installer apache Enter email address (used for urgent renewal and security notices) (Enter 'c' to cancel): YOU@YOUR-DOMAIN.ac.lk
+
+Please read the Terms of Service at https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf. You must agree in order to register with the ACME server at https://acme-v02.api.letsencrypt.org/directory
+
+(A)gree/(C)ancel: A
+
+Would you be willing to share your email address with the Electronic Frontier Foundation, a founding partner of the Let's Encrypt project and the non-profit organization that develops Certbot? We'd like to send you email about our work encrypting the web, EFF news, campaigns, and ways to support digital freedom.
+
+(Y)es/(N)o: Y
+
+Obtaining a new certificate Performing the following challenges: http-01 challenge for idp.YOUR-DOMAIN Waiting for verification... Cleaning up challenges Created an SSL vhost at /etc/apache2/sites-available/idp-le-ssl.conf Enabled Apache socache_shmcb module Enabled Apache ssl module Deploying Certificate to VirtualHost /etc/apache2/sites-available/idp-le-ssl.conf Enabling available site: /etc/apache2/sites-available/idp-le-ssl.conf
+
+Please choose whether or not to redirect HTTP traffic to HTTPS, removing HTTP access.
+
+1: No redirect - Make no further changes to the webserver configuration. 2: Redirect - Make all requests redirect to secure HTTPS access. Choose this for new sites, or if you're confident your site works on HTTPS. You can undo this change by editing your web server's configuration.
+
+Select the appropriate number [1-2] then [enter] (press 'c' to cancel): 2 Redirecting vhost in /etc/apache2/sites-enabled/rr3.conf to ssl vhost in /etc/apache2/sites-available/rr3-le-ssl.conf
+
+Congratulations! You have successfully enabled https://idp.YOUR-DOMAIN
+```
+
+If you use ACME (Let's Encrypt):
+
+`ln -s /etc/letsencrypt/live/<SERVER_FQDN>/chain.pem /etc/ssl/certs/ACME-CA.pem`
+
+Install MySQL Connector Java and other useful libraries for MySQL DB (if you don't have them already):
+
+`apt install default-mysql-server libmariadb-java libcommons-dbcp-java libcommons-pool-java --no-install-recommends`
+
+Activate MariaDB database service:
+
+`systemctl start mysql.service`
+
+Then type mysql on your terminal and hit ENTER.
+
+Run the following `ALTER USER` command to change the root user’s authentication method to mysql_native_password
+
+`ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'YOUR_PASSWORD';`
+
+After making this change, exit the MySQL prompt:
+
+`mysql>` exit Now you can run mysql_secure_installation again and the error should be gone.
+
+Create and prepare the "shibboleth" MySQL DB to host the values of the several persistent-id and StorageRecords MySQL DB to host other useful information about user consent:
+
+`mysql_secure_installation`
+```
+Securing the MySQL server deployment.
+
+Connecting to MySQL using a blank password.
+
+VALIDATE PASSWORD PLUGIN can be used to test passwords
+and improve security. It checks the strength of password
+and allows the users to set only those passwords which are
+secure enough. Would you like to setup VALIDATE PASSWORD plugin?
+
+Press y|Y for Yes, any other key for No: n
+
+Remove anonymous users? (Press y|Y for Yes, any other key for No) : y
+Success.
+
+Normally, root should only be allowed to connect from
+'localhost'. This ensures that someone cannot guess at
+the root password from the network.
+
+Disallow root login remotely? (Press y|Y for Yes, any other key for No) : y
+Success.
+
+By default, MySQL comes with a database named 'test' that
+anyone can access. This is also intended only for testing,
+and should be removed before moving into a production
+environment.
+
+
+Remove test database and access to it? (Press y|Y for Yes, any other key for No) : y
+ - Dropping test database...
+Success.
+
+ - Removing privileges on test database...
+Success.
+
+Reloading the privilege tables will ensure that all changes
+made so far will take effect immediately.
+
+Reload privilege tables now? (Press y|Y for Yes, any other key for No) : y
+Success.
+
+All done!
+```
+log in to your MySQL Server: Create StorageRecords table on storageservice database:
+
+`wget https://raw.githubusercontent.com/LEARN-LK/IAM/master/shib-ss-db.sql -O /root/shib-ss-db.sql`
+
+Open the `shib-ss-db.sql` and change the username and password as your preference
+
+`vi shib-ss-db.sql`
+
+fill missing data on `shib-ss-db.sql` before import
+
+`mysql -u root -p < /root/shib-ss-db.sql`
+
+Restart mysql service: `service mysql restart`
+
+
 
 
 
