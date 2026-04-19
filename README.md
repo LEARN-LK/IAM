@@ -55,7 +55,7 @@ Identity Provider is the party who provides authentication and authorization for
 
 ## If you are a Federation Operator looking to install a Attribute Release Tester
 
-* [Install SP-Tester in Ubuntu 24](Attribute_release_Tester_ubuntu24.md)
+* [Install SP-Tester in Ubuntu 24](shibboleth_SP/Attribute_release_Tester_ubuntu24.md)
 
 ## If you are a Federation Operator looking to install Eduroam Tools
 
