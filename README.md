@@ -53,6 +53,10 @@ Identity Provider is the party who provides authentication and authorization for
 
 * [Create NREN Federation on Jagger Dashboard](Federation_Regitry_Jagger/how_to_use_Jagger_Dashboard.pdf)
 
+## If you are a Federation Operator looking to install a Attribute Release Tester
+
+* [Install SP-Tester in Ubuntu 24](Attribute_release_Tester_ubuntu24.md)
+
 ## If you are a Federation Operator looking to install Eduroam Tools
 
 * [Eduroam Tools - Ubuntu 22 + Docker](https://github.com/LEARN-LK/etcbd-public/tree/master)
