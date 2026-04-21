@@ -351,13 +351,14 @@ Generate the salt:
 
  Enable SAML2PersistentGenerator
 
-`/opt/shibboleth-idp/conf/saml-nameid.xml`
+`vi /opt/shibboleth-idp/conf/saml-nameid.xml`
 
  Uncomment this line:
 
 `<ref bean="shibboleth.SAML2PersistentGenerator" />`
 
  Enable c14n/SAML2Persistent
+ `vi /opt/shibboleth-id/conf/c14n/subject-c14n.xml`
 
 `<ref bean="c14n/SAML2Persistent" />`
 
