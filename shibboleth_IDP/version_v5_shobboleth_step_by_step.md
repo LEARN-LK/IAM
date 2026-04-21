@@ -39,7 +39,7 @@ echo "127.0.1.1  idp.YOUR-DOMAIN.ac.lk" >> /etc/hosts
 
 `java -version`
 
-# Expected: openjdk version "17.x.x" ...
+ Expected: openjdk version "17.x.x" ...
 
 4.3 Set JAVA_HOME globally
 
