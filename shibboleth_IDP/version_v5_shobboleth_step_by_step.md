@@ -8,10 +8,10 @@ Installation & Configuration Guide with Jetty 12
 ### Prerequisites
 
 Before starting, ensure the following:
-•	Ubuntu 24.04 LTS (clean server install)
-•	Root or sudo access
-•	A fully qualified domain name (FQDN) — e.g. idp.YOUR-DOMAIN.ac.lk
-•	Internet access to download packages
+* Ubuntu 24.04 LTS (clean server install)
+* Root or sudo access
+* A fully qualified domain name (FQDN) — e.g. idp.YOUR-DOMAIN.ac.lk
+* Internet access to download packages
 
 System Preparation
 ⚠ NOTE: Run all commands as root or prefix with sudo.
