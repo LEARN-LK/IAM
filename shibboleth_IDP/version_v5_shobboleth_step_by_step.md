@@ -442,19 +442,183 @@ grep -i "persistentid\|datasource\|storageservice\|error" \
   /opt/shibboleth-idp/logs/idp-process.log | tail -30
 ```
 
-9.2 Configure LDAP authentication (if using LDAP)
+9.2 Configure LDAP authentication (if using LDAP) 
+
+Login to your openLDAP server as root or with sudo permission.
+
+use openssl x509 -outform der -in /etc/ssl/certs/ldap_server.pem -out /etc/ssl/certs/ldap_server.crt to convert the ldap .pem certificate to a .cert.
+
+copy the ldap_server.crt to  /opt/shibboleth-idp/credentials of your idp server (HINT : you can use scp from ldap server to idp server to obtain the crt file) Log in to your ldap and then, scp ldap_server.crt <your idp user>@<your idp ip>:/path_to_copy
+
+Next,
 
 `vi /opt/shibboleth-idp/conf/ldap.properties`
- 
+
+Solution 1: LDAP + STARTTLS: (recommended)
 ```
-idp.authn.LDAP.authenticator= bindSearchAuthenticator
-idp.authn.LDAP.ldapURL= ldap://ldap.example.org:389
-idp.authn.LDAP.baseDN= ou=people,dc=example,dc=org
-idp.authn.LDAP.subtreeSearch= true
-idp.authn.LDAP.userFilter= (uid={user})
-idp.authn.LDAP.bindDN= cn=admin,dc=example,dc=org
-idp.authn.LDAP.bindDNCredential= YourLDAPPassword
+idp.authn.LDAP.authenticator = bindSearchAuthenticator
+idp.authn.LDAP.ldapURL = ldap://your-ldap-server-FQDN:389
+idp.authn.LDAP.useStartTLS = true
+idp.authn.LDAP.useSSL = false
+idp.authn.LDAP.sslConfig = certificateTrust
+idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap_server.crt
+idp.authn.LDAP.baseDN = ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
+idp.authn.LDAP.userFilter = (uid={user})
+idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
+idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
+idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates:undefined}
+idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
+#idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
+idp.authn.LDAP.returnAttributes                 = *
+idp.attribute.resolver.LDAP.exportAttributes    =
 ```
+
+Solution 2: LDAP + TLS:
+
+```
+idp.authn.LDAP.authenticator = bindSearchAuthenticator
+idp.authn.LDAP.ldapURL = ldaps://LDAP.YOUR-DOMAIN:636
+idp.authn.LDAP.useStartTLS = false
+idp.authn.LDAP.useSSL = true
+idp.authn.LDAP.sslConfig = certificateTrust
+idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap_server.crt
+idp.authn.LDAP.baseDN = ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
+idp.authn.LDAP.userFilter = (uid={user})
+idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
+idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
+idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates:undefined}
+idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
+#idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap_server.truststore
+idp.authn.LDAP.returnAttributes                 = *
+idp.attribute.resolver.LDAP.exportAttributes    =
+```
+
+Solution 3: plain LDAP
+
+```
+idp.authn.LDAP.authenticator = bindSearchAuthenticator
+idp.authn.LDAP.ldapURL = ldap://LDAP.YOUR-DOMAIN:389
+idp.authn.LDAP.useStartTLS = false
+idp.authn.LDAP.useSSL = false
+idp.authn.LDAP.baseDN = ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk
+idp.authn.LDAP.userFilter = (uid={user})
+idp.authn.LDAP.bindDN = cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk
+idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
+#idp.authn.LDAP.sslConfig = certificateTrust
+#idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap-server.crt
+idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
+#idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
+idp.authn.LDAP.returnAttributes                 = *
+idp.attribute.resolver.LDAP.exportAttributes    =
+```
+
+Make sure to change dc=YOUR-DOMAIN,dc=ac,dc=lk according to your domain
+
+Enrich IDP logs with the authentication error occurred on LDAP:
+
+`vim /opt/shibboleth-idp/conf/logback.xml`
+
+```
+<!-- Logs LDAP related messages -->
+<logger name="org.ldaptive" level="${idp.loglevel.ldap:-WARN}"/>
+
+<!-- Logs on LDAP user authentication -->
+<logger name="org.ldaptive.auth.Authenticator" level="INFO" />
+```
+
+Download the attribute resolver provided by LEARN:
+
+`wget https://fr.ac.lk/signedmetadata/files/attribute-resolver-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml`
+
+Download the attribute filter provided by LEARN:
+
+The attribute filter provided by LEARN:
+
+`wget https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml`
+
+
+Append your `services.xml` with:
+
+`vim /opt/shibboleth-idp/conf/services.xml`
+
+Add folowing before the closing </beans> Make sure to maintain proper indentation
+```
+      <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
+            c:client-ref="shibboleth.FileCachingHttpClient"
+            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml"
+            c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-v5.xml"/>
+```
+Modify the shibboleth.AttributeFilterResources util:list
+```
+      <util:list id ="shibboleth.AttributeFilterResources">
+       <!--  <value>%{idp.home}/conf/attribute-filter.xml</value> -->
+         <ref bean="Default-Filter"/>
+      </util:list>
+```
+
+Reload service with id shibboleth.AttributeFilterService to refresh the Attribute Filter followed by the IdP: *  cd /opt/shibboleth-idp/bin *  `./reload-service.sh -id shibboleth.AttributeFilterService`
+
+If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
+
+ ```
+  <!-- LDAP Connector -->
+   <DataConnector id="myLDAP" xsi:type="LDAPDirectory"
+       ldapURL="%{idp.attribute.resolver.LDAP.ldapURL}"
+       baseDN="%{idp.attribute.resolver.LDAP.baseDN}"
+       principal="%{idp.attribute.resolver.LDAP.bindDN}"
+       principalCredential="%{idp.attribute.resolver.LDAP.bindDNCredential}"
+       useStartTLS="%{idp.attribute.resolver.LDAP.useStartTLS:true}">
+        <!-- trustFile="%{idp.attribute.resolver.LDAP.trustCertificates}" -->
+       <FilterTemplate>
+           <![CDATA[
+               %{idp.attribute.resolver.LDAP.searchFilter}
+           ]]>
+       </FilterTemplate>
+       <!-- <StartTLSTrustCredential id="LDAPtoIdPCredential" xsi:type="sec:X509ResourceBacked">
+           <sec:Certificate>%{idp.attribute.resolver.LDAP.trustCertificates}</sec:Certificate>
+       </StartTLSTrustCredential> -->
+       <ReturnAttributes>%{idp.attribute.resolver.LDAP.returnAttributes}</ReturnAttributes>
+   </DataConnector>
+```
+Change the value of schacHomeOrganizationType,
+```
+<Attribute id="schacHomeOrganizationType">
+      <Value>urn:schac:homeOrganizationType:lk:others</Value>
+</Attribute>
+```
+where value must be either,
+```
+urn:schac:homeOrganizationType:int:university
+urn:schac:homeOrganizationType:int:library
+urn:schac:homeOrganizationType:int:public-research-institution
+urn:schac:homeOrganizationType:int:private-research-institution
+```
+
+Modify services.xml file: vim /opt/shibboleth-idp/conf/services.xml,
+
+` <value>%{idp.home}/conf/attribute-resolver.xml</value>`
+	 
+must become:
+
+`<value>%{idp.home}/conf/attribute-resolver-LEARN-v5.xml</value>`
+
+
+Enable the SAML2 support by changing the idp-metadata.xml:
+
+`vim /opt/shibboleth-idp/metadata/idp-metadata.xml`
+
+From the `<IDPSSODescriptor>` session:
+From the list of protocolSupportEnumeration delete:
+
+Modify,
+
+ ```
+      <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Your Institute Name</mdui:DisplayName>
+          <mdui:Description xml:lang="en">Enter a description of your IdP</mdui:Description>
+      </mdui:UIInfo>
+```
+
 9.3 Build the IdP WAR file
 
 ```
@@ -520,6 +684,20 @@ sleep 8
 systemctl status jetty
 ```
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 12 Verify Installation
 
 12.1 Check IdP status
@@ -544,6 +722,113 @@ curl -k --resolve idp.example.org:443:127.0.0.1 https://idp.YOUR-DOMAIN.ac.lk/id
 cat /var/log/jetty/jetty.log
 cat /var/log/jetty/jetty-error.log
 ```
+Obtain your IdP metadata here:
+
+`https://idp.YOUR-DOMAIN.AC.LK/idp/shibboleth`
+
+Configure the IdP to retrieve the Federation Metadata:
+
+```
+cd /opt/shibboleth-idp/conf
+vim metadata-providers.xml
+```
+
+Add folowing before the closing </MetadataProvider> Make sure to maintain proper indentation
+```
+<MetadataProvider
+      id="HTTPMD-LEARN-Federation"
+      xsi:type="FileBackedHTTPMetadataProvider"
+      backingFile="%{idp.home}/metadata/test-metadata.xml"
+      metadataURL="https://fr.ac.lk/signedmetadata/metadata.xml">
+      <!--
+          Verify the signature on the root element of the metadata aggregate
+          using a trusted metadata signing certificate.
+      -->
+      <MetadataFilter xsi:type="SignatureValidation" requireSignedRoot="true" certificateFile="${idp.home}/metadata/federation-cert.pem"/>
+
+      <!--
+          Require a validUntil XML attribute on the root element and
+          make sure its value is no more than 10 days into the future.
+      -->
+      <MetadataFilter xsi:type="RequiredValidUntil" maxValidityInterval="P10D"/>
+
+      <!-- Consume all SP metadata in the aggregate -->
+      <MetadataFilter xsi:type="EntityRoleWhiteList">
+        <RetainedRole>md:SPSSODescriptor</RetainedRole>
+      </MetadataFilter>
+</MetadataProvider>
+<MetadataProvider id="HTTPMD-LEARN-interfederation"
+                xsi:type="FileBackedHTTPMetadataProvider"
+                backingFile="%{idp.home}/metadata/LEARNmetadata.xml"
+                metadataURL="https://fr.ac.lk/signedmetadata/LIAF-interfederation-sp-metadata.xml">
+
+  <MetadataFilter xsi:type="SignatureValidation" requireSignedRoot="true" certificateFile="${idp.home}/metadata/federation-cert.pem"/>
+  <MetadataFilter xsi:type="RequiredValidUntil" maxValidityInterval="P11D"/>
+
+      <!-- Consume all SP metadata in the aggregate -->
+  <MetadataFilter xsi:type="EntityRoleWhiteList">
+      <RetainedRole>md:SPSSODescriptor</RetainedRole>
+  </MetadataFilter>
+</MetadataProvider>
+```
+
+Retrive the Federation Certificate used to verify its signed metadata:
+
+`wget https://fr.ac.lk/signedmetadata/metadata-signer -O /opt/shibboleth-idp/metadata/federation-cert.pem`
+
+Reload service with id shibboleth.MetadataResolverService to retrieve the Federation Metadata:
+```
+cd /opt/shibboleth-idp/bin
+./reload-service.sh -id shibboleth.MetadataResolverService
+```
+The day after the Federation Operators approval you, check if you can login with your IdP on the following services:
+
+`https://sp-test.liaf.ac.lk`
+
+(Service Provider provided for testing the LEARN Federation)
+To be able to log-in, you should continue with the rest of the guide.
+
+### Register you IdP on LIAF:
+
+https://liaf.ac.lk/
+
+Once your membership is approved, you will be sent a federation registry joining link where the form will ask lot of questions to identify your provider. Therefore, answer all of them as per the following,
+
+On the IDP registration page start with pasting the whole xml metadata from https://idp.YOUR-DOMAIN.ac.lk/idp/shibboleth and click next. If you are using a browser to open the metadata link, use its view-source mode to copy the content.
+
+If you have correctly entered metadata you will be asked to select a Federation.
+
+Select "LEARN Identity Federation"
+
+Fill in your contact Details
+
+Go to Organization tab and Fill in all details for language English(en) by clicking "Add in new language" button
+
+Name of organization: Institute XY
+
+Displayname of organization: Institute XY
+
+URL: https://www.YOUR-DOMAIN
+
+Go to Contacts tab and add at least "Support" and "Technical" contacts
+
+On UI Information tab you will see some data extracted from metadata. Apart from those fill-in the rest
+
+Keywords: university or research
+For the tutorial put some dummy URL data for Information and Privacy Policy. But in production, you may have to provide your true data
+On UI Hints tab you may add your DNS Domain as instXY.ac.lk. Also you may specify your IP blocks or Location
+
+on SAML tab, tick the following on IDPSSODescriptor and AttributeAuthorityDescriptor? sections as Supported Name Identifiers
+
+urn:oasis:names:tc:SAML:2.0:nameid-format:persistent
+On Certificates tab, make sure it contains Certificate details, if not start Over by reloading IDP's metadata and pasting them.
+
+Finally click Register.
+
+Your Federation operator will review your application and will proceed with the registration
+
+
+
 #### Quick Reference — Key Paths
 
 | Resource			|		Path |
