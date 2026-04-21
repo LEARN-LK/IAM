@@ -85,6 +85,7 @@ bin/install.sh
 ℹ INFO: The installer will prompt for: 
 	Installation directory → /opt/shibboleth-idp
 	EntityID → https://idp.example.org/idp/shibboleth
+
 5.2 Set permissions
 ```
 chown -R jetty:jetty /opt/shibboleth-idp
@@ -144,13 +145,13 @@ Test the full renewal pipeline
 
 7. Configure Jetty for Shibboleth
 
-7.1 — idp.ini (disable deploy scan)
+7.1 idp.ini (disable deploy scan)
 ```
 cat > /opt/jetty-base/start.d/idp.ini << 'EOF'
 jetty.deploy.scanInterval=0
 EOF
 ```
-7.2 — http.ini (port 80)
+7.2 http.ini (port 80)
 ```
 cat > /opt/jetty-base/start.d/http.ini << 'EOF'
 --module=http
@@ -158,7 +159,7 @@ jetty.http.port=80
 jetty.http.host=0.0.0.0
 EOF
 ```
-7.3 — ssl.ini (TLS keystore — use password from Phase 5)
+7.3 ssl.ini (TLS keystore — use password from Phase 5)
 
 ```
 cat > /opt/jetty-base/start.d/ssl.ini << 'EOF'
@@ -175,7 +176,7 @@ EOF
 chown jetty:jetty /opt/jetty-base/start.d/ssl.ini
 ```
 
-7.4 — https.ini (HTTPS connector)
+7.4 https.ini (HTTPS connector)
 
 ```
 cat > /opt/jetty-base/start.d/https.ini << 'EOF'
@@ -183,8 +184,9 @@ cat > /opt/jetty-base/start.d/https.ini << 'EOF'
 jetty.https.port=443
 EOF
 ```
-7.5 — Webapp context descriptor (idp.xml)
+7.5 Webapp context descriptor (idp.xml)
 ⚠ NOTE: Use `org.eclipse.jetty.ee10.webapp.WebAppContext` — NOT the ee9 class. This is critical for Jetty 12.
+
 ```
 mkdir -p /opt/jetty-base/webapps
 cat > /opt/jetty-base/webapps/idp.xml << 'EOF'
@@ -205,12 +207,12 @@ EOF
 
 chown jetty:jetty /opt/jetty-base/webapps/idp.xml
 ```
-7.6 — Create temp directory
+7.6 Create temp directory
 
 ```mkdir -p /opt/shibboleth-idp/jetty-tmp
 chown jetty:jetty /opt/shibboleth-idp/jetty-tmp
 ```
-7.7 — Configure logging
+7.7 Configure logging
 ```
 cat > /opt/jetty-base/start.d/console-capture.ini << 'EOF'
 --module=console-capture
@@ -221,7 +223,7 @@ EOF
 mkdir -p /var/log/jetty
 chown jetty:jetty /var/log/jetty
 ```
-7.8 — Fix ownership of all jetty-base files
+7.8 Fix ownership of all jetty-base files
 `chown -R jetty:jetty /opt/jetty-base/`
 
 8 Add JSTL and JSP Support
@@ -240,12 +242,14 @@ wget -O /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/jakarta.servlet.jsp.jstl-3.0
   https://repo1.maven.org/maven2/org/glassfish/web/jakarta.servlet.jsp.jstl/3.0.1/jakarta.servlet.jsp.jstl-3.0.1.jar
 ```
 8.2 Enable the ee10-jsp module in Jetty
+
 ```
 cd /opt/jetty-base
 java -jar /opt/jetty-home/start.jar --add-modules=ee10-jsp
 chown -R jetty:jetty /opt/jetty-base/
 ```
-8.3Fix ownership
+8.3 Fix ownership
+
 `chown -R jetty:jetty /opt/shibboleth-idp/edit-webapp/`
 
 9. Configure Shibboleth IdP
@@ -253,7 +257,7 @@ chown -R jetty:jetty /opt/jetty-base/
 9.1 Edit idp.properties
 `vi /opt/shibboleth-idp/conf/idp.properties`
  
-# Set these values:
+ Set these values:
 ```
 idp.entityID= https://idp.example.org/idp/shibboleth
 idp.scope= example.org
@@ -275,7 +279,7 @@ idp.authn.LDAP.bindDNCredential= YourLDAPPassword
 cd /opt/shibboleth-idp
 bin/build.sh
 ```
-# Expected output: BUILD SUCCESSFUL
+ Expected output: BUILD SUCCESSFUL
 
 10. Grant Port Binding Permission
 ℹ INFO: On Linux, non-root users cannot bind to ports below 1024. Grant the Java binary the cap_net_bind_service capability.
@@ -285,7 +289,8 @@ bin/build.sh
 
 10.2 Verify the capability was set
 `getcap /usr/lib/jvm/java-17-openjdk-amd64/bin/java`
-# Expected: /usr/lib/jvm/.../bin/java cap_net_bind_service=eip
+
+ Expected: /usr/lib/jvm/.../bin/java cap_net_bind_service=eip
 
 11. Systemd Service
 
@@ -334,7 +339,7 @@ systemctl status jetty
 
 ⚠ NOTE: Always use the FQDN, not localhost — Jetty 12 enforces SNI strictly.
 curl -k --resolve idp.example.org:443:127.0.0.1 https://idp.YOUR-DOMAIN.ac.lk/idp/status
-# Expected: ## Operating normally
+ Expected:  Operating normally
 
 12.2 Check ports are bound
 
@@ -342,7 +347,7 @@ curl -k --resolve idp.example.org:443:127.0.0.1 https://idp.YOUR-DOMAIN.ac.lk/id
 12.3 Watch IdP logs
 `tail -f /opt/shibboleth-idp/logs/idp-process.log`
 
-# Look for: Shibboleth IdP version 5.x.x
+ Look for: Shibboleth IdP version 5.x.x
 
 12.4 Check Jetty logs if issues occur
 
