@@ -2,11 +2,17 @@
 
 # Shibboleth IdP v5+ on Ubuntu Linux LTS 24.04
 
+Step-by-step guide for installing Shibboleth IdP 5+ on Ubuntu 24.04 with Jetty 12
+
 LEARN concluded a workshop on Federated Identity with the introduction of Shibboleth IDP and SP to IAM infrastructure on member institutions. 
 
-Installation assumes you have already installed Ubuntu Server 24.04 with default configuration and has a public IP connectivity with DNS setup
+### Prerequisites
 
-Lets Assume your server hostname as **idp.YOUR-DOMAIN**
+* Ubuntu 24.04 LTS (clean server)
+* Root or sudo access
+* FQDN set (e.g. idp.YOUR-DOMAIN.ac.lk)
+
+Lets Assume your server hostname as **idp.YOUR-DOMAIN.ac.lk**
 
 All commands are to be run as **root** and you may use `sudo su`, to become root
 
@@ -22,10 +28,239 @@ All commands are to be run as **root** and you may use `sudo su`, to become root
    apt update && apt-get upgrade -y --no-install-recommends
    ```
    
-3.Install the required packages:
+3.Install the required dependencies:
    ```bash
-   apt install vim wget gnupg ca-certificates openssl apache2 ntp --no-install-recommends
+   apt install -y curl wget unzip gnupg2 apt-transport-https ca-certificates software-properties-common ntp
    ```
+4. Set Hostname
+
+`hostnamectl set-hostname idp.YOUR_DOMAIN.ac.lk`
+`echo "127.0.0.1  idp.YOUR_DOMAIN.ac.lk idp" >> /etc/hosts`
+
+5. Install Java 17
+Shibboleth IdP 5 requires Java 17+.
+
+```
+apt install -y openjdk-17-jdk-headless
+
+# Verify
+java -version
+# Expected: openjdk version "17.x.x"
+
+# Set JAVA_HOME
+echo 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> /etc/environment
+echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> /etc/profile.d/java.sh
+source /etc/profile.d/java.sh
+```
+
+7. Install Jetty 12
+
+Shibboleth IdP 5 requires Jetty 12 with EE10 (Jakarta EE 10). Do NOT use Jetty 9/10/11. 
+
+```
+# Create jetty user
+useradd -r -m -U -d /opt/jetty -s /bin/false jetty
+
+# Download Jetty 12 (check https://jetty.org for latest)
+cd /opt
+JETTY_VER="12.0.16"
+wget https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/${JETTY_VER}/jetty-home-${JETTY_VER}.tar.gz
+tar -xzf jetty-home-${JETTY_VER}.tar.gz
+ln -s jetty-home-${JETTY_VER} jetty-home
+rm jetty-home-${JETTY_VER}.tar.gz
+
+# Create Jetty base directory
+mkdir -p /opt/jetty-base
+cd /opt/jetty-base
+java -jar /opt/jetty-home/start.jar \
+  --add-modules=server,http,https,ee10-deploy,ee10-annotations,\
+ee10-cdi,requestlog,rewrite,ssl,console-capture
+
+# Set ownership
+chown -R jetty:jetty /opt/jetty-home /opt/jetty-base
+```
+
+8. Install Shibboleth IdP 5
+
+```
+cd /opt
+wget https://shibboleth.net/downloads/identity-provider/${IDP_VER}/shibboleth-identity-provider-5.2.1.tar.gz
+tar -xzf shibboleth-identity-provider-5.2.1.tar.gz
+
+# Run installer
+cd shibboleth-identity-provider-5.2.1
+bin/install.sh
+```
+
+Note : check the version in https://shibboleth.net/downloads/identity-provider
+
+Ownership and the permission of the Shibboleth location for jetty user
+```
+# Set permissions
+chown -R jetty:jetty /opt/shibboleth-idp
+chmod -R 750 /opt/shibboleth-idp
+```
+
+9. Configure Jetty for Shibboleth
+
+Disable deploy scan (important for stability)
+
+```
+cat > /opt/jetty-base/start.d/idp.ini << 'EOF'
+--module=ee10-deploy
+jetty.deploy.scanInterval=0
+EOF
+```
+
+HTTP connector (port 80)
+
+```
+cat > /opt/jetty-base/start.d/http.ini << 'EOF'
+--module=http
+jetty.http.port=80
+jetty.http.host=0.0.0.0
+EOF
+```
+
+SSL configuration (port 443)
+
+```
+cat > /opt/jetty-base/start.d/ssl.ini << 'EOF'
+--module=ssl
+jetty.ssl.port=443
+jetty.ssl.host=0.0.0.0
+jetty.sslContext.keyStorePath=/opt/shibboleth-idp/credentials/idp.p12
+jetty.sslContext.keyStorePassword=YOUR_KEYSTORE_PASSWORD
+jetty.sslContext.keyStoreType=PKCS12
+jetty.sslContext.trustStorePath=/opt/shibboleth-idp/credentials/idp.p12
+jetty.sslContext.trustStorePassword=YOUR_KEYSTORE_PASSWORD
+jetty.sslContext.trustStoreType=PKCS12
+EOF
+```
+HTTPS connector
+```
+cat > /opt/jetty-base/start.d/https.ini << 'EOF'
+--module=https
+jetty.https.port=443
+EOF
+```
+Shibboleth IdP webapp context descriptor (critical)
+```
+mkdir -p /opt/jetty-base/webapps
+cat > /opt/jetty-base/webapps/idp.xml << 'EOF'
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN"
+  "https://www.eclipse.org/jetty/configure_10_0.dtd">
+
+<Configure class="org.eclipse.jetty.ee10.webapp.WebAppContext">
+  <Set name="war">/opt/shibboleth-idp/war/idp.war</Set>
+  <Set name="contextPath">/idp</Set>
+  <Set name="extractWAR">false</Set>
+  <Set name="copyWebDir">false</Set>
+  <Set name="copyWebInf">true</Set>
+  <Set name="tempDirectory">/opt/shibboleth-idp/jetty-tmp</Set>
+
+  <Call name="setInitParameter">
+    <Arg>org.eclipse.jetty.server.webapp.ContainerIncludeJarPattern</Arg>
+    <Arg>.*/[^/]*servlet-api-[^/]*\.jar$|.*/javax.servlet.jsp.jstl-.*\.jar$</Arg>
+  </Call>
+</Configure>
+EOF
+```
+Create temp directory
+```
+mkdir -p /opt/shibboleth-idp/jetty-tmp
+chown jetty:jetty /opt/shibboleth-idp/jetty-tmp
+```
+JVM tuning
+```
+cat > /opt/jetty-base/start.d/jvm.ini << 'EOF'
+--exec
+-Xms512m
+-Xmx1024m
+-XX:+UseG1GC
+-XX:+DisableExplicitGC
+-DIDP_HOME=/opt/shibboleth-idp
+EOF
+```
+ Configure logging
+ ```
+cat > /opt/jetty-base/start.d/console-capture.ini << 'EOF'
+--module=console-capture
+jetty.console-capture.dir=/var/log/jetty
+jetty.console-capture.retain=90
+jetty.console-capture.append=true
+EOF
+mkdir -p /var/log/jetty
+chown jetty:jetty /var/log/jetty
+```
+
+10. Configure idp.properties file
+
+11. Configure LDAP in Shiboleth
+
+Then Build the IdP WAR
+
+```
+cd /opt/shibboleth-idp
+bin/build.sh
+# Expected: BUILD SUCCESSFUL
+```
+
+12. Systemd Service
+
+```
+cat > /etc/systemd/system/jetty.service << 'EOF'
+[Unit]
+Description=Jetty 12 Web Server (Shibboleth IdP)
+After=network.target
+
+[Service]
+Type=simple
+User=jetty
+Group=jetty
+Environment="JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64"
+Environment="JETTY_HOME=/opt/jetty-home"
+Environment="JETTY_BASE=/opt/jetty-base"
+ExecStart=/usr/lib/jvm/java-17-openjdk-amd64/bin/java \
+  -jar /opt/jetty-home/start.jar \
+  jetty.base=/opt/jetty-base
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/var/log/jetty/jetty.log
+StandardError=append:/var/log/jetty/jetty-error.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable jetty
+systemctl start jetty
+systemctl status jetty
+```
+
+
+13. Verify
+```
+# Check IdP status
+curl -k https://localhost/idp/status
+# Expected: ## Operating normally
+
+# Check metadata endpoint
+curl -k https://localhost/idp/shibboleth
+# Expected: XML metadata
+
+# Watch logs
+tail -f /opt/shibboleth-idp/logs/idp-process.log
+```
+14. 
+
+
+
+
+
+
 
 4. Install Amazon Corretto JDK:
    ```bash
