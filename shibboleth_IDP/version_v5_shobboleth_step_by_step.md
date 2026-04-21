@@ -199,6 +199,7 @@ jetty.sslContext.trustStorePath=/opt/shibboleth-idp/credentials/idp.p12
 jetty.sslContext.trustStorePassword=ChangeMeNow123
 jetty.sslContext.trustStoreType=PKCS12
 EOF
+
 chown jetty:jetty /opt/jetty-base/start.d/ssl.ini
 ```
 
@@ -215,11 +216,12 @@ EOF
 
 ```
 mkdir -p /opt/jetty-base/webapps
+
 cat > /opt/jetty-base/webapps/idp.xml << 'EOF'
 <?xml version="1.0"?>
 <!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN"
   "https://www.eclipse.org/jetty/configure_10_0.dtd">
- 
+
 <Configure class="org.eclipse.jetty.ee10.webapp.WebAppContext">
   <Set name="war">/opt/shibboleth-idp/war/idp.war</Set>
   <Set name="contextPath">/idp</Set>
@@ -287,15 +289,157 @@ chown -R jetty:jetty /opt/jetty-base/
 
 9. Configure Shibboleth IdP
 
-9.1 Edit idp.properties
-
-`vi /opt/shibboleth-idp/conf/idp.properties`
- 
-Set these values:
+9.1 Install MySQL and Java connector libraries
 
 ```
-idp.entityID= https://idp.example.org/idp/shibboleth
-idp.scope= example.org
+apt install -y default-mysql-server libmariadb-java \
+  libcommons-dbcp2-java libcommons-pool2-java --no-install-recommends
+
+systemctl enable --now mysql
+```
+ Secure MySQL and create the database
+
+ ```
+# Set root password first
+mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'YOUR_ROOT_PASSWORD';"
+
+mysql_secure_installation
+```
+Create the storageservice database
+
+```
+wget https://raw.githubusercontent.com/LEARN-LK/IAM/master/shib-ss-db.sql \
+  -O /root/shib-ss-db.sql
+
+# Edit the file — set your preferred DB username and password
+nano /root/shib-ss-db.sql
+
+# Import it
+mysql -u root -p < /root/shib-ss-db.sql
+
+systemctl restart mysql
+```
+
+Link libraries into IdP webapp
+
+```
+cd /opt/shibboleth-idp
+
+# IdP 5 uses dbcp2 and pool2 — NOT the old dbcp/pool
+ln -s /usr/share/java/mariadb-java-client.jar edit-webapp/WEB-INF/lib/
+ln -s /usr/share/java/commons-dbcp2.jar edit-webapp/WEB-INF/lib/
+ln -s /usr/share/java/commons-pool2.jar edit-webapp/WEB-INF/lib/
+
+bin/build.sh
+```
+
+Configure persistent-id
+
+`vi /opt/shibboleth-idp/conf/saml-nameid.properties`
+
+modify the file 
+
+```
+idp.persistentId.sourceAttribute = uid
+idp.persistentId.salt = ### result of: openssl rand -base64 36 ###
+idp.persistentId.generator = shibboleth.StoredPersistentIdGenerator
+idp.persistentId.dataSource = MyDataSource
+idp.persistentId.computed = shibboleth.ComputedPersistentIdGenerator
+```
+
+Generate the salt:
+
+`openssl rand -base64 36`
+
+ Enable SAML2PersistentGenerator
+
+ `/opt/shibboleth-idp/conf/saml-nameid.xml`
+
+ Uncomment this line:
+
+ `<ref bean="shibboleth.SAML2PersistentGenerator" />`
+
+ Enable c14n/SAML2Persistent
+
+ `<ref bean="c14n/SAML2Persistent" />`
+
+Add JPA beans to global.xml
+
+`vi  /opt/shibboleth-idp/conf/global.xml`
+
+Add before the closing </beans> tag — note dbcp2 class names
+
+```
+<!-- DB-independent Configuration -->
+<bean id="storageservice.JPAStorageService"
+      class="org.opensaml.storage.impl.JPAStorageService"
+      p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
+      c:factory-ref="storageservice.JPAStorageService.EntityManagerFactory"/>
+
+<bean id="storageservice.JPAStorageService.EntityManagerFactory"
+      class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+    <property name="packagesToScan" value="org.opensaml.storage.impl"/>
+    <property name="dataSource" ref="MyDataSource"/>
+    <property name="jpaVendorAdapter" ref="storageservice.JPAStorageService.JPAVendorAdapter"/>
+    <property name="jpaDialect">
+        <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
+    </property>
+</bean>
+
+<!-- DB-dependent Configuration -->
+<bean id="storageservice.JPAStorageService.JPAVendorAdapter"
+      class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+    <property name="database" value="MYSQL" />
+</bean>
+
+<!-- DataSource for storageservice DB -->
+<bean id="storageservice.JPAStorageService.DataSource"
+      class="org.apache.commons.dbcp2.BasicDataSource"
+      destroy-method="close" lazy-init="true"
+      p:driverClassName="org.mariadb.jdbc.Driver"
+      p:url="jdbc:mysql://127.0.0.1:3306/storageservice?useSSL=false&amp;autoReconnect=true&amp;allowPublicKeyRetrieval=true"
+      p:username="YOUR_SS_DB_USERNAME"
+      p:password="YOUR_SS_DB_PASSWORD"
+      p:maxTotal="10"
+      p:maxIdle="5"
+      p:maxWaitMillis="15000"
+      p:testOnBorrow="true"
+      p:validationQuery="select 1"
+      p:validationQueryTimeout="5" />
+
+<bean id="MyDataSource"
+      class="org.apache.commons.dbcp2.BasicDataSource"
+      destroy-method="close" lazy-init="true"
+      p:driverClassName="org.mariadb.jdbc.Driver"
+      p:url="jdbc:mysql://127.0.0.1:3306/storageservice?useSSL=false&amp;autoReconnect=true&amp;allowPublicKeyRetrieval=true"
+      p:username="YOUR_SS_DB_USERNAME"
+      p:password="YOUR_SS_DB_PASSWORD"
+      p:maxTotal="10"
+      p:maxIdle="5"
+      p:maxWaitMillis="15000"
+      p:testOnBorrow="true"
+      p:validationQuery="select 1"
+      p:validationQueryTimeout="5" />
+```
+
+Update idp.properties
+
+`vi /opt/shibboleth-idp/conf/idp.properties`
+
+modify the file
+
+```
+idp.consent.StorageService = storageservice.JPAStorageService
+idp.session.trackSPSessions = true
+idp.session.secondaryServiceIndex = true
+```
+
+Verify persistent-id is working
+
+```
+# Check logs for any DB connection errors
+grep -i "persistentid\|datasource\|storageservice\|error" \
+  /opt/shibboleth-idp/logs/idp-process.log | tail -30
 ```
 
 9.2 Configure LDAP authentication (if using LDAP)
