@@ -352,19 +352,31 @@ cat /var/log/jetty/jetty-error.log
 ```
 #### Quick Reference — Key Paths
 
-Resource					Path
-IdP home				/opt/shibboleth-idp
-IdP config				/opt/shibboleth-idp/conf/
-IdP logs				/opt/shibboleth-idp/logs/
-IdP WAR					/opt/shibboleth-idp/war/idp.war
-IdP credentials			/opt/shibboleth-idp/credentials/
-IdP edit-webapp			/opt/shibboleth-idp/edit-webapp/
-Jetty home				/opt/jetty-home
-Jetty base				/opt/jetty-base
-Jetty modules config	/opt/jetty-base/start.d/
-Jetty webapp context	/opt/jetty-base/webapps/idp.xml
-Jetty logs				/var/log/jetty/
-Systemd unit			/etc/systemd/system/jetty.service
+| Resource			|		Path |
+
+| IdP home			|	/opt/shibboleth-idp |
+
+| IdP config			|	/opt/shibboleth-idp/conf/ |
+
+| IdP logs			|	/opt/shibboleth-idp/logs/ |
+
+| IdP WAR				|	/opt/shibboleth-idp/war/idp.war |
+
+| IdP credentials		|	/opt/shibboleth-idp/credentials/ |
+
+| IdP edit-webapp		|	/opt/shibboleth-idp/edit-webapp/ |
+
+| Jetty home			|	/opt/jetty-home |
+
+| Jetty base			|	/opt/jetty-base |
+
+| Jetty modules config |	/opt/jetty-base/start.d/ |
+
+| Jetty webapp context |	/opt/jetty-base/webapps/idp.xml |
+
+| Jetty logs			|	/var/log/jetty/ |
+
+| Systemd unit		|	/etc/systemd/system/jetty.service |
 
 Important Notes
 •	Always use the FQDN (not localhost) when testing — Jetty 12 enforces SNI.
