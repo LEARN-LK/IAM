@@ -1,9 +1,5 @@
  
 # Shibboleth Identity Provider 5 - Manual Installation - Ubuntu 24
-Installation & Configuration Guide with Jetty 12
-* Ubuntu Server 24.04 LTS
-* Jetty 12 EE10
-* Java 17 
 
 ### Prerequisites
 
@@ -82,9 +78,11 @@ cd /opt/jetty-base
 java -jar /opt/jetty-home/start.jar \
   --add-modules=server,http,https,ee10-deploy,ee10-annotations,\
 ee10-cdi,requestlog,rewrite,ssl,console-capture
-Step 4 — Set ownership
-chown -R jetty:jetty /opt/jetty-home /opt/jetty-base
 ```
+
+5.4 Set ownership
+
+`chown -R jetty:jetty /opt/jetty-home /opt/jetty-base`
 
 5. Install Shibboleth IdP 5
 
@@ -115,7 +113,6 @@ chmod -R 750 /opt/shibboleth-idp
 ⚠ NOTE: The Shibboleth installer does NOT create a Jetty SSL certificate. You must create one separately.
 
 ```
-
 apt install -y certbot python3-certbot-apache
 
 certbot --apache -d idp.example.org \
@@ -283,6 +280,7 @@ cd /opt/jetty-base
 java -jar /opt/jetty-home/start.jar --add-modules=ee10-jsp
 chown -R jetty:jetty /opt/jetty-base/
 ```
+
 8.3 Fix ownership
 
 `chown -R jetty:jetty /opt/shibboleth-idp/edit-webapp/`
@@ -297,7 +295,7 @@ apt install -y default-mysql-server libmariadb-java \
 
 systemctl enable --now mysql
 ```
- Secure MySQL and create the database
+Secure MySQL and create the database
 
  ```
 # Set root password first
@@ -312,7 +310,7 @@ wget https://raw.githubusercontent.com/LEARN-LK/IAM/master/shib-ss-db.sql \
   -O /root/shib-ss-db.sql
 
 # Edit the file — set your preferred DB username and password
-nano /root/shib-ss-db.sql
+vi /root/shib-ss-db.sql
 
 # Import it
 mysql -u root -p < /root/shib-ss-db.sql
@@ -353,15 +351,15 @@ Generate the salt:
 
  Enable SAML2PersistentGenerator
 
- `/opt/shibboleth-idp/conf/saml-nameid.xml`
+`/opt/shibboleth-idp/conf/saml-nameid.xml`
 
  Uncomment this line:
 
- `<ref bean="shibboleth.SAML2PersistentGenerator" />`
+`<ref bean="shibboleth.SAML2PersistentGenerator" />`
 
  Enable c14n/SAML2Persistent
 
- `<ref bean="c14n/SAML2Persistent" />`
+`<ref bean="c14n/SAML2Persistent" />`
 
 Add JPA beans to global.xml
 
@@ -446,9 +444,9 @@ grep -i "persistentid\|datasource\|storageservice\|error" \
 
 Login to your openLDAP server as root or with sudo permission.
 
-use openssl x509 -outform der -in /etc/ssl/certs/ldap_server.pem -out /etc/ssl/certs/ldap_server.crt to convert the ldap .pem certificate to a .cert.
+use `openssl x509 -outform der -in /etc/ssl/certs/ldap_server.pem -out /etc/ssl/certs/ldap_server.crt` to convert the ldap .pem certificate to a .cert.
 
-copy the ldap_server.crt to  /opt/shibboleth-idp/credentials of your idp server (HINT : you can use scp from ldap server to idp server to obtain the crt file) Log in to your ldap and then, scp ldap_server.crt <your idp user>@<your idp ip>:/path_to_copy
+copy the ldap_server.crt to  `/opt/shibboleth-idp/credentials` of your idp server (HINT : you can use scp from ldap server to idp server to obtain the crt file) Log in to your ldap and then, scp ldap_server.crt <your idp user>@<your idp ip>:/path_to_copy
 
 Next,
 
