@@ -858,9 +858,9 @@ Your Federation operator will review your application and will proceed with the 
 | Systemd unit		|	/etc/systemd/system/jetty.service |
 
 Important Notes
-•	Always use the FQDN (not localhost) when testing — Jetty 12 enforces SNI.
-•	The Shibboleth installer keystore (idp-backchannel.p12) is different from the Jetty SSL keystore (idp.p12). Do not mix them.
-•	After any change to conf/ files, rebuild the WAR: cd /opt/shibboleth-idp && bin/build.sh
-•	After rebuilding the WAR, clear the temp dir and restart: rm -rf /opt/shibboleth-idp/jetty-tmp/* && systemctl restart jetty
-•	Use parentLoaderPriority=false in idp.xml to ensure the IdP's own classes take priority over Jetty's.
-•	JSTL jars must go inside edit-webapp/WEB-INF/lib — NOT in Jetty's lib/ext (causes classloader conflicts).
+* Always use the FQDN (not localhost) when testing — Jetty 12 enforces SNI.
+* The Shibboleth installer keystore (idp-backchannel.p12) is different from the Jetty SSL keystore (idp.p12). Do not mix them.
+* After any change to conf/ files, rebuild the WAR: cd /opt/shibboleth-idp && bin/build.sh
+* After rebuilding the WAR, clear the temp dir and restart: rm -rf /opt/shibboleth-idp/jetty-tmp/* && systemctl restart jetty
+* Use parentLoaderPriority=false in idp.xml to ensure the IdP's own classes take priority over Jetty's.
+* JSTL jars must go inside edit-webapp/WEB-INF/lib — NOT in Jetty's lib/ext (causes classloader conflicts).
