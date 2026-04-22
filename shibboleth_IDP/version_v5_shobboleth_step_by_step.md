@@ -366,59 +366,25 @@ Add JPA beans to global.xml
 
 `vi  /opt/shibboleth-idp/conf/global.xml`
 
-Add before the closing </beans> tag — note dbcp2 class names
+Add before the closing </beans> tag 
 
 ```
-<!-- DB-independent Configuration -->
-<bean id="storageservice.JPAStorageService"
-      class="org.opensaml.storage.impl.JPAStorageService"
-      p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
-      c:factory-ref="storageservice.JPAStorageService.EntityManagerFactory"/>
 
-<bean id="storageservice.JPAStorageService.EntityManagerFactory"
-      class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-    <property name="packagesToScan" value="org.opensaml.storage.impl"/>
-    <property name="dataSource" ref="MyDataSource"/>
-    <property name="jpaVendorAdapter" ref="storageservice.JPAStorageService.JPAVendorAdapter"/>
-    <property name="jpaDialect">
-        <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
-    </property>
-</bean>
+<!-- DataSource for persistent-id -->
+    <bean id="MyDataSource"
+  class="org.apache.commons.dbcp2.BasicDataSource"
+  destroy-method="close" lazy-init="true"
+  p:driverClassName="org.mariadb.jdbc.Driver"
+  p:url="jdbc:mysql://127.0.0.1:3306/storageservice?useSSL=false&amp;autoReconnect=true&amp;allowPublicKeyRetrieval=true"
+  p:username="shib"
+  p:password="Learn@123"
+  p:maxTotal="10"
+  p:maxIdle="5"
+  p:maxWaitMillis="15000"
+  p:testOnBorrow="true"
+  p:validationQuery="select 1"
+  p:validationQueryTimeout="5" />
 
-<!-- DB-dependent Configuration -->
-<bean id="storageservice.JPAStorageService.JPAVendorAdapter"
-      class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
-    <property name="database" value="MYSQL" />
-</bean>
-
-<!-- DataSource for storageservice DB -->
-<bean id="storageservice.JPAStorageService.DataSource"
-      class="org.apache.commons.dbcp2.BasicDataSource"
-      destroy-method="close" lazy-init="true"
-      p:driverClassName="org.mariadb.jdbc.Driver"
-      p:url="jdbc:mysql://127.0.0.1:3306/storageservice?useSSL=false&amp;autoReconnect=true&amp;allowPublicKeyRetrieval=true"
-      p:username="YOUR_SS_DB_USERNAME"
-      p:password="YOUR_SS_DB_PASSWORD"
-      p:maxTotal="10"
-      p:maxIdle="5"
-      p:maxWaitMillis="15000"
-      p:testOnBorrow="true"
-      p:validationQuery="select 1"
-      p:validationQueryTimeout="5" />
-
-<bean id="MyDataSource"
-      class="org.apache.commons.dbcp2.BasicDataSource"
-      destroy-method="close" lazy-init="true"
-      p:driverClassName="org.mariadb.jdbc.Driver"
-      p:url="jdbc:mysql://127.0.0.1:3306/storageservice?useSSL=false&amp;autoReconnect=true&amp;allowPublicKeyRetrieval=true"
-      p:username="YOUR_SS_DB_USERNAME"
-      p:password="YOUR_SS_DB_PASSWORD"
-      p:maxTotal="10"
-      p:maxIdle="5"
-      p:maxWaitMillis="15000"
-      p:testOnBorrow="true"
-      p:validationQuery="select 1"
-      p:validationQueryTimeout="5" />
 ```
 
 Update idp.properties
