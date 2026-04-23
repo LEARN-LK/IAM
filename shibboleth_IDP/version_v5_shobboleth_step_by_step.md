@@ -700,41 +700,40 @@ vim metadata-providers.xml
 
 Add folowing before the closing </MetadataProvider> Make sure to maintain proper indentation
 ```
-<MetadataProvider
-      id="HTTPMD-LEARN-Federation"
-      xsi:type="FileBackedHTTPMetadataProvider"
-      backingFile="%{idp.home}/metadata/test-metadata.xml"
-      metadataURL="https://fr.ac.lk/signedmetadata/metadata.xml">
-      <!--
-          Verify the signature on the root element of the metadata aggregate
-          using a trusted metadata signing certificate.
-      -->
-      <MetadataFilter xsi:type="SignatureValidation" requireSignedRoot="true" certificateFile="${idp.home}/metadata/federation-cert.pem"/>
+    <!-- Federation metadata -->
+    <MetadataProvider id="HTTPMD-LEARN-Federation"
+                      xsi:type="FileBackedHTTPMetadataProvider"
+                      backingFile="%{idp.home}/metadata/test-metadata.xml"
+                      metadataURL="https://fr.ac.lk/signedmetadata/metadata.xml">
 
-      <!--
-          Require a validUntil XML attribute on the root element and
-          make sure its value is no more than 10 days into the future.
-      -->
-      <MetadataFilter xsi:type="RequiredValidUntil" maxValidityInterval="P10D"/>
+        <MetadataFilter xsi:type="SignatureValidation" 
+                        requireSignedRoot="true" 
+                        certificateFile="%{idp.home}/metadata/federation-cert.pem"/>
 
-      <!-- Consume all SP metadata in the aggregate -->
-      <MetadataFilter xsi:type="EntityRoleWhiteList">
-        <RetainedRole>md:SPSSODescriptor</RetainedRole>
-      </MetadataFilter>
-</MetadataProvider>
-<MetadataProvider id="HTTPMD-LEARN-interfederation"
-                xsi:type="FileBackedHTTPMetadataProvider"
-                backingFile="%{idp.home}/metadata/LEARNmetadata.xml"
-                metadataURL="https://fr.ac.lk/signedmetadata/LIAF-interfederation-sp-metadata.xml">
+        <MetadataFilter xsi:type="RequiredValidUntil" 
+                        maxValidityInterval="P10D"/>
 
-  <MetadataFilter xsi:type="SignatureValidation" requireSignedRoot="true" certificateFile="${idp.home}/metadata/federation-cert.pem"/>
-  <MetadataFilter xsi:type="RequiredValidUntil" maxValidityInterval="P11D"/>
+        <MetadataFilter xsi:type="EntityRole">
+            <RetainedRole>md:SPSSODescriptor</RetainedRole>
+        </MetadataFilter>
+    </MetadataProvider>
 
-      <!-- Consume all SP metadata in the aggregate -->
-  <MetadataFilter xsi:type="EntityRoleWhiteList">
-      <RetainedRole>md:SPSSODescriptor</RetainedRole>
-  </MetadataFilter>
-</MetadataProvider>
+    <MetadataProvider id="HTTPMD-LEARN-interfederation"
+                      xsi:type="FileBackedHTTPMetadataProvider"
+                      backingFile="%{idp.home}/metadata/LEARNmetadata.xml"
+                      metadataURL="https://fr.ac.lk/signedmetadata/LIAF-interfederation-sp-metadata.xml">
+
+        <MetadataFilter xsi:type="SignatureValidation" 
+                        requireSignedRoot="true" 
+                        certificateFile="%{idp.home}/metadata/federation-cert.pem"/>
+
+        <MetadataFilter xsi:type="RequiredValidUntil" 
+                        maxValidityInterval="P11D"/>
+
+        <MetadataFilter xsi:type="EntityRole">
+            <RetainedRole>md:SPSSODescriptor</RetainedRole>
+        </MetadataFilter>
+    </MetadataProvider>
 ```
 
 Retrive the Federation Certificate used to verify its signed metadata:
