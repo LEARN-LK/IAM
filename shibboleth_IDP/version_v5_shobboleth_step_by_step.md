@@ -115,9 +115,9 @@ chmod -R 750 /opt/shibboleth-idp
 ```
 apt install -y certbot python3-certbot-apache
 
-certbot --apache -d idp.example.org \
+certbot --apache -d idp.YOUR-DOMAIN.ac.lk\
   --agree-tos \
-  --email admin@example.org \
+  --email admin@YOUR-DOMAIN.ac.lk \
   --no-eff-email
 ```
 (Certbot will automatically configure Apache's VirtualHost with the cert and set up auto-renewal. Nothing extra needed on the Apache side.)
@@ -387,17 +387,6 @@ Add before the closing </beans> tag
 
 ```
 
-Update idp.properties
-
-`vi /opt/shibboleth-idp/conf/idp.properties`
-
-modify the file
-
-```
-idp.consent.StorageService = storageservice.JPAStorageService
-idp.session.trackSPSessions = true
-idp.session.secondaryServiceIndex = true
-```
 
 Verify persistent-id is working
 
@@ -435,7 +424,7 @@ idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertific
 idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
 #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
 idp.authn.LDAP.returnAttributes                 = *
-idp.attribute.resolver.LDAP.exportAttributes    =
+idp.attribute.resolver.LDAP.exportAttributes    = *
 ```
 
 Solution 2: LDAP + TLS:
@@ -455,7 +444,7 @@ idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertific
 idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
 #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap_server.truststore
 idp.authn.LDAP.returnAttributes                 = *
-idp.attribute.resolver.LDAP.exportAttributes    =
+idp.attribute.resolver.LDAP.exportAttributes    = *
 ```
 
 Solution 3: plain LDAP
@@ -474,7 +463,7 @@ idp.authn.LDAP.bindDNCredential = ###LDAP_ADMIN_PASSWORD###
 idp.attribute.resolver.LDAP.returnAttributes    = %{idp.authn.LDAP.returnAttributes}
 #idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
 idp.authn.LDAP.returnAttributes                 = *
-idp.attribute.resolver.LDAP.exportAttributes    =
+idp.attribute.resolver.LDAP.exportAttributes    = *
 ```
 
 Make sure to change dc=YOUR-DOMAIN,dc=ac,dc=lk according to your domain
@@ -493,13 +482,13 @@ Enrich IDP logs with the authentication error occurred on LDAP:
 
 Download the attribute resolver provided by LEARN:
 
-`wget https://fr.ac.lk/signedmetadata/files/attribute-resolver-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml`
+`wget https://fr.ac.lk/signedmetadata/files/attribute-resolver-LEARN-v5.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml`
 
 Download the attribute filter provided by LEARN:
 
 The attribute filter provided by LEARN:
 
-`wget https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml`
+`wget https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v5.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml`
 
 
 Append your `services.xml` with:
@@ -510,7 +499,7 @@ Add folowing before the closing </beans> Make sure to maintain proper indentatio
 ```
       <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
             c:client-ref="shibboleth.FileCachingHttpClient"
-            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml"
+            c:url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v5.xml"
             c:backingFile="%{idp.home}/conf/attribute-filter-LEARN-v5.xml"/>
 ```
 Modify the shibboleth.AttributeFilterResources util:list
@@ -520,8 +509,6 @@ Modify the shibboleth.AttributeFilterResources util:list
          <ref bean="Default-Filter"/>
       </util:list>
 ```
-
-Reload service with id shibboleth.AttributeFilterService to refresh the Attribute Filter followed by the IdP: *  cd /opt/shibboleth-idp/bin *  `./reload-service.sh -id shibboleth.AttributeFilterService`
 
 If you decided to use the Solution 3 of step 28, you have to modify the following code as given, from your Attribute Resolver file:
 
@@ -604,7 +591,7 @@ bin/build.sh
 
 `getcap /usr/lib/jvm/java-17-openjdk-amd64/bin/java`
 
- Expected: /usr/lib/jvm/.../bin/java cap_net_bind_service=eip
+ Expected: `/usr/lib/jvm/.../bin/java cap_net_bind_service=eip`
 
 11. Systemd Service - Jetty
 
@@ -639,6 +626,7 @@ StandardError=append:/var/log/jetty/jetty-error.log
 WantedBy=multi-user.target
 EOF
 ```
+
 11.2 Enable and start the service
 
 ```
@@ -649,26 +637,14 @@ sleep 8
 systemctl status jetty
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 12 Verify Installation
 
 12.1 Check IdP status
 
 ⚠ NOTE: Always use the FQDN, not localhost — Jetty 12 enforces SNI strictly.
-curl -k --resolve idp.example.org:443:127.0.0.1 https://idp.YOUR-DOMAIN.ac.lk/idp/status
+
+`curl -k --resolve idp.example.org:443:127.0.0.1 https://idp.YOUR-DOMAIN.ac.lk/idp/status`
+
  Expected:  Operating normally
 
 12.2 Check ports are bound
@@ -772,9 +748,9 @@ Name of organization: Institute XY
 
 Displayname of organization: Institute XY
 
-URL: https://www.YOUR-DOMAIN
+URL: `https://www.YOUR-DOMAIN`
 
-Go to Contacts tab and add at least "Support" and "Technical" contacts
+Go to Contacts tab and add at least "Support" and "Technical" contacts.(Tip : If you have decided to join the IDP to EduGAIN, please add at least two contacts)
 
 On UI Information tab you will see some data extracted from metadata. Apart from those fill-in the rest
 
@@ -791,37 +767,33 @@ Finally click Register.
 
 Your Federation operator will review your application and will proceed with the registration
 
-
-
 #### Quick Reference — Key Paths
 
-| Resource			|		Path |
+IdP home - /opt/shibboleth-idp 
 
-| IdP home			|	/opt/shibboleth-idp |
+IdP config - /opt/shibboleth-idp/conf/ 
 
-| IdP config			|	/opt/shibboleth-idp/conf/ |
+IdP logs - /opt/shibboleth-idp/logs/
 
-| IdP logs			|	/opt/shibboleth-idp/logs/ |
+IdP WAR - /opt/shibboleth-idp/war/idp.war
 
-| IdP WAR				|	/opt/shibboleth-idp/war/idp.war |
+IdP credentials - /opt/shibboleth-idp/credentials/
 
-| IdP credentials		|	/opt/shibboleth-idp/credentials/ |
+IdP edit-webapp - /opt/shibboleth-idp/edit-webapp/
 
-| IdP edit-webapp		|	/opt/shibboleth-idp/edit-webapp/ |
+Jetty home - /opt/jetty-home
 
-| Jetty home			|	/opt/jetty-home |
+Jetty base - /opt/jetty-base
 
-| Jetty base			|	/opt/jetty-base |
+Jetty modules config - /opt/jetty-base/start.d/
 
-| Jetty modules config |	/opt/jetty-base/start.d/ |
+Jetty webapp context - /opt/jetty-base/webapps/idp.xml
 
-| Jetty webapp context |	/opt/jetty-base/webapps/idp.xml |
+Jetty logs - /var/log/jetty/
 
-| Jetty logs			|	/var/log/jetty/ |
+Systemd unit - /etc/systemd/system/jetty.service
 
-| Systemd unit		|	/etc/systemd/system/jetty.service |
-
-Important Notes
+#### Important Notes
 * Always use the FQDN (not localhost) when testing — Jetty 12 enforces SNI.
 * The Shibboleth installer keystore (idp-backchannel.p12) is different from the Jetty SSL keystore (idp.p12). Do not mix them.
 * After any change to conf/ files, rebuild the WAR: cd /opt/shibboleth-idp && bin/build.sh
