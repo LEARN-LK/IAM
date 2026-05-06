@@ -482,13 +482,13 @@ Enrich IDP logs with the authentication error occurred on LDAP:
 
 Download the attribute resolver provided by LEARN:
 
-`wget https://fr.ac.lk/signedmetadata/files/attribute-resolver-LEARN-v5.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml`
+`wget https://fr.ac.lk/templates/attribute-resolver-LEARN-v5.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml`
 
 Download the attribute filter provided by LEARN:
 
 The attribute filter provided by LEARN:
 
-`wget https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v5.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml`
+`wget https://fr.ac.lk/templates/attribute-filter-LEARN-v5.xml -O /opt/shibboleth-idp/conf/attribute-filter-LEARN-v5.xml`
 
 
 Append your `services.xml` with:
