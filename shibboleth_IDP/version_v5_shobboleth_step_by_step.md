@@ -134,7 +134,7 @@ Check https://shibboleth.net for the latest 5.x version before running.
 
 ```
 cd /opt
-IDP_VER="5.2.1"
+IDP_VER="5.2.2"
 wget https://shibboleth.net/downloads/identity-provider/${IDP_VER}/shibboleth-identity-provider-${IDP_VER}.tar.gz
 tar -xzf shibboleth-identity-provider-${IDP_VER}.tar.gz
 Step 2 — Run the installer
