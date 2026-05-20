@@ -1,5 +1,7 @@
  
-# Shibboleth Identity Provider 5 - Manual Installation - Ubuntu 24
+# Shibboleth Identity Provider 5 Installation - Ubuntu 24
+
+## Install using a script
 
 ### Prerequisites
 
@@ -8,6 +10,38 @@ Before starting, ensure the following:
 * Root or sudo access
 * A fully qualified domain name (FQDN) — e.g. idp.YOUR-DOMAIN.ac.lk
 * Internet access to download packages
+* copy ldap_server.crt to /tmp/ldap_server.crt on the IdP server before running the script
+Script: validates the file exists at /tmp/ldap_server.crt at startup, then copies it to the correct credentials path at the right step
+
+How to use
+1. Edit idp.env with your institution's values:
+    `vi idp_server.env`
+
+2. Copy both files to your Ubuntu 24 server and run:
+    ` sudo bash install_idpv5_ubuntu.sh idp_server.env`
+
+What the script covers (all 18 steps from the manual)
+
+* System update, hostname, /etc/hosts
+* Java 17, JAVA_HOME
+* Jetty 12, base dir, modules
+* Shibboleth IdP v5 download & non-interactive install
+* Certbot SSL cert → PKCS12 for Jetty + auto-renewal hook
+* All Jetty .ini config files + idp.xml webapp descriptor
+* JSTL/JSP jars + ee10-jsp module
+* MySQL setup, schema import, JDBC jars linked
+* saml-nameid.properties, global.xml DataSource bean — all via sed
+* ldap.properties — mode-aware (STARTTLS/TLS/plain) via sed
+* LEARN attribute-resolver & filter downloaded, patched with your domain/org type
+* idp-metadata.xml DisplayName/Description patched
+* LEARN federation cert + metadata-providers.xml entries
+* LDAP debug loggers in logback.xml
+* bin/build.sh WAR rebuild
+* cap_net_bind_service granted to Java
+* systemd unit created, enabled, started
+* Port check + IdP status verification
+
+## Step by step installation
 
 System Preparation
 ⚠ NOTE: Run all commands as root or prefix with sudo.
