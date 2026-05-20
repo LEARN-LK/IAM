@@ -21,6 +21,10 @@ Identity Provider is the party who provides authentication and authorization for
 * [Shibboleth IdP v3.4.6 on Ubuntu Linux LTS 18.04](shibboleth_IDP/Shibboleth3.4.6-Ubuntu18.04.md)
 * [Shibboleth IdP v3.3.2 on Ubuntu Linux LTS 18.04](shibboleth_IDP/IDPonUbuntu.md)
 
+### Enabling MFA for Shibboleth IDP
+
+ * [MFA for Shibboleth V5 - Ubuntu 24](allowing_services_IDP/mfa_ubuntu24_shibv5.md)
+
 ### Change Certificates in fr(Federation Registry)
 
 * [Change the Certificates - IDP Version 3 to 4](change_keys_fr.md)
