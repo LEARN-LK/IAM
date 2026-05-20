@@ -15,12 +15,18 @@ Script: validates the file exists at /tmp/ldap_server.crt at startup, then copie
 
 How to use
 1. Edit idp.env with your institution's values:
+
+    `cd cd /usr/local/src`
    
+    `wget https://raw.githubusercontent.com/LEARN-LK/IAM/refs/heads/master/shibboleth_IDP/idp_server.env`
+
     `vi idp_server.env`
 
-3. Copy both files to your Ubuntu 24 server and run:
+3. Download sh file to your Ubuntu 24 server and run:
+
+   `wget https://raw.githubusercontent.com/LEARN-LK/IAM/refs/heads/master/shibboleth_IDP/install_idpv5_ubuntu_24.sh && chmod +x install_idpv5_ubuntu_24.sh`
    
-    ` sudo bash install_idpv5_ubuntu_24.sh idp_server.env`
+    `sudo bash install_idpv5_ubuntu_24.sh idp_server.env`
 
 What the script covers (all 18 steps from the manual)
 
