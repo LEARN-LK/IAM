@@ -128,3 +128,114 @@ systemctl enable --now ntp
 timedatectl set-ntp true
 ```
 
+ Edit conf/authn/authn.properties
+
+ `vi /opt/shibboleth-idp/conf/authn/authn.properties`
+
+ Add these lines (append to the end of the file, or find any existing idp.authn.MFA.supportedPrincipals line and replace it):
+
+ ```
+idp.authn.MFA.supportedPrincipals = \
+    saml2/https://refeds.org/profile/mfa, \
+    saml2/urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport, \
+    saml2/urn:oasis:names:tc:SAML:2.0:ac:classes:Password, \
+    saml1/urn:oasis:names:tc:SAML:1.0:am:password
+
+idp.authn.TOTP.supportedPrincipals = \
+    saml2/https://refeds.org/profile/mfa, \
+    saml2/urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken, \
+    saml1/urn:oasis:names:tc:SAML:1.0:am:HardwareToken
+```
+Edit `conf/relying-party.xml`
+
+Find the shibboleth.DefaultRelyingParty bean and add defaultAuthenticationMethods to the SAML2.SSO profile configuration. It will look something like this — find your existing SAML2.SSO bean and add the property:
+
+```
+<bean id="shibboleth.DefaultRelyingParty" parent="RelyingParty">
+    <property name="profileConfigurations">
+        <list>
+            <bean parent="SAML2.SSO">
+                <property name="defaultAuthenticationMethods">
+                    <bean parent="shibboleth.SAML2AuthnContextClassRef"
+                          c:classRef="https://refeds.org/profile/mfa" />
+                </property>
+            </bean>
+            <ref bean="SAML2.ECP" />
+            <ref bean="SAML2.Logout" />
+            <ref bean="SAML2.AttributeQuery" />
+            <ref bean="SAML2.ArtifactResolution" />
+        </list>
+    </property>
+</bean>
+```
+
+Rebuild and Restart
+
+```
+cd /opt/shibboleth-idp
+bin/build.sh && rm -rf jetty-tmp/* && systemctl restart jetty
+sleep 10
+systemctl status jetty
+```
+
+ 
+### Do this on your LDAP server:
+
+Step 1 — Create the Custom Schema File
+
+`vi /tmp/totp-schema.ldif`
+
+Paste the following content:
+
+```
+dn: cn=totp,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: totp
+olcAttributeTypes: ( 1.3.6.1.4.1.55053.1.1
+  NAME 'totpSecret'
+  DESC 'TOTP seed for MFA authentication'
+  EQUALITY caseExactMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+olcObjectClasses: ( 1.3.6.1.4.1.55053.2.1
+  NAME 'totpUser'
+  DESC 'User with TOTP MFA'
+  AUXILIARY
+  MAY ( totpSecret ) )
+```
+
+Step 2 — Load the Schema
+
+`ldapadd -Y EXTERNAL -H ldapi:/// -f /root/totp-schema.ldif`
+
+Expected output:
+
+`adding new entry "cn=totp,cn=schema,cn=config"`
+
+Step 3 — Now Add the Attribute to the User
+
+```
+dn: uid=<UID>,ou=people,dc=<YOUR-DOMAIN>,dc=ac,dc=lk
+changetype: modify
+add: objectClass
+objectClass: totpUser
+-
+add: totpSecret
+totpSecret: 7ZODY4DQQ76DHYL3JK66DJIR3TE3QPW5
+```
+Apply it:
+
+```
+ldapmodify -H ldap://localhost -x \
+  -D "cn=admin,dc=<YOUR-DOMAIN>,dc=ac,dc=lk" \
+  -W -f /root/add-totp-testme.ldif
+```
+
+Step 4 — Verify
+
+```
+ldapsearch -H ldap://localhost -x \
+  -D "cn=admin,dc=<YOUR-DOMAIN>,dc=ac,dc=lk" \
+  -W -b "uid=testme,ou=people,dc=<YOUR-DOMAIN>,dc=ac,dc=lk" \
+  totpSecret
+```
