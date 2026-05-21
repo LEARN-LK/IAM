@@ -108,11 +108,10 @@ chmod -R 750 /opt/shibboleth-idp
 ⚠ NOTE: The Shibboleth installer does NOT create a Jetty SSL certificate. You must create one separately.
 
 ```
-apt install -y certbot python3-certbot-apache
-
-certbot --apache -d idp.YOUR-DOMAIN.ac.lk\
+certbot certonly --standalone \
+  -d idp.accmt.ac.lk \
   --agree-tos \
-  --email admin@YOUR-DOMAIN.ac.lk \
+  --email admin@accmt.ac.lk \
   --no-eff-email
 ```
 (Certbot will automatically configure Apache's VirtualHost with the cert and set up auto-renewal. Nothing extra needed on the Apache side.)
@@ -353,7 +352,7 @@ Generate the salt:
 `<ref bean="shibboleth.SAML2PersistentGenerator" />`
 
  Enable c14n/SAML2Persistent
- `vi /opt/shibboleth-id/conf/c14n/subject-c14n.xml`
+ `vi /opt/shibboleth-idp/conf/c14n/subject-c14n.xml`
 
 `<ref bean="c14n/SAML2Persistent" />`
 
@@ -485,7 +484,6 @@ The attribute filter provided by LEARN:
 
 `wget https://fr.ac.lk/templates/attribute-filter-LEARN-v5.xml -O /opt/shibboleth-idp/conf/attribute-filter-LEARN-v5.xml`
 
-
 Append your `services.xml` with:
 
 `vim /opt/shibboleth-idp/conf/services.xml`
@@ -548,7 +546,6 @@ Modify services.xml file: vim /opt/shibboleth-idp/conf/services.xml,
 must become:
 
 `<value>%{idp.home}/conf/attribute-resolver-LEARN-v5.xml</value>`
-
 
 Enable the SAML2 support by changing the idp-metadata.xml:
 
