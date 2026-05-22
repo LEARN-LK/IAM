@@ -79,6 +79,15 @@ ee10-cdi,requestlog,rewrite,ssl,console-capture
 
 `chown -R jetty:jetty /opt/jetty-home /opt/jetty-base`
 
+
+
+
+
+
+
+
+
+
 5. Install Shibboleth IdP 5
 
 5.1 Download Shibboleth IdP 5
@@ -279,9 +288,7 @@ chown -R jetty:jetty /opt/jetty-base/
 
 `chown -R jetty:jetty /opt/shibboleth-idp/edit-webapp/`
 
-9. Configure Shibboleth IdP
-
-9.1 Install MySQL and Java connector libraries
+9 Install MySQL and Java connector libraries
 
 ```
 apt install -y default-mysql-server libmariadb-java \
@@ -370,8 +377,8 @@ Add before the closing </beans> tag
   destroy-method="close" lazy-init="true"
   p:driverClassName="org.mariadb.jdbc.Driver"
   p:url="jdbc:mysql://127.0.0.1:3306/storageservice?useSSL=false&amp;autoReconnect=true&amp;allowPublicKeyRetrieval=true"
-  p:username="shib"
-  p:password="Learn@123"
+  p:username="##MYSQL-DB-NAME##"
+  p:password="##MYSQL-USER-PASSWORD##"
   p:maxTotal="10"
   p:maxIdle="5"
   p:maxWaitMillis="15000"
@@ -381,7 +388,6 @@ Add before the closing </beans> tag
 
 ```
 
-
 Verify persistent-id is working
 
 ```
@@ -390,7 +396,7 @@ grep -i "persistentid\|datasource\|storageservice\|error" \
   /opt/shibboleth-idp/logs/idp-process.log | tail -30
 ```
 
-9.2 Configure LDAP authentication (if using LDAP) 
+9.1 Configure LDAP authentication (if using LDAP) 
 
 Login to your openLDAP server as root or with sudo permission.
 
@@ -539,7 +545,7 @@ urn:schac:homeOrganizationType:int:public-research-institution
 urn:schac:homeOrganizationType:int:private-research-institution
 ```
 
-Modify services.xml file: vim /opt/shibboleth-idp/conf/services.xml,
+Modify services.xml file: vim `/opt/shibboleth-idp/conf/services.xml`,
 
 ` <value>%{idp.home}/conf/attribute-resolver.xml</value>`
 	 
@@ -550,6 +556,13 @@ must become:
 Enable the SAML2 support by changing the idp-metadata.xml:
 
 `vim /opt/shibboleth-idp/metadata/idp-metadata.xml`
+
+ Enable the Consent Module
+ ```
+/opt/shibboleth-idp/bin/module.sh -t idp.intercept.Consent || \
+/opt/shibboleth-idp/bin/module.sh -e idp.intercept.Consent
+
+```
 
 From the `<IDPSSODescriptor>` session:
 From the list of protocolSupportEnumeration delete:
