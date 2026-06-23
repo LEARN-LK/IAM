@@ -118,7 +118,7 @@ chmod -R 750 /opt/shibboleth-idp
 
 ```
 certbot certonly --standalone \
-  -d idp.accmt.ac.lk \
+  -d idp.YOUR-DOMAIN.ac.lk \
   --agree-tos \
   --email admin@accmt.ac.lk \
   --no-eff-email
