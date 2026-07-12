@@ -22,7 +22,7 @@ Identity Provider is the party who provides authentication and authorization for
 
 ### Enabling MFA for Shibboleth IDP
 
- * [MFA for Shibboleth V5 - Ubuntu 24](allowing_services_IDP/mfa_ubuntu24_shibv5.md)
+ * [MFA for Shibboleth V5 - Ubuntu 24](allowing_services_IDP/MFA_ShibbolethIDP_Ubuntu.md) 
 
 ### Change Certificates in fr(Federation Registry)
 
