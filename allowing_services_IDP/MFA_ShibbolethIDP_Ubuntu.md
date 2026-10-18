@@ -239,10 +239,133 @@ ldapsearch -H ldap://localhost -x \
   -W -b "uid=testme,ou=people,dc=<YOUR-DOMAIN>,dc=ac,dc=lk" \
   totpSecret
 ```
+### when we are going to create QR code for user profile adding to TOTP app
+
+default is api.qrserver.com is used by the plugin, but let's install a local qr server for a safer approach
+
+Install qrencode
+```
+sudo apt update && sudo apt install -y qrencode apache2-utils
+```
+
+Move the images out of the web root so Apache can’t serve them directly and bypass the script
+```
+sudo mkdir -p /var/lib/totp-qr
+sudo chown root:www-data /var/lib/totp-qr
+sudo chmod 770 /var/lib/totp-qr      # www-data needs write access to delete files
+```
+
+Create `/usr/local/lib/totp-qr/qr.cgi`
+
+```
+#!/bin/bash
+QR_DIR="/var/lib/totp-qr"
+FILE=$(echo "$QUERY_STRING" | sed -n 's/^f=\([A-Za-z0-9._-]*\)$/\1/p')
+
+if [ "$REQUEST_METHOD" = "GET" ] && [ -n "$FILE" ] && [[ "$FILE" != *..* ]] && [ -f "$QR_DIR/$FILE" ]; then
+    echo "Content-Type: image/png"
+    echo "Cache-Control: no-store"
+    echo ""
+    cat "$QR_DIR/$FILE"
+    rm -f "$QR_DIR/$FILE"
+else
+    echo "Status: 404 Not Found"
+    echo "Content-Type: text/plain"
+    echo ""
+    echo "This link has expired or was already used."
+fi
+```
+
+```
+sudo mkdir -p /usr/local/lib/totp-qr
+sudo chmod 755 /usr/local/lib/totp-qr/qr.cgi
+sudo a2enmod cgid
+```
+create `/etc/apache2/sites-available/totp-qr.conf` file
+
+`vi /etc/apache2/sites-available/totp-qr.conf`
+
+Change the names accordingly
+```
+Listen 8443
+<VirtualHost *:8443>
+    ServerName idpv5.<YOUR-DOMAIN>.ac.lk
+    DocumentRoot /var/www/html
+
+    SSLEngine on
+    SSLCertificateFile    /etc/letsencrypt/live/idpv5.learn.ac.lk/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/idpv5.learn.ac.lk/privkey.pem
+
+    ScriptAlias /qr /usr/local/lib/totp-qr/qr.cgi
+    <Directory /usr/local/lib/totp-qr>
+        Options +ExecCGI
+        Require all granted
+    </Directory>
+</VirtualHost>
+```
+Enable the site 
+```
+sudo a2ensite totp-qr
+sudo systemctl restart apache2
+```
+Add this line to crontab: change the cleanup window accordingly
+
+`echo '*/30 * * * * root find /var/lib/totp-qr -name "*.png" -mmin +1440 -delete' | sudo tee /etc/cron.d/totp-qr-cleanup`
+
+create the following file 
+`vi /usr/local/bin/totp-gen`
+Change the url of the QR server : IDP is used to install QR server in the test setup
+
+```
+#!/bin/bash
+# Usage: totp-gen <username> [--png]
+IDP_HOME="/opt/shibboleth-idp"
+ISSUER="LEARN IdP"
+QR_DIR="/var/www/totp-qr"
+QR_BASE_URL="https://<URL-IDP>:8443"
+
+USERNAME="$1"
+[ -z "$USERNAME" ] && { echo "Usage: $0 <username> [--png]"; exit 1; }
+
+OUT=$("$IDP_HOME/bin/totpauth.sh" --home "$IDP_HOME" --issuer "$ISSUER" --account "$USERNAME" 2>/dev/null)
+SEED=$(echo "$OUT" | grep "^Seed:" | awk '{print $2}')
+OTP_URL=$(echo "$OUT" | grep "^URL:" | awk '{print $2}')
+
+[ -z "$SEED" ] && { echo "ERROR: could not generate seed"; exit 1; }
+
+echo "Seed: $SEED"
+echo "URL:  $OTP_URL"
+echo
+
+if [ "$2" = "--png" ]; then
+    RAND=$(openssl rand -hex 16)
+    QR_FILE="${USERNAME}-${RAND}.png"
+    qrencode -o "$QR_DIR/$QR_FILE" -s 8 -m 2 -l M "$OTP_URL"
+    chgrp www-data "$QR_DIR/$QR_FILE"
+    chmod 640 "$QR_DIR/$QR_FILE"
+    echo "QR Code: ${QR_BASE_URL}/${QR_FILE}"
+else
+    qrencode -t ANSIUTF8 "$OTP_URL"
+fi
+```
+Change the permission
+`chmod 700 /usr/local/bin/totp-gen`
+
+test :
+`totp-gen <username>`
 
 ### now let's create the totp tokens for the users
 
-(should add some lines about the generating the token)
+Command to generate the TOTP token (seed)
+
+```
+cd /opt/shibboleth-idp
+bin/totpauth.sh --home /opt/shibboleth-idp --issuer "LEARN IdP" --account testme
+```
+
+from the terminal:
+To test a seed against a code from the authenticator app, use the positional form that worked
+`bin/totpauth.sh --home /opt/shibboleth-idp <SEED> <6-digit-code>`
 For bulk user update, use the script file as follows
 
 `cd ~ && wget https://raw.githubusercontent.com/LEARN-LK/IAM/refs/heads/master/allowing_services_IDP/bulk-totp-enroll.sh && chmod +x bulk-totp-enroll.sh`
