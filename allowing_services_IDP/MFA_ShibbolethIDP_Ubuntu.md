@@ -364,5 +364,6 @@ test :
 For bulk user update, use the script file as follows
 
 `cd ~ && wget https://raw.githubusercontent.com/LEARN-LK/IAM/refs/heads/master/allowing_services_IDP/bulk-totp-enroll.sh && chmod +x bulk-totp-enroll.sh`
+
 Then you will get a csv file with the details for the users already existing in the system(whose who needed to be updated with new schema and tokens)
 
