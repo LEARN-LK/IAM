@@ -112,21 +112,18 @@ The TOTP plugin will automatically call the attribute resolver to fetch the attr
 
 ℹ️ The LDAP attribute must contain the plain Base32-encoded seed (not encrypted). For encrypted seeds, see the DataSealer section in the official plugin docs.
 
-### need to be updated from here
+#### Clock Sync Check (Important for TOTP)
+T
+OTP codes are time-based. If the server clock drifts, codes will fail.
 
+Check current NTP sync status
+`timedatectl status`
 
-Clock Sync Check (Important for TOTP)
-TOTP codes are time-based. If the server clock drifts, codes will fail.
+If not synced, ensure NTP is running
+`systemctl enable --now ntp`
 
-```
-# Check current NTP sync status
-timedatectl status
-
-# If not synced, ensure NTP is running
-systemctl enable --now ntp
-# or on systemd-timesyncd systems:
-timedatectl set-ntp true
-```
+or on systemd-timesyncd systems:
+`timedatectl set-ntp true`
 
  Edit conf/authn/authn.properties
 
@@ -146,7 +143,7 @@ idp.authn.TOTP.supportedPrincipals = \
     saml2/urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken, \
     saml1/urn:oasis:names:tc:SAML:1.0:am:HardwareToken
 ```
-Edit `conf/relying-party.xml`
+Edit `vi /opt/shibboleth-idp/conf/relying-party.xml`
 
 Find the shibboleth.DefaultRelyingParty bean and add defaultAuthenticationMethods to the SAML2.SSO profile configuration. It will look something like this — find your existing SAML2.SSO bean and add the property:
 
@@ -215,6 +212,8 @@ Expected output:
 
 Step 3 — Now Add the Attribute to the User
 
+in the file `add-totp-user.ldif` paste the following
+
 ```
 dn: uid=<UID>,ou=people,dc=<YOUR-DOMAIN>,dc=ac,dc=lk
 changetype: modify
@@ -224,12 +223,12 @@ objectClass: totpUser
 add: totpSecret
 totpSecret: 7ZODY4DQQ76DHYL3JK66DJIR3TE3QPW5
 ```
-Apply it:
 
+Apply it:
 ```
 ldapmodify -H ldap://localhost -x \
   -D "cn=admin,dc=<YOUR-DOMAIN>,dc=ac,dc=lk" \
-  -W -f /root/add-totp-testme.ldif
+  -W -f add-totp-user.ldif
 ```
 
 Step 4 — Verify
@@ -240,3 +239,12 @@ ldapsearch -H ldap://localhost -x \
   -W -b "uid=testme,ou=people,dc=<YOUR-DOMAIN>,dc=ac,dc=lk" \
   totpSecret
 ```
+
+### now let's create the totp tokens for the users
+
+(should add some lines about the generating the token)
+For bulk user update, use the script file as follows
+
+`cd ~ && wget https://raw.githubusercontent.com/LEARN-LK/IAM/refs/heads/master/allowing_services_IDP/bulk-totp-enroll.sh && chmod +x bulk-totp-enroll.sh`
+Then you will get a csv file with the details for the users already existing in the system(whose who needed to be updated with new schema and tokens)
+
