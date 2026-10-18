@@ -173,11 +173,12 @@ Rebuild and Restart
 
 ```
 cd /opt/shibboleth-idp
-bin/build.sh && rm -rf jetty-tmp/* && systemctl restart jetty
+bin/build.sh
+systemctl restart jetty
 sleep 10
 systemctl status jetty
 ```
-
+Remove temp files if needed: TIP : `bin/build.sh && rm -rf jetty-tmp/* && systemctl restart jetty`
  
 ### Do this on your LDAP server:
 
