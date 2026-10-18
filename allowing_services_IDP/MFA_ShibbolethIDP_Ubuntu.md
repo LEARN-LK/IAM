@@ -351,21 +351,16 @@ fi
 Change the permission
 `chmod 700 /usr/local/bin/totp-gen`
 
-test :
-`totp-gen <username>`
+
 
 ### now let's create the totp tokens for the users
 
 Command to generate the TOTP token (seed)
 
-```
-cd /opt/shibboleth-idp
-bin/totpauth.sh --home /opt/shibboleth-idp --issuer "LEARN IdP" --account testme
-```
-
 from the terminal:
-To test a seed against a code from the authenticator app, use the positional form that worked
-`bin/totpauth.sh --home /opt/shibboleth-idp <SEED> <6-digit-code>`
+test :
+`totp-gen <username>`
+
 For bulk user update, use the script file as follows
 
 `cd ~ && wget https://raw.githubusercontent.com/LEARN-LK/IAM/refs/heads/master/allowing_services_IDP/bulk-totp-enroll.sh && chmod +x bulk-totp-enroll.sh`
