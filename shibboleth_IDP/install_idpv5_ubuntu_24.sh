@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# install-idp5.sh
+# install_idpv5_ubuntu_24.sh
 #
 # Shibboleth IdP 5 + Jetty 12 (listening on 127.0.0.1:8080) behind Apache 2,
 # on Ubuntu 22.04 / 24.04.  Based on the LEARN "installing-idp-v4" manual
