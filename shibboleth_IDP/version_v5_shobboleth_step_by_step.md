@@ -4,7 +4,7 @@ Adapted from the LEARN *installing-idp-v4* manual. Same architecture, updated fo
 
 All commands are run as **root** (`sudo -i`). Replace `idp.YOUR-DOMAIN.ac.lk` / `YOUR-DOMAIN` with your own values.
 
-> **Don't want to type all this?** Jump to [Automated installation](#automated-installation) — `install-idp5.sh` does every step below.
+> **Don't want to type all this?** Jump to [Automated installation](#automated-installation) — `install_idpv5_ubuntu_24.sh` does every step below.
 
 ## What changed compared with v4
 
@@ -753,20 +753,20 @@ systemctl restart jetty-idp && journalctl -u jetty-idp -n 50 --no-pager
 
 # Automated installation
 
-`install-idp5.sh` performs sections 1–8 (and optionally 9.1–9.2) in one run, prompting for what it needs.
+`install_idpv5_ubuntu_24.sh` performs sections 1–8 (and optionally 9.1–9.2) in one run, prompting for what it needs.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `install-idp5.sh` | The installer (run as root) |
-| `idp5.env.example` | Template for non-interactive runs |
+| `install_idpv5_ubuntu_24.sh` | The installer (run as root) |
+| `idp5.env` | Template for non-interactive runs |
 
 ## Interactive
 
 ```bash
-chmod +x install-idp5.sh
-sudo ./install-idp5.sh
+chmod +x install_idpv5_ubuntu_24.sh
+sudo ./install_idpv5_ubuntu_24.sh
 ```
 
 You will be asked for: IdP FQDN, scope (domain), entityID, organisation name (optional), LDAP URL / security mode / base DN / bind DN / **bind password** (hidden) / user filter / optional LDAP certificate, DB name/user/password (blank = generated), TLS mode (`letsencrypt`, `selfsigned`, `existing`), and whether to configure the LEARN federation.
@@ -781,11 +781,11 @@ The script also understands the **older LEARN variable names** (`idp_server.env`
 * `/tmp/ldap_server.crt` is picked up automatically as the LDAP certificate if present.
 
 ```bash
-cp idp5.env.example idp5.env
-chmod 600 idp5.env
-nano idp5.env
-sudo ./install-idp5.sh -e idp5.env          # asks only for anything missing
-sudo ./install-idp5.sh -e idp5.env -y       # fully unattended; fails fast if a required value is missing
+cp idp5.env.example idp_server.env
+chmod 600 idp_server.env
+nano idp_server.env
+sudo ./install-idp5.sh -e idp_server.env         # asks only for anything missing
+sudo ./install-idp5.sh -e idp_server.env -y       # fully unattended; fails fast if a required value is missing
 ```
 
 Wrap values that contain `$ ! \` " \` or spaces in **single quotes** (`LDAP_BIND_PASSWORD='p@ss$word'`).
