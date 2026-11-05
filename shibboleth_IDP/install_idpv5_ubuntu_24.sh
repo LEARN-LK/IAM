@@ -1,617 +1,1122 @@
 #!/usr/bin/env bash
-# ============================================================
-#  Shibboleth Identity Provider 5 - Automated Installer
-#  Manual reference: LEARN-LK/IAM (version_v5_shobboleth_step_by_step.md)
+# =============================================================================
+# install-idp5.sh
 #
-#  Usage:
-#    sudo bash install_idp.sh /path/to/idp.env
+# Shibboleth IdP 5 + Jetty 12 (listening on 127.0.0.1:8080) behind Apache 2,
+# on Ubuntu 22.04 / 24.04.  Based on the LEARN "installing-idp-v4" manual
+# workflow, adapted for IdP 5 / Jetty 12 (ee9) and Apache as reverse proxy.
 #
-#  Must be run as root or with sudo.
+# Versions: IdP 5.2.x needs Servlet 6.1 -> Jetty 12.1+ with the ee11 modules;
+# IdP 5.1.x uses the ee9 modules.  The script picks the right set automatically.
 #
-#  PREREQUISITES (do these BEFORE running the script):
-#  -------------------------------------------------------
-#  1. Fill in idp.env with your institution's values.
+# Usage:
+#   sudo ./install-idp5.sh                  # interactive, prompts for values
+#   sudo ./install-idp5.sh -e idp5.env      # read values from an env file
+#   sudo ./install-idp5.sh -e idp5.env -y   # non-interactive (fails if a
+#                                           # required value is missing)
 #
-#  2. If LDAP_MODE is 'starttls' or 'tls', copy your LDAP
-#     server certificate to this IdP server first:
-#
-#     On the LDAP server:
-#       openssl x509 -outform der \
-#         -in /etc/ssl/certs/ldap_server.pem \
-#         -out /etc/ssl/certs/ldap_server.crt
-#
-#     Then from the LDAP server (or from this IdP server):
-#       scp <ldap-user>@<ldap-fqdn>:/etc/ssl/certs/ldap_server.crt \
-#           /tmp/ldap_server.crt
-#
-#     The script will validate the file exists, copy it into
-#     /opt/shibboleth-idp/credentials/ at the right step,
-#     and remove the /tmp staging copy afterwards.
-#
-#  3. Ensure DNS resolves ${IDP_FQDN} to this server's public IP
-#     (required for Certbot to obtain an SSL certificate).
-# ============================================================
+# The script is re-runnable: already-completed work is skipped or re-applied
+# idempotently.  Full log: /var/log/idp5-install.log
+# =============================================================================
+set -Eeuo pipefail
+trap 'echo "ERROR: line ${LINENO}: \"${BASH_COMMAND}\" failed (exit $?)" >&2' ERR
 
-set -euo pipefail
+ENV_FILE=""
+ASSUME_YES="no"
+LOG_FILE="/var/log/idp5-install.log"
+SECRETS_NOTE="/root/idp5-install-secrets.txt"
 
-# ---------- Load environment file ----------
-if [[ $# -lt 1 ]]; then
-  echo "Usage: sudo bash $0 /path/to/idp.env"
-  exit 1
-fi
+# ----------------------------------------------------------------------------
+# Small helpers
+# ----------------------------------------------------------------------------
+log()  { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
+info() { printf '    %s\n' "$*"; }
+warn() { printf '\033[1;33mWARNING: %s\033[0m\n' "$*" >&2; }
+die()  { printf '\033[1;31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 
-ENV_FILE="$1"
-if [[ ! -f "$ENV_FILE" ]]; then
-  echo "ERROR: env file not found: $ENV_FILE"
-  exit 1
-fi
+usage() {
+  sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+  exit "${1:-0}"
+}
 
-# shellcheck source=/dev/null
-source "$ENV_FILE"
+confirm() { # confirm "question"   -> 0 = yes
+  local a
+  if [[ "$ASSUME_YES" == "yes" ]]; then return 0; fi
+  read -r -p "$1 [y/N]: " a
+  [[ "$a" =~ ^[Yy] ]]
+}
 
-# ---------- Derived variables ----------
-BASE_DN="dc=${DOMAIN_DC1},dc=${DOMAIN_DC2},dc=${DOMAIN_DC3}"
-IDP_HOME="/opt/shibboleth-idp"
-JETTY_BASE="/opt/jetty-base"
-JETTY_HOME="/opt/jetty-home"
-
-# LDAP URL depends on mode
-case "$LDAP_MODE" in
-  starttls) LDAP_URL="ldap://${LDAP_FQDN}:389" ;;
-  tls)      LDAP_URL="ldaps://${LDAP_FQDN}:636" ;;
-  plain)    LDAP_URL="ldap://${LDAP_FQDN}:389" ;;
-  *) echo "ERROR: LDAP_MODE must be starttls, tls, or plain"; exit 1 ;;
-esac
-
-# ============================================================
-log() { echo -e "\n\033[1;34m>>> $*\033[0m"; }
-warn() { echo -e "\033[1;33mWARN: $*\033[0m"; }
-die() { echo -e "\033[1;31mERROR: $*\033[0m"; exit 1; }
-
-[[ $EUID -eq 0 ]] || die "Run this script as root or with sudo."
-
-# ============================================================
-# PRE-FLIGHT CHECKS
-# ============================================================
-log "PRE-FLIGHT: Checking prerequisites"
-
-# LDAP cert check — skip for plain mode (no cert needed)
-LDAP_CERT_TMP="/tmp/ldap_server.crt"
-if [[ "$LDAP_MODE" != "plain" ]]; then
-  if [[ ! -f "$LDAP_CERT_TMP" ]]; then
-    echo ""
-    echo "  ╔══════════════════════════════════════════════════════════════╗"
-    echo "  ║  PREREQUISITE: LDAP Server Certificate Missing               ║"
-    echo "  ╠══════════════════════════════════════════════════════════════╣"
-    echo "  ║  LDAP mode is set to: ${LDAP_MODE}"
-    echo "  ║  A certificate file is required at: ${LDAP_CERT_TMP}"
-    echo "  ║                                                              ║"
-    echo "  ║  On your LDAP server, run:                                   ║"
-    echo "  ║    openssl x509 -outform der \\                               ║"
-    echo "  ║      -in /etc/ssl/certs/ldap_server.pem \\                    ║"
-    echo "  ║      -out /etc/ssl/certs/ldap_server.crt                     ║"
-    echo "  ║                                                              ║"
-    echo "  ║  Then copy it to THIS server:                                ║"
-    echo "  ║    scp user@${LDAP_FQDN}:/etc/ssl/certs/ldap_server.crt \\"
-    echo "  ║        ${LDAP_CERT_TMP}"
-    echo "  ║                                                              ║"
-    echo "  ║  Then re-run this script.                                    ║"
-    echo "  ╚══════════════════════════════════════════════════════════════╝"
-    echo ""
-    die "Aborting — LDAP certificate not found at ${LDAP_CERT_TMP}"
+# ask VAR "Prompt" "default" [flags]    flags: s = secret input, o = optional
+# A value already present in the environment / env file is never re-asked.
+ask() {
+  local var="$1" prompt="$2" def="${3:-}" flags="${4:-}" val=""
+  if [[ -n "${!var:-}" ]]; then return 0; fi
+  if [[ "$ASSUME_YES" == "yes" ]]; then
+    if [[ -n "$def" || "$flags" == *o* ]]; then
+      printf -v "$var" '%s' "$def"
+      return 0
+    fi
+    die "Missing required value ${var} (non-interactive mode). Set it in the env file."
   fi
-  echo "  [OK] LDAP certificate found at ${LDAP_CERT_TMP}"
-else
-  echo "  [SKIP] LDAP mode is 'plain' — no certificate required."
-fi
+  while true; do
+    if [[ "$flags" == *s* ]]; then
+      read -r -s -p "${prompt}: " val; echo
+    else
+      read -r -p "${prompt}${def:+ [${def}]}: " val
+    fi
+    val="${val:-$def}"
+    if [[ -n "$val" || "$flags" == *o* ]]; then break; fi
+    echo "  A value is required."
+  done
+  printf -v "$var" '%s' "$val"
+}
 
-echo "  [OK] Running as root."
-echo "  [OK] Environment file loaded: ${ENV_FILE}"
-echo "  [OK] IdP FQDN: ${IDP_FQDN}"
-echo "  [OK] LDAP mode: ${LDAP_MODE}"
-echo ""
+rand_hex()    { openssl rand -hex "${1:-24}"; }
+rand_base64() { openssl rand -base64 "${1:-36}"; }
 
-# ============================================================
-# STEP 1 — System Preparation
-# ============================================================
-log "STEP 1: Updating system packages"
-apt update && apt upgrade -y
+# set_prop FILE KEY VALUE
+#   Replace "KEY = ..." (or the first commented "# KEY = ...") in a .properties
+#   file, or append it.  Backslashes in VALUE are escaped for .properties.
+set_prop() {
+  python3 - "$1" "$2" "$3" <<'PY'
+import re, sys
+path, key, value = sys.argv[1:4]
+value = value.replace('\\', '\\\\')
+new = f"{key} = {value}\n"
+try:
+    with open(path, encoding='utf-8') as fh:
+        lines = fh.readlines()
+except FileNotFoundError:
+    lines = []
+act = re.compile(r'^\s*' + re.escape(key) + r'\s*[=:]')
+com = re.compile(r'^\s*#+\s*' + re.escape(key) + r'\s*[=:]')
+hit = [i for i, l in enumerate(lines) if act.match(l)]
+if hit:
+    for n, i in enumerate(hit):
+        lines[i] = new if n == 0 else '# (duplicate removed) ' + lines[i]
+else:
+    c = [i for i, l in enumerate(lines) if com.match(l)]
+    if c:
+        lines[c[0]] = new
+    else:
+        if lines and not lines[-1].endswith('\n'):
+            lines[-1] += '\n'
+        lines.append(new)
+with open(path, 'w', encoding='utf-8') as fh:
+    fh.writelines(lines)
+PY
+}
 
-log "STEP 1: Installing required dependencies"
-apt install -y curl wget unzip gnupg2 apt-transport-https \
-  ca-certificates software-properties-common ntp apache2
+# has_prop FILE KEY  -> 0 if an active (uncommented) KEY exists
+has_prop() { grep -Eq "^[[:space:]]*${2//./\\.}[[:space:]]*[=:]" "$1" 2>/dev/null; }
 
-log "STEP 1: Setting hostname to ${IDP_FQDN}"
-hostnamectl set-hostname "${IDP_FQDN}"
+# insert_xml FILE CLOSING_TAG MARKER   (snippet on stdin)
+#   Inserts the snippet before the LAST occurrence of CLOSING_TAG, once only
+#   (MARKER must appear inside the snippet).
+insert_xml() {
+  local file="$1" close="$2" marker="$3" snip
+  snip="$(mktemp)"; cat >"$snip"
+  if grep -qF "$marker" "$file"; then rm -f "$snip"; return 0; fi
+  python3 - "$file" "$close" "$snip" <<'PY'
+import sys
+path, close, snip = sys.argv[1:4]
+text = open(path, encoding='utf-8').read()
+add = open(snip, encoding='utf-8').read()
+i = text.rfind(close)
+if i < 0:
+    sys.exit(f"closing tag {close} not found in {path}")
+open(path, 'w', encoding='utf-8').write(text[:i] + add.rstrip('\n') + '\n' + text[i:])
+PY
+  rm -f "$snip"
+}
 
-# Add to /etc/hosts only if not already present
-grep -q "127.0.1.1  ${IDP_FQDN}" /etc/hosts || \
-  echo "127.0.1.1  ${IDP_FQDN}" >> /etc/hosts
+# uncomment_ref FILE BEAN  -> turns  <!-- <ref bean="BEAN" /> -->  into  <ref bean="BEAN" />
+uncomment_ref() {
+  python3 - "$1" "$2" <<'PY'
+import re, sys
+path, bean = sys.argv[1:3]
+text = open(path, encoding='utf-8').read()
+pat = re.compile(r'<!--\s*(<ref\s+bean="' + re.escape(bean) + r'"\s*/>)\s*-->')
+new, n = pat.subn(r'\1', text)
+if n:
+    open(path, 'w', encoding='utf-8').write(new)
+    print(f"    enabled {bean} in {path}")
+elif re.search(r'<ref\s+bean="' + re.escape(bean) + r'"\s*/>', text):
+    print(f"    {bean} already enabled in {path}")
+else:
+    print(f"    WARNING: {bean} not found in {path}; enable it manually", file=sys.stderr)
+PY
+}
 
-# ============================================================
-# STEP 2 — Java 17
-# ============================================================
-log "STEP 2: Installing OpenJDK 17"
-apt install -y openjdk-17-jdk-headless
+verify_hash() { # file algo(sha1|sha256) expected
+  local actual
+  actual="$("$2"sum "$1" | awk '{print $1}')"
+  [[ "${actual,,}" == "${3,,}" ]] || die "Checksum mismatch for $1 ($2 expected $3, got $actual)"
+}
 
-log "STEP 2: Setting JAVA_HOME"
-grep -q "JAVA_HOME" /etc/environment || \
-  echo 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> /etc/environment
+maven_jar() { # group_path artifact version dest_dir   (downloads + verifies sha1)
+  local url="$MAVEN/$1/$2/$3/$2-$3.jar" dest="$4/$2-$3.jar" sum
+  if [[ -s "$dest" ]]; then info "have $(basename "$dest")"; return 0; fi
+  curl -fsSL -o "$dest" "$url" || die "Download failed: $url"
+  sum="$(curl -fsSL "$url.sha1" | grep -oiE '[0-9a-f]{40}' | head -n1 || true)"
+  [[ -n "$sum" ]] || die "Could not fetch checksum for $url"
+  verify_hash "$dest" sha1 "$sum"
+  info "downloaded + verified $(basename "$dest")"
+}
 
-cat > /etc/profile.d/java.sh << 'JEOF'
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-JEOF
-# shellcheck source=/dev/null
-source /etc/profile.d/java.sh
+# ----------------------------------------------------------------------------
+# Configuration: defaults, prompts, validation
+# ----------------------------------------------------------------------------
+set_defaults() {
+  : "${IDP_VERSION:=5.2.3}"
+  : "${JETTY_VERSION:=}"            # empty = newest 12.1.x from Maven Central
+  : "${JAVA_VENDOR:=corretto}"      # corretto | openjdk
+  if [[ "$JAVA_VENDOR" == "openjdk" ]]; then
+    : "${JAVA_PACKAGE:=openjdk-17-jdk-headless}"
+    : "${JAVA_HOME_DIR:=/usr/lib/jvm/java-17-openjdk-$(dpkg --print-architecture 2>/dev/null || echo amd64)}"
+  else
+    : "${JAVA_PACKAGE:=java-17-amazon-corretto-jdk}"
+    : "${JAVA_HOME_DIR:=/usr/lib/jvm/java-17-amazon-corretto}"
+  fi
+  : "${LEARN_RESOLVER_URL:=https://fr.ac.lk/templates/attribute-resolver-LEARN-v5.xml}"
+  : "${LEARN_FILTER_SEED_URL:=https://fr.ac.lk/templates/attribute-filter-LEARN-v5.xml}"
+  : "${LEARN_FILTER_URL:=https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v5.xml}"
+  : "${MARIADB_JDBC_VERSION:=3.5.10}"
+  : "${DBCP2_VERSION:=2.13.0}"
+  : "${POOL2_VERSION:=2.12.0}"
+  : "${IDP_HOME:=/opt/shibboleth-idp}"
+  : "${JETTY_BASE:=/opt/jetty}"
+  : "${SRC_DIR:=/usr/local/src}"
+  : "${JETTY_HTTP_PORT:=8080}"
+  : "${JETTY_XMX:=1500m}"
+  MAVEN="https://repo1.maven.org/maven2"
+  JETTY_HOME_LINK="$SRC_DIR/jetty-src"
+}
 
-java -version
+# Accept the variable names used by the older LEARN idp_server.env / idp.env files.
+import_legacy_env() {
+  local used=no
+  _map() { # _map NEW OLD   (only if NEW unset and OLD set)
+    if [[ -z "${!1:-}" && -n "${!2:-}" ]]; then printf -v "$1" '%s' "${!2}"; used=yes; fi
+  }
+  _map IDP_VERSION IDP_VER
+  # An old Jetty pin (< 12.1) cannot run IdP 5.2+, so it is ignored with a warning.
+  if [[ -z "${JETTY_VERSION:-}" && -n "${JETTY_VER:-}" ]]; then
+    if version_ge "$JETTY_VER" 12.1.0; then JETTY_VERSION="$JETTY_VER"; used=yes
+    elif version_ge "${IDP_VERSION:-5.2.3}" 5.2.0; then
+      warn "JETTY_VER=$JETTY_VER is too old for IdP ${IDP_VERSION:-5.2.3} (needs Jetty 12.1+); using the newest 12.1.x instead."
+    else JETTY_VERSION="$JETTY_VER"; used=yes; fi
+  fi
+  _map ORG_NAME INSTITUTE_DISPLAY_NAME
+  _map ORG_NAME INSTITUTE_NAME
+  _map LDAP_BIND_PASSWORD LDAP_BIND_DN_PASSWORD
+  _map DB_NAME MYSQL_DB_NAME
+  _map DB_USER MYSQL_SHIB_USER
+  _map DB_PASSWORD MYSQL_SHIB_PASSWORD
+  _map HOME_ORG_TYPE SCHAC_HOME_ORG_TYPE
+  _map LE_EMAIL ADMIN_EMAIL
+  if [[ -n "${LDAP_MODE:-}" && -z "${LDAP_SECURITY:-}" ]]; then
+    case "$LDAP_MODE" in tls|ldaps) LDAP_SECURITY=ldaps ;; starttls) LDAP_SECURITY=starttls ;; plain) LDAP_SECURITY=plain ;;
+      *) die "LDAP_MODE must be starttls, tls or plain" ;; esac
+    used=yes
+  fi
+  if [[ -z "${LDAP_URL:-}" && -n "${LDAP_FQDN:-}" ]]; then
+    if [[ "${LDAP_SECURITY:-starttls}" == "ldaps" ]]; then LDAP_URL="ldaps://${LDAP_FQDN}:636"; else LDAP_URL="ldap://${LDAP_FQDN}:389"; fi
+    used=yes
+  fi
+  if [[ -n "${DOMAIN_DC1:-}" && -n "${DOMAIN_DC2:-}" ]]; then
+    local root="dc=${DOMAIN_DC1},dc=${DOMAIN_DC2}${DOMAIN_DC3:+,dc=${DOMAIN_DC3}}"
+    : "${LDAP_ROOT_DN:=$root}"
+    : "${LDAP_BASE_DN:=ou=people,$root}"
+    : "${LDAP_BIND_DN:=cn=admin,$root}"
+    : "${IDP_SCOPE:=${DOMAIN_DC1}.${DOMAIN_DC2}${DOMAIN_DC3:+.${DOMAIN_DC3}}}"
+    used=yes
+  fi
+  if [[ "$used" == "yes" ]]; then
+    : "${CONFIGURE_LEARN:=yes}"       # the old script always configured the LEARN federation
+    : "${TLS_MODE:=letsencrypt}"
+    info "Legacy env variable names detected and mapped."
+    info "Ignored (not needed with this design): MYSQL_ROOT_PASSWORD, SSL_KEYSTORE_PASSWORD (Apache holds the certificate; MariaDB root uses the unix socket)."
+  fi
+  if [[ -z "${LDAP_CERT_FILE:-}" && -r /tmp/ldap_server.crt && "${LDAP_SECURITY:-starttls}" != "plain" ]]; then
+    LDAP_CERT_FILE=/tmp/ldap_server.crt
+    info "Using staged LDAP certificate /tmp/ldap_server.crt"
+  fi
+}
 
-# ============================================================
-# STEP 3 — Jetty 12
-# ============================================================
-log "STEP 3: Creating jetty system user"
-id jetty &>/dev/null || useradd -r -m -U -d /opt/jetty -s /bin/false jetty
+# version_ge A B -> 0 if A >= B (dotted versions)
+version_ge() { [[ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -n1)" == "$2" ]]; }
 
-log "STEP 3: Downloading Jetty ${JETTY_VER}"
-cd /opt
-if [[ ! -d "jetty-home-${JETTY_VER}" ]]; then
-  wget -q "https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/${JETTY_VER}/jetty-home-${JETTY_VER}.tar.gz"
-  tar -xzf "jetty-home-${JETTY_VER}.tar.gz"
-  rm "jetty-home-${JETTY_VER}.tar.gz"
-fi
-[[ -L jetty-home ]] || ln -s "jetty-home-${JETTY_VER}" jetty-home
+# Decide Jetty version and EE level, and refuse impossible combinations.
+resolve_versions() {
+  if [[ -z "${JETTY_VERSION:-}" ]]; then
+    JETTY_VERSION="$(curl -fsSL "$MAVEN/org/eclipse/jetty/jetty-home/maven-metadata.xml" 2>/dev/null \
+      | grep -oE '<version>12\.1\.[0-9]+</version>' | sed -E 's/<[^>]+>//g' | sort -V | tail -n1 || true)"
+    if [[ -z "$JETTY_VERSION" ]]; then JETTY_VERSION="12.1.5"; warn "Could not query Maven Central; falling back to Jetty $JETTY_VERSION"; fi
+    info "Newest Jetty 12.1.x: $JETTY_VERSION"
+  fi
+  if [[ -z "${JETTY_EE:-}" ]]; then
+    if version_ge "$IDP_VERSION" 5.2.0; then JETTY_EE=ee11; else JETTY_EE=ee9; fi
+  fi
+  case "$JETTY_EE" in ee9|ee10|ee11) ;; *) die "JETTY_EE must be ee9, ee10 or ee11" ;; esac
+  version_ge "$JETTY_VERSION" 12.0.0 || die "Jetty $JETTY_VERSION is too old - IdP 5 needs Jetty 12.x"
+  if version_ge "$IDP_VERSION" 5.2.0; then
+    version_ge "$JETTY_VERSION" 12.1.0 || die "IdP $IDP_VERSION needs Servlet 6.1 -> Jetty 12.1+ (you have $JETTY_VERSION)."
+    [[ "$JETTY_EE" == "ee11" ]] || die "IdP $IDP_VERSION needs the ee11 Jetty modules (JETTY_EE=$JETTY_EE)."
+  elif [[ "$JETTY_EE" == "ee11" ]]; then
+    warn "IdP $IDP_VERSION with ee11 is untested; IdP 5.1.x is normally run with ee9."
+  fi
+  info "IdP $IDP_VERSION + Jetty $JETTY_VERSION with ${JETTY_EE} modules"
+}
 
-log "STEP 3: Creating Jetty base and enabling modules"
-mkdir -p "${JETTY_BASE}"
-cd "${JETTY_BASE}"
-java -jar "${JETTY_HOME}/start.jar" \
-  --add-modules=server,http,https,ee10-deploy,ee10-annotations,ee10-cdi,requestlog,rewrite,ssl,console-capture \
-  || true   # idempotent — already-added modules print a warning but exit 0
+collect_settings() {
+  log "Configuration"
+  info "Press Enter to accept a [default]. Values can be pre-set with an env file (-e)."
+  echo
 
-log "STEP 3: Setting Jetty ownership"
-chown -R jetty:jetty "${JETTY_HOME}" "${JETTY_BASE}"
+  ask IDP_FQDN       "IdP host name (FQDN), e.g. idp.inst.ac.lk"
+  [[ "$IDP_FQDN" =~ ^([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}$ ]] || die "Invalid FQDN: $IDP_FQDN"
 
-# ============================================================
-# STEP 4 — Shibboleth IdP 5
-# ============================================================
-log "STEP 4: Downloading Shibboleth IdP ${IDP_VER}"
-cd /opt
-if [[ ! -d "shibboleth-identity-provider-${IDP_VER}" ]]; then
-  wget -q "https://shibboleth.net/downloads/identity-provider/${IDP_VER}/shibboleth-identity-provider-${IDP_VER}.tar.gz"
-  tar -xzf "shibboleth-identity-provider-${IDP_VER}.tar.gz"
-  rm "shibboleth-identity-provider-${IDP_VER}.tar.gz"
-fi
+  local guess="${IDP_FQDN#*.}"
+  ask IDP_SCOPE      "Attribute scope / domain (schacHomeOrganization), e.g. inst.ac.lk" "$guess"
+  ask IDP_ENTITY_ID  "IdP entityID" "https://${IDP_FQDN}/idp/shibboleth"
+  ask ORG_NAME       "Organisation name for login page title/footer (optional)" "" o
 
-log "STEP 4: Running Shibboleth IdP installer (non-interactive)"
-cd "/opt/shibboleth-identity-provider-${IDP_VER}"
-if [[ ! -d "${IDP_HOME}" ]]; then
-  # Provide answers via heredoc — installer reads stdin
-  bin/install.sh \
-    -Didp.target.dir="${IDP_HOME}" \
-    -Didp.host.name="${IDP_FQDN}" \
-    -Didp.entityID="https://${IDP_FQDN}/idp/shibboleth" \
-    -Didp.merge.properties=/dev/null \
-    -Didp.noprompt=true
-fi
+  echo
+  ask LDAP_URL       "LDAP URL (ldap://host:389 or ldaps://host:636)"
+  [[ "$LDAP_URL" =~ ^ldaps?://[^/[:space:]]+ ]] || die "LDAP_URL must start with ldap:// or ldaps://"
+  local def_sec="starttls"; [[ "$LDAP_URL" == ldaps://* ]] && def_sec="ldaps"
+  ask LDAP_SECURITY  "LDAP security: starttls | ldaps | plain" "$def_sec"
+  case "$LDAP_SECURITY" in starttls|ldaps|plain) ;; *) die "LDAP_SECURITY must be starttls, ldaps or plain";; esac
+  ask LDAP_BASE_DN   "LDAP base DN for users, e.g. ou=people,dc=inst,dc=ac,dc=lk"
+  ask LDAP_BIND_DN   "LDAP bind DN, e.g. cn=admin,dc=inst,dc=ac,dc=lk"
+  ask LDAP_BIND_PASSWORD "LDAP bind password" "" s
+  ask LDAP_USER_FILTER   "LDAP user filter ({user} = login name)" "(uid={user})"
+  if [[ "$LDAP_SECURITY" != "plain" ]]; then
+    ask LDAP_CERT_FILE "Path to LDAP server certificate (PEM) for trust; blank = use Java trust store" "" o
+    if [[ -n "${LDAP_CERT_FILE:-}" && ! -r "$LDAP_CERT_FILE" ]]; then die "Cannot read LDAP_CERT_FILE: $LDAP_CERT_FILE"; fi
+  fi
+  if [[ -z "${LDAP_ROOT_DN:-}" ]]; then   # e.g. ou=people,dc=a,dc=b -> dc=a,dc=b
+    LDAP_ROOT_DN="$(sed -E 's/^([Oo][Uu]=[^,]*,)+//' <<<"$LDAP_BASE_DN")"
+  fi
+  ask PERSISTENT_ID_SOURCE "Attribute used as source for persistent-id" "uid"
 
-log "STEP 4: Setting IdP permissions"
-chown -R jetty:jetty "${IDP_HOME}"
-chmod -R 750 "${IDP_HOME}"
+  echo
+  ask DB_NAME        "MariaDB database name" "storageservice"
+  ask DB_USER        "MariaDB user" "idp_admin"
+  [[ "$DB_NAME" =~ ^[A-Za-z0-9_]+$ && "$DB_USER" =~ ^[A-Za-z0-9_]+$ ]] || die "DB_NAME / DB_USER may only contain letters, digits and _"
+  if [[ -z "${DB_PASSWORD:-}" && -f "$IDP_HOME/credentials/secrets.properties" ]]; then
+    DB_PASSWORD="$(sed -n 's/^[[:space:]]*idp\.storage\.dbpassword[[:space:]]*=[[:space:]]*//p' "$IDP_HOME/credentials/secrets.properties" | head -n1 || true)"
+    [[ -n "$DB_PASSWORD" ]] && info "Re-using existing DB password from secrets.properties"
+  fi
+  ask DB_PASSWORD    "MariaDB password for ${DB_USER} (blank = generate)" "" "so"
+  if [[ -z "$DB_PASSWORD" ]]; then DB_PASSWORD="$(rand_hex 20)"; fi
+  [[ "$DB_PASSWORD" != *"'"* && "$DB_PASSWORD" != *'\'* ]] || die "DB password must not contain ' or \\"
 
-# ============================================================
-# STEP 5 — SSL Certificate (Certbot / Let's Encrypt)
-# ============================================================
-log "STEP 5: Installing Certbot"
-apt install -y certbot python3-certbot-apache
+  echo
+  ask TLS_MODE       "Apache TLS: letsencrypt | selfsigned | existing" "letsencrypt"
+  case "$TLS_MODE" in
+    letsencrypt) ask LE_EMAIL "Let's Encrypt contact e-mail (blank = none)" "" o ;;
+    selfsigned)  ;;
+    existing)
+      ask TLS_CERT_FILE  "Path to certificate (full chain preferred)"
+      ask TLS_KEY_FILE   "Path to private key"
+      ask TLS_CHAIN_FILE "Path to intermediate chain (optional)" "" o
+      [[ -r "$TLS_CERT_FILE" && -r "$TLS_KEY_FILE" ]] || die "Cannot read TLS_CERT_FILE / TLS_KEY_FILE" ;;
+    *) die "TLS_MODE must be letsencrypt, selfsigned or existing" ;;
+  esac
 
-log "STEP 5: Obtaining Let's Encrypt certificate for ${IDP_FQDN}"
-certbot --apache \
-  -d "${IDP_FQDN}" \
-  --agree-tos \
-  --email "${ADMIN_EMAIL}" \
-  --no-eff-email \
-  --non-interactive \
-  || warn "Certbot may have already obtained a cert. Continuing..."
+  echo
+  ask CONFIGURE_LEARN "Configure LEARN/LIAF federation metadata + attribute files? (yes/no)" "no"
+  if [[ "$CONFIGURE_LEARN" == "yes" ]]; then
+    ask HOME_ORG_TYPE "schacHomeOrganizationType (urn:schac:homeOrganizationType:int:university | library | public-research-institution | private-research-institution)" \
+        "urn:schac:homeOrganizationType:int:university"
+  fi
 
-log "STEP 5: Converting cert to PKCS12 for Jetty"
-openssl pkcs12 -export \
-  -in "/etc/letsencrypt/live/${IDP_FQDN}/fullchain.pem" \
-  -inkey "/etc/letsencrypt/live/${IDP_FQDN}/privkey.pem" \
-  -out "${IDP_HOME}/credentials/idp.p12" \
-  -name idp \
-  -passout "pass:${SSL_KEYSTORE_PASSWORD}"
+  echo
+  log "Summary"
+  info "IdP FQDN        : $IDP_FQDN"
+  info "Scope           : $IDP_SCOPE"
+  info "EntityID        : $IDP_ENTITY_ID"
+  info "LDAP            : $LDAP_URL ($LDAP_SECURITY), base $LDAP_BASE_DN"
+  info "Database        : $DB_NAME / $DB_USER"
+  info "TLS             : $TLS_MODE"
+  info "IdP / Jetty     : $IDP_VERSION / $JETTY_VERSION [$JETTY_EE]  (home $IDP_HOME, jetty base $JETTY_BASE)"
+  info "LEARN federation: $CONFIGURE_LEARN"
+  confirm "Continue with the installation?" || die "Aborted."
+}
 
-chown jetty:jetty "${IDP_HOME}/credentials/idp.p12"
-chmod 640 "${IDP_HOME}/credentials/idp.p12"
+# ----------------------------------------------------------------------------
+# Steps
+# ----------------------------------------------------------------------------
+step_preflight() {
+  log "Pre-flight checks"
+  [[ $EUID -eq 0 ]] || die "Run as root (sudo)."
+  if [[ -r /etc/os-release ]]; then
+    . /etc/os-release
+    [[ "${ID:-}" == "ubuntu" || "${ID:-}" == "debian" ]] || warn "Untested OS (${PRETTY_NAME:-unknown}); script targets Ubuntu 22.04/24.04."
+    info "OS: ${PRETTY_NAME:-unknown}"
+  fi
+  if ss -ltn "( sport = :${JETTY_HTTP_PORT} )" 2>/dev/null | grep -q LISTEN \
+     && ! systemctl is-active --quiet jetty-idp; then
+    die "Port ${JETTY_HTTP_PORT} is already in use by another service. Set JETTY_HTTP_PORT to a free port."
+  fi
+  if ! getent hosts "$IDP_FQDN" >/dev/null 2>&1; then
+    if [[ "$TLS_MODE" == "letsencrypt" ]]; then
+      die "$IDP_FQDN does not resolve - create the DNS A record first (Let's Encrypt must reach this server on port 80), or use TLS_MODE=selfsigned/existing."
+    else warn "$IDP_FQDN does not resolve from this server."; fi
+  fi
+}
 
-log "STEP 5: Creating Certbot deploy hook for auto-renewal"
-cat > /etc/letsencrypt/renewal-hooks/deploy/jetty-idp.sh << HOOK
-#!/bin/bash
-openssl pkcs12 -export \\
-  -in /etc/letsencrypt/live/${IDP_FQDN}/fullchain.pem \\
-  -inkey /etc/letsencrypt/live/${IDP_FQDN}/privkey.pem \\
-  -out ${IDP_HOME}/credentials/idp.p12 \\
-  -name idp \\
-  -passout pass:${SSL_KEYSTORE_PASSWORD}
+step_packages() {
+  log "Installing packages"
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -y
+  local pkgs=(apache2 mariadb-server wget curl gnupg ca-certificates openssl chrony unzip python3 iproute2)
+  [[ "$TLS_MODE" == "letsencrypt" ]] && pkgs+=(certbot python3-certbot-apache)
+  apt-get install -y --no-install-recommends "${pkgs[@]}"
+}
 
-chown jetty:jetty ${IDP_HOME}/credentials/idp.p12
-chmod 640 ${IDP_HOME}/credentials/idp.p12
-systemctl restart jetty
-HOOK
-chmod +x /etc/letsencrypt/renewal-hooks/deploy/jetty-idp.sh
+step_java() {
+  log "Java 17 (${JAVA_VENDOR})"
+  if [[ -x "$JAVA_HOME_DIR/bin/java" ]]; then info "Found $JAVA_HOME_DIR"
+  elif [[ "$JAVA_VENDOR" == "openjdk" ]]; then
+    apt-get install -y "$JAVA_PACKAGE"
+  else
+    curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg
+    echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" \
+      > /etc/apt/sources.list.d/corretto.list
+    apt-get update -y
+    apt-get install -y "$JAVA_PACKAGE"
+  fi
+  [[ -x "$JAVA_HOME_DIR/bin/java" ]] || die "Java not found at $JAVA_HOME_DIR (set JAVA_HOME_DIR)."
+  export JAVA_HOME="$JAVA_HOME_DIR"
+  "$JAVA_HOME/bin/java" -version 2>&1 | sed 's/^/    /'
+  # NOTE: /etc/environment and the system-wide default java are deliberately NOT
+  # changed, so other sites on this server keep their own Java setup.
+}
 
-# ============================================================
-# STEP 6 — Configure Jetty (using sed / cat for all files)
-# ============================================================
-log "STEP 6: Writing Jetty configuration files"
+step_jetty_user() {
+  log "System user 'jetty'"
+  getent passwd jetty >/dev/null || useradd -r -M -s /usr/sbin/nologin jetty
+}
 
-# 6.1 idp.ini
-cat > "${JETTY_BASE}/start.d/idp.ini" << 'EOF'
+step_database() {
+  log "MariaDB database for persistent-id and storage (consent)"
+  systemctl enable --now mariadb
+  mysql <<SQL
+DROP DATABASE IF EXISTS test;
+DROP USER IF EXISTS ''@'localhost';
+CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+ALTER USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';
+FLUSH PRIVILEGES;
+USE \`${DB_NAME}\`;
+CREATE TABLE IF NOT EXISTS shibpid (
+  localEntity      VARCHAR(255) NOT NULL,
+  peerEntity       VARCHAR(255) NOT NULL,
+  persistentId     VARCHAR(50)  NOT NULL,
+  principalName    VARCHAR(50)  NOT NULL,
+  localId          VARCHAR(50)  NOT NULL,
+  peerProvidedId   VARCHAR(50)  NULL,
+  creationDate     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deactivationDate TIMESTAMP    NULL,
+  PRIMARY KEY (localEntity, peerEntity, persistentId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE TABLE IF NOT EXISTS StorageRecords (
+  context VARCHAR(255) NOT NULL,
+  id      VARCHAR(255) NOT NULL,
+  expires BIGINT DEFAULT NULL,
+  value   LONGTEXT NOT NULL,
+  version BIGINT NOT NULL,
+  PRIMARY KEY (context, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+SQL
+  info "Database '${DB_NAME}' and tables shibpid / StorageRecords are ready."
+}
+
+step_idp_install() {
+  log "Shibboleth IdP ${IDP_VERSION}"
+  if [[ -f "$IDP_HOME/conf/idp.properties" ]]; then
+    info "IdP already installed in $IDP_HOME - skipping installer (upgrades are a separate procedure)."
+    return 0
+  fi
+  local tgz="$SRC_DIR/shibboleth-identity-provider-${IDP_VERSION}.tar.gz"
+  local url="${IDP_URL:-https://shibboleth.net/downloads/identity-provider/${IDP_VERSION}/shibboleth-identity-provider-${IDP_VERSION}.tar.gz}"
+  local src="$SRC_DIR/shibboleth-identity-provider-${IDP_VERSION}"
+
+  if [[ ! -s "$tgz" ]]; then curl -fsSL -o "$tgz" "$url" || die "Download failed: $url"; fi
+
+  local expected="${IDP_SHA256:-}"
+  if [[ -z "$expected" ]]; then
+    expected="$(curl -fsSL "${url}.sha256" 2>/dev/null | grep -oiE '[0-9a-f]{64}' | head -n1 || true)"
+  fi
+  if [[ -n "$expected" ]]; then
+    verify_hash "$tgz" sha256 "$expected"; info "SHA-256 verified."
+  else
+    warn "No SHA-256 available for the IdP tarball (set IDP_SHA256 to enforce)."
+    if [[ "${ALLOW_UNVERIFIED:-no}" != "yes" ]]; then confirm "Continue WITHOUT checksum verification?" || die "Aborted."; fi
+  fi
+
+  [[ -d "$src" ]] || tar -xzf "$tgz" -C "$SRC_DIR"
+
+  SEALER_PASSWORD="$(rand_hex 24)"
+  BACKCHANNEL_PASSWORD="$(rand_hex 24)"
+  local props; props="$(umask 077; mktemp)"
+  cat >"$props" <<EOF
+idp.target.dir = $IDP_HOME
+idp.entityID = $IDP_ENTITY_ID
+idp.host.name = $IDP_FQDN
+idp.scope = $IDP_SCOPE
+idp.initial.modules = idp.authn.Password,idp.intercept.Consent
+idp.sealer.password = $SEALER_PASSWORD
+idp.keystore.password = $BACKCHANNEL_PASSWORD
+EOF
+  JAVA_HOME="$JAVA_HOME_DIR" bash "$src/bin/install.sh" --propertyFile "$props" --noPrompt
+  shred -u "$props" 2>/dev/null || rm -f "$props"
+  [[ -f "$IDP_HOME/conf/idp.properties" ]] || die "IdP installer did not create $IDP_HOME"
+}
+
+step_jetty_install() {
+  log "Jetty ${JETTY_VERSION} (ee9) on 127.0.0.1:${JETTY_HTTP_PORT}"
+  local jhome="$SRC_DIR/jetty-home-${JETTY_VERSION}"
+  local tgz="$SRC_DIR/jetty-home-${JETTY_VERSION}.tar.gz"
+  local url="$MAVEN/org/eclipse/jetty/jetty-home/${JETTY_VERSION}/jetty-home-${JETTY_VERSION}.tar.gz"
+
+  if [[ ! -d "$jhome" ]]; then
+    curl -fsSL -o "$tgz" "$url" || die "Download failed: $url"
+    local sum; sum="$(curl -fsSL "$url.sha1" | grep -oiE '[0-9a-f]{40}' | head -n1 || true)"
+    [[ -n "$sum" ]] || die "Could not fetch Jetty checksum"
+    verify_hash "$tgz" sha1 "$sum"; info "SHA-1 verified."
+    tar -xzf "$tgz" -C "$SRC_DIR"
+  fi
+  ln -nsf "jetty-home-${JETTY_VERSION}" "$JETTY_HOME_LINK"
+
+  install -d -o jetty -g jetty "$JETTY_BASE" "$JETTY_BASE/tmp" "$JETTY_BASE/webapps" /var/log/jetty
+  ln -nsf /var/log/jetty "$JETTY_BASE/logs" 2>/dev/null || true
+
+  # Always (re)apply the module set: --add-modules is idempotent, and this repairs a base that was
+  # first created for a different EE level (e.g. ee9 -> ee11 when moving to IdP 5.2+).
+  ( cd "$JETTY_BASE" && runuser -u jetty -- env JAVA_HOME="$JAVA_HOME_DIR" \
+      "$JAVA_HOME_DIR/bin/java" -Djetty.home="$JETTY_HOME_LINK" -Djetty.base="$JETTY_BASE" \
+      -jar "$JETTY_HOME_LINK/start.jar" --create-startd --approve-all-licenses \
+      --add-modules="server,http,forwarded,ext,resources,logging-logback,${JETTY_EE}-deploy,${JETTY_EE}-annotations,${JETTY_EE}-plus,${JETTY_EE}-jsp,${JETTY_EE}-jstl,${JETTY_EE}-servlets" )
+  # Remove modules of the other EE levels and the deprecated http-forwarded module
+  local ee
+  for ee in ee9 ee10 ee11; do
+    [[ "$ee" == "$JETTY_EE" ]] && continue
+    if compgen -G "$JETTY_BASE/start.d/${ee}-*.ini" >/dev/null; then
+      warn "Removing ${ee} modules from $JETTY_BASE/start.d (this IdP needs ${JETTY_EE})"
+      rm -f "$JETTY_BASE"/start.d/${ee}-*.ini
+    fi
+  done
+  rm -f "$JETTY_BASE/start.d/http-forwarded.ini"
+  if ! compgen -G "$JETTY_BASE/start.d/${JETTY_EE}-deploy.ini" >/dev/null; then
+    die "Module ${JETTY_EE}-deploy was not enabled in $JETTY_BASE/start.d - check the Jetty output above."
+  fi
+
+  cat >"$JETTY_BASE/start.d/idp-local.ini" <<EOF
+# Jetty listens on localhost only; Apache terminates TLS and proxies /idp here.
+jetty.http.host=127.0.0.1
+jetty.http.port=${JETTY_HTTP_PORT}
+jetty.httpConfig.sendServerVersion=false
+# Do not rescan webapps/ - the IdP is only (re)deployed by restarting the service.
 jetty.deploy.scanInterval=0
 EOF
 
-# 6.2 http.ini
-cat > "${JETTY_BASE}/start.d/http.ini" << 'EOF'
---module=http
-jetty.http.port=80
-jetty.http.host=0.0.0.0
-EOF
-
-# 6.3 ssl.ini  — inject password via sed after writing template
-cat > "${JETTY_BASE}/start.d/ssl.ini" << 'EOF'
---module=ssl
-jetty.ssl.port=443
-jetty.ssl.host=0.0.0.0
-jetty.sslContext.keyStorePath=KEYSTORE_PATH
-jetty.sslContext.keyStorePassword=KEYSTORE_PASS
-jetty.sslContext.keyStoreType=PKCS12
-jetty.sslContext.trustStorePath=KEYSTORE_PATH
-jetty.sslContext.trustStorePassword=KEYSTORE_PASS
-jetty.sslContext.trustStoreType=PKCS12
-EOF
-sed -i "s|KEYSTORE_PATH|${IDP_HOME}/credentials/idp.p12|g" \
-        "${JETTY_BASE}/start.d/ssl.ini"
-sed -i "s|KEYSTORE_PASS|${SSL_KEYSTORE_PASSWORD}|g" \
-        "${JETTY_BASE}/start.d/ssl.ini"
-chown jetty:jetty "${JETTY_BASE}/start.d/ssl.ini"
-
-# 6.4 https.ini
-cat > "${JETTY_BASE}/start.d/https.ini" << 'EOF'
---module=https
-jetty.https.port=443
-EOF
-
-# 6.5 idp.xml webapp context
-mkdir -p "${JETTY_BASE}/webapps"
-cat > "${JETTY_BASE}/webapps/idp.xml" << 'EOF'
+  cat >"$JETTY_BASE/webapps/idp.xml" <<EOF
 <?xml version="1.0"?>
-<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN"
-  "https://www.eclipse.org/jetty/configure_10_0.dtd">
-
-<Configure class="org.eclipse.jetty.ee10.webapp.WebAppContext">
-  <Set name="war">/opt/shibboleth-idp/war/idp.war</Set>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "https://www.eclipse.org/jetty/configure_10_0.dtd">
+<Configure class="org.eclipse.jetty.${JETTY_EE}.webapp.WebAppContext">
+  <Set name="war"><SystemProperty name="idp.home"/>/war/idp.war</Set>
   <Set name="contextPath">/idp</Set>
   <Set name="extractWAR">false</Set>
   <Set name="copyWebDir">false</Set>
   <Set name="copyWebInf">true</Set>
-  <Set name="tempDirectory">/opt/shibboleth-idp/jetty-tmp</Set>
-  <Set name="parentLoaderPriority">false</Set>
 </Configure>
 EOF
-chown jetty:jetty "${JETTY_BASE}/webapps/idp.xml"
 
-# 6.6 Temp dir
-mkdir -p "${IDP_HOME}/jetty-tmp"
-chown jetty:jetty "${IDP_HOME}/jetty-tmp"
-
-# 6.7 Logging
-cat > "${JETTY_BASE}/start.d/console-capture.ini" << 'EOF'
---module=console-capture
-jetty.console-capture.dir=/var/log/jetty
-jetty.console-capture.retain=90
-jetty.console-capture.append=true
-EOF
-mkdir -p /var/log/jetty
-chown jetty:jetty /var/log/jetty
-
-chown -R jetty:jetty "${JETTY_BASE}/"
-
-# ============================================================
-# STEP 7 — JSTL / JSP Support
-# ============================================================
-log "STEP 7: Adding JSTL jars to IdP webapp"
-mkdir -p "${IDP_HOME}/edit-webapp/WEB-INF/lib"
-
-wget -q -O "${IDP_HOME}/edit-webapp/WEB-INF/lib/jakarta.servlet.jsp.jstl-api-3.0.0.jar" \
-  "https://repo1.maven.org/maven2/jakarta/servlet/jsp/jstl/jakarta.servlet.jsp.jstl-api/3.0.0/jakarta.servlet.jsp.jstl-api-3.0.0.jar"
-
-wget -q -O "${IDP_HOME}/edit-webapp/WEB-INF/lib/jakarta.servlet.jsp.jstl-3.0.1.jar" \
-  "https://repo1.maven.org/maven2/org/glassfish/web/jakarta.servlet.jsp.jstl/3.0.1/jakarta.servlet.jsp.jstl-3.0.1.jar"
-
-log "STEP 7: Enabling ee10-jsp in Jetty"
-cd "${JETTY_BASE}"
-java -jar "${JETTY_HOME}/start.jar" --add-modules=ee10-jsp || true
-chown -R jetty:jetty "${JETTY_BASE}/" "${IDP_HOME}/edit-webapp/"
-
-# ============================================================
-# STEP 8 — MySQL / StorageService
-# ============================================================
-log "STEP 8: Installing MySQL and Java connector libraries"
-apt install -y default-mysql-server libmariadb-java \
-  libcommons-dbcp2-java libcommons-pool2-java --no-install-recommends
-
-systemctl enable --now mysql
-
-log "STEP 8: Setting MySQL root password"
-mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASSWORD}';" || \
-  warn "Root password may already be set."
-
-log "STEP 8: Downloading and importing storageservice schema"
-wget -q https://raw.githubusercontent.com/LEARN-LK/IAM/master/shib-ss-db.sql \
-  -O /root/shib-ss-db.sql
-
-# Use sed to inject DB name, user, and password into the SQL file
-sed -i "s/storageservice/${MYSQL_DB_NAME}/g"       /root/shib-ss-db.sql
-sed -i "s/'shib'/'${MYSQL_SHIB_USER}'/g"           /root/shib-ss-db.sql
-sed -i "s/'yourpassword'/'${MYSQL_SHIB_PASSWORD}'/g" /root/shib-ss-db.sql
-# Also handle common "Learn@123" default in the sql file
-sed -i "s/'Learn@123'/'${MYSQL_SHIB_PASSWORD}'/g"  /root/shib-ss-db.sql
-
-mysql -u root -p"${MYSQL_ROOT_PASSWORD}" < /root/shib-ss-db.sql
-systemctl restart mysql
-
-log "STEP 8: Linking MariaDB/DBCP2 jars into IdP"
-cd "${IDP_HOME}"
-for jar in \
-  /usr/share/java/mariadb-java-client.jar \
-  /usr/share/java/commons-dbcp2.jar \
-  /usr/share/java/commons-pool2.jar; do
-  target="edit-webapp/WEB-INF/lib/$(basename "$jar")"
-  [[ -e "$target" ]] || ln -s "$jar" "$target"
-done
-
-# ============================================================
-# STEP 9 — Persistent-ID configuration (sed edits)
-# ============================================================
-log "STEP 9: Generating persistent-id salt"
-PERSISTENT_ID_SALT=$(openssl rand -base64 36)
-
-log "STEP 9: Configuring saml-nameid.properties"
-NAMEID_PROPS="${IDP_HOME}/conf/saml-nameid.properties"
-
-sed -i "s|^#\?idp.persistentId.sourceAttribute\s*=.*|idp.persistentId.sourceAttribute = uid|" \
-       "${NAMEID_PROPS}"
-sed -i "s|^#\?idp.persistentId.salt\s*=.*|idp.persistentId.salt = ${PERSISTENT_ID_SALT}|" \
-       "${NAMEID_PROPS}"
-sed -i "s|^#\?idp.persistentId.generator\s*=.*|idp.persistentId.generator = shibboleth.StoredPersistentIdGenerator|" \
-       "${NAMEID_PROPS}"
-sed -i "s|^#\?idp.persistentId.dataSource\s*=.*|idp.persistentId.dataSource = MyDataSource|" \
-       "${NAMEID_PROPS}"
-sed -i "s|^#\?idp.persistentId.computed\s*=.*|idp.persistentId.computed = shibboleth.ComputedPersistentIdGenerator|" \
-       "${NAMEID_PROPS}"
-
-log "STEP 9: Enabling SAML2PersistentGenerator in saml-nameid.xml"
-NAMEID_XML="${IDP_HOME}/conf/saml-nameid.xml"
-sed -i 's|<!--\s*<ref bean="shibboleth.SAML2PersistentGenerator"\s*/>\s*-->|<ref bean="shibboleth.SAML2PersistentGenerator" />|' \
-       "${NAMEID_XML}"
-# If it's already uncommented leave it; if the comment style differs try a broader match
-grep -q 'shibboleth.SAML2PersistentGenerator' "${NAMEID_XML}" || \
-  warn "Could not find SAML2PersistentGenerator line — verify saml-nameid.xml manually."
-
-log "STEP 9: Enabling c14n/SAML2Persistent"
-C14N_XML="${IDP_HOME}/conf/c14n/subject-c14n.xml"
-sed -i 's|<!--\s*<ref bean="c14n/SAML2Persistent"\s*/>\s*-->|<ref bean="c14n/SAML2Persistent" />|' \
-       "${C14N_XML}"
-
-log "STEP 9: Adding DataSource bean to global.xml"
-GLOBAL_XML="${IDP_HOME}/conf/global.xml"
-
-# Insert DataSource bean before closing </beans> if not already present
-grep -q "MyDataSource" "${GLOBAL_XML}" || sed -i "s|</beans>|    <!-- DataSource for persistent-id -->\n    <bean id=\"MyDataSource\"\n  class=\"org.apache.commons.dbcp2.BasicDataSource\"\n  destroy-method=\"close\" lazy-init=\"true\"\n  p:driverClassName=\"org.mariadb.jdbc.Driver\"\n  p:url=\"jdbc:mysql://127.0.0.1:3306/${MYSQL_DB_NAME}?useSSL=false\&amp;autoReconnect=true\&amp;allowPublicKeyRetrieval=true\"\n  p:username=\"${MYSQL_SHIB_USER}\"\n  p:password=\"${MYSQL_SHIB_PASSWORD}\"\n  p:maxTotal=\"10\"\n  p:maxIdle=\"5\"\n  p:maxWaitMillis=\"15000\"\n  p:testOnBorrow=\"true\"\n  p:validationQuery=\"select 1\"\n  p:validationQueryTimeout=\"5\" />\n\n</beans>|" "${GLOBAL_XML}"
-
-# ============================================================
-# STEP 10 — LDAP Configuration (sed edits)
-# ============================================================
-log "STEP 10: Installing LDAP server certificate into IdP credentials"
-LDAP_CERT_DEST="${IDP_HOME}/credentials/ldap_server.crt"
-if [[ "$LDAP_MODE" != "plain" ]]; then
-  # /tmp/ldap_server.crt was validated at pre-flight; IDP_HOME now exists
-  cp "${LDAP_CERT_TMP}" "${LDAP_CERT_DEST}"
-  chown jetty:jetty "${LDAP_CERT_DEST}"
-  chmod 640 "${LDAP_CERT_DEST}"
-  echo "  [OK] LDAP cert installed  -> ${LDAP_CERT_DEST}"
-  rm -f "${LDAP_CERT_TMP}"
-  echo "  [OK] Removed staging copy  /tmp/ldap_server.crt"
-else
-  echo "  [SKIP] LDAP mode is 'plain' — no certificate to install."
-fi
-
-log "STEP 10: Configuring LDAP properties (mode: ${LDAP_MODE})"
-LDAP_PROPS="${IDP_HOME}/conf/ldap.properties"
-
-sed -i "s|^#\?idp.authn.LDAP.authenticator\s*=.*|idp.authn.LDAP.authenticator = bindSearchAuthenticator|" "${LDAP_PROPS}"
-sed -i "s|^#\?idp.authn.LDAP.ldapURL\s*=.*|idp.authn.LDAP.ldapURL = ${LDAP_URL}|"                         "${LDAP_PROPS}"
-sed -i "s|^#\?idp.authn.LDAP.baseDN\s*=.*|idp.authn.LDAP.baseDN = ou=people,${BASE_DN}|"                  "${LDAP_PROPS}"
-sed -i "s|^#\?idp.authn.LDAP.userFilter\s*=.*|idp.authn.LDAP.userFilter = (uid={user})|"                   "${LDAP_PROPS}"
-sed -i "s|^#\?idp.authn.LDAP.bindDN\s*=.*|idp.authn.LDAP.bindDN = cn=admin,${BASE_DN}|"                   "${LDAP_PROPS}"
-sed -i "s|^#\?idp.authn.LDAP.bindDNCredential\s*=.*|idp.authn.LDAP.bindDNCredential = ${LDAP_BIND_DN_PASSWORD}|" "${LDAP_PROPS}"
-sed -i "s|^#\?idp.authn.LDAP.returnAttributes\s*=.*|idp.authn.LDAP.returnAttributes = *|"                  "${LDAP_PROPS}"
-sed -i "s|^#\?idp.attribute.resolver.LDAP.returnAttributes\s*=.*|idp.attribute.resolver.LDAP.returnAttributes = %{idp.authn.LDAP.returnAttributes}|" "${LDAP_PROPS}"
-sed -i "s|^#\?idp.attribute.resolver.LDAP.exportAttributes\s*=.*|idp.attribute.resolver.LDAP.exportAttributes = *|" "${LDAP_PROPS}"
-
-case "$LDAP_MODE" in
-  starttls)
-    sed -i "s|^#\?idp.authn.LDAP.useStartTLS\s*=.*|idp.authn.LDAP.useStartTLS = true|"  "${LDAP_PROPS}"
-    sed -i "s|^#\?idp.authn.LDAP.useSSL\s*=.*|idp.authn.LDAP.useSSL = false|"            "${LDAP_PROPS}"
-    sed -i "s|^#\?idp.authn.LDAP.sslConfig\s*=.*|idp.authn.LDAP.sslConfig = certificateTrust|" "${LDAP_PROPS}"
-    sed -i "s|^#\?idp.authn.LDAP.trustCertificates\s*=.*|idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap_server.crt|" "${LDAP_PROPS}"
-    sed -i "s|^#\?idp.attribute.resolver.LDAP.trustCertificates\s*=.*|idp.attribute.resolver.LDAP.trustCertificates = %{idp.authn.LDAP.trustCertificates:undefined}|" "${LDAP_PROPS}"
-    ;;
-  tls)
-    sed -i "s|^#\?idp.authn.LDAP.useStartTLS\s*=.*|idp.authn.LDAP.useStartTLS = false|" "${LDAP_PROPS}"
-    sed -i "s|^#\?idp.authn.LDAP.useSSL\s*=.*|idp.authn.LDAP.useSSL = true|"             "${LDAP_PROPS}"
-    sed -i "s|^#\?idp.authn.LDAP.sslConfig\s*=.*|idp.authn.LDAP.sslConfig = certificateTrust|" "${LDAP_PROPS}"
-    sed -i "s|^#\?idp.authn.LDAP.trustCertificates\s*=.*|idp.authn.LDAP.trustCertificates = %{idp.home}/credentials/ldap_server.crt|" "${LDAP_PROPS}"
-    sed -i "s|^#\?idp.attribute.resolver.LDAP.trustCertificates\s*=.*|idp.attribute.resolver.LDAP.trustCertificates = %{idp.authn.LDAP.trustCertificates:undefined}|" "${LDAP_PROPS}"
-    ;;
-  plain)
-    sed -i "s|^#\?idp.authn.LDAP.useStartTLS\s*=.*|idp.authn.LDAP.useStartTLS = false|" "${LDAP_PROPS}"
-    sed -i "s|^#\?idp.authn.LDAP.useSSL\s*=.*|idp.authn.LDAP.useSSL = false|"            "${LDAP_PROPS}"
-    ;;
-esac
-
-# ============================================================
-# STEP 11 — Attribute Resolver / Filter from LEARN
-# ============================================================
-log "STEP 11: Downloading LEARN attribute-resolver and attribute-filter"
-wget -q https://fr.ac.lk/templates/attribute-resolver-LEARN-v5.xml \
-     -O "${IDP_HOME}/conf/attribute-resolver-LEARN-v5.xml"
-wget -q https://fr.ac.lk/templates/attribute-filter-LEARN-v5.xml  \
-     -O "${IDP_HOME}/conf/attribute-filter-LEARN-v5.xml"
-
-log "STEP 11: Patching schacHomeOrganizationType in attribute-resolver"
-RESOLVER="${IDP_HOME}/conf/attribute-resolver-LEARN-v5.xml"
-sed -i "s|urn:schac:homeOrganizationType:lk:others|${SCHAC_HOME_ORG_TYPE}|g" "${RESOLVER}"
-# Update domain-specific values
-sed -i "s|dc=YOUR-DOMAIN,dc=ac,dc=lk|${BASE_DN}|g" "${RESOLVER}"
-
-log "STEP 11: Patching services.xml (attribute-resolver and filter)"
-SERVICES="${IDP_HOME}/conf/services.xml"
-
-# Switch to LEARN resolver
-sed -i "s|%{idp.home}/conf/attribute-resolver.xml|%{idp.home}/conf/attribute-resolver-LEARN-v5.xml|g" \
-       "${SERVICES}"
-
-# Add Default-Filter bean and switch shibboleth.AttributeFilterResources
-grep -q "Default-Filter" "${SERVICES}" || sed -i "s|</beans>|    <bean id=\"Default-Filter\" class=\"net.shibboleth.ext.spring.resource.FileBackedHTTPResource\"\n          c:client-ref=\"shibboleth.FileCachingHttpClient\"\n          c:url=\"https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v5.xml\"\n          c:backingFile=\"%{idp.home}/conf/attribute-filter-LEARN-v5.xml\"/>\n\n</beans>|" "${SERVICES}"
-
-# Replace shibboleth.AttributeFilterResources list
-# Use Python for multi-line XML replacement (more reliable than sed for blocks)
-python3 - << PYEOF
-import re, pathlib
-f = pathlib.Path("${SERVICES}")
-txt = f.read_text()
-old = r'<util:list id\s*=\s*"shibboleth\.AttributeFilterResources"[^>]*>.*?</util:list>'
-new = '''<util:list id ="shibboleth.AttributeFilterResources">
-   <!--  <value>%{idp.home}/conf/attribute-filter.xml</value> -->
-   <ref bean="Default-Filter"/>
-</util:list>'''
-txt2 = re.sub(old, new, txt, flags=re.DOTALL)
-f.write_text(txt2)
-print("services.xml AttributeFilterResources updated.")
-PYEOF
-
-# ============================================================
-# STEP 12 — idp-metadata.xml (UIInfo, DisplayName)
-# ============================================================
-log "STEP 12: Patching idp-metadata.xml with institute name and description"
-METADATA="${IDP_HOME}/metadata/idp-metadata.xml"
-
-sed -i "s|<mdui:DisplayName xml:lang=\"en\">.*</mdui:DisplayName>|<mdui:DisplayName xml:lang=\"en\">${INSTITUTE_DISPLAY_NAME}</mdui:DisplayName>|" \
-       "${METADATA}"
-sed -i "s|<mdui:Description xml:lang=\"en\">.*</mdui:Description>|<mdui:Description xml:lang=\"en\">${INSTITUTE_DESCRIPTION}</mdui:Description>|" \
-       "${METADATA}"
-
-# ============================================================
-# STEP 13 — Federation Metadata
-# ============================================================
-log "STEP 13: Downloading LEARN federation signing certificate"
-wget -q https://fr.ac.lk/signedmetadata/metadata-signer \
-     -O "${IDP_HOME}/metadata/federation-cert.pem"
-
-log "STEP 13: Adding federation metadata providers to metadata-providers.xml"
-META_PROVIDERS="${IDP_HOME}/conf/metadata-providers.xml"
-
-grep -q "HTTPMD-LEARN-Federation" "${META_PROVIDERS}" || sed -i "s|</MetadataProvider>$|</MetadataProvider>\n\n    <!-- LEARN Federation metadata -->\n    <MetadataProvider id=\"HTTPMD-LEARN-Federation\"\n                      xsi:type=\"FileBackedHTTPMetadataProvider\"\n                      backingFile=\"%{idp.home}/metadata/test-metadata.xml\"\n                      metadataURL=\"https://fr.ac.lk/signedmetadata/metadata.xml\">\n        <MetadataFilter xsi:type=\"SignatureValidation\"\n                        requireSignedRoot=\"true\"\n                        certificateFile=\"%{idp.home}/metadata/federation-cert.pem\"/>\n        <MetadataFilter xsi:type=\"RequiredValidUntil\" maxValidityInterval=\"P10D\"/>\n        <MetadataFilter xsi:type=\"EntityRole\"><RetainedRole>md:SPSSODescriptor</RetainedRole></MetadataFilter>\n    </MetadataProvider>\n\n    <MetadataProvider id=\"HTTPMD-LEARN-interfederation\"\n                      xsi:type=\"FileBackedHTTPMetadataProvider\"\n                      backingFile=\"%{idp.home}/metadata/LEARNmetadata.xml\"\n                      metadataURL=\"https://fr.ac.lk/signedmetadata/LIAF-interfederation-sp-metadata.xml\">\n        <MetadataFilter xsi:type=\"SignatureValidation\"\n                        requireSignedRoot=\"true\"\n                        certificateFile=\"%{idp.home}/metadata/federation-cert.pem\"/>\n        <MetadataFilter xsi:type=\"RequiredValidUntil\" maxValidityInterval=\"P11D\"/>\n        <MetadataFilter xsi:type=\"EntityRole\"><RetainedRole>md:SPSSODescriptor</RetainedRole></MetadataFilter>\n    </MetadataProvider>|" "${META_PROVIDERS}"
-
-# ============================================================
-# STEP 14 — logback.xml LDAP debug entries
-# ============================================================
-log "STEP 14: Adding LDAP loggers to logback.xml"
-LOGBACK="${IDP_HOME}/conf/logback.xml"
-
-grep -q "org.ldaptive.auth.Authenticator" "${LOGBACK}" || sed -i "s|</configuration>|    <!-- Logs LDAP related messages -->\n    <logger name=\"org.ldaptive\" level=\"\${idp.loglevel.ldap:-WARN}\"/>\n    <!-- Logs on LDAP user authentication -->\n    <logger name=\"org.ldaptive.auth.Authenticator\" level=\"INFO\" />\n\n</configuration>|" "${LOGBACK}"
-
-# ============================================================
-# STEP 15 — Build the WAR
-# ============================================================
-log "STEP 15: Building IdP WAR file"
-cd "${IDP_HOME}"
-bin/build.sh
-chown -R jetty:jetty "${IDP_HOME}"
-
-# ============================================================
-# STEP 16 — Grant port-binding capability to Java
-# ============================================================
-log "STEP 16: Granting cap_net_bind_service to Java binary"
-JAVA_BIN="/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
-setcap cap_net_bind_service=+eip "${JAVA_BIN}"
-getcap "${JAVA_BIN}"
-
-# ============================================================
-# STEP 17 — systemd service for Jetty
-# ============================================================
-log "STEP 17: Creating Jetty systemd service"
-cat > /etc/systemd/system/jetty.service << 'SVCEOF'
+  cat >/etc/systemd/system/jetty-idp.service <<EOF
 [Unit]
-Description=Jetty 12 Web Server (Shibboleth IdP)
-After=network.target
+Description=Jetty ${JETTY_VERSION} - Shibboleth IdP
+After=network.target mariadb.service
 
 [Service]
-Type=simple
 User=jetty
 Group=jetty
-WorkingDirectory=/opt/jetty-base
-Environment="JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64"
-ExecStart=/usr/lib/jvm/java-17-openjdk-amd64/bin/java \
-  -Xms512m \
-  -Xmx1024m \
-  -XX:+UseG1GC \
-  -DIDP_HOME=/opt/shibboleth-idp \
-  -Djetty.home=/opt/jetty-home \
-  -Djetty.base=/opt/jetty-base \
-  -jar /opt/jetty-home/start.jar
+WorkingDirectory=${JETTY_BASE}
+ExecStartPre=/bin/sh -c 'rm -rf ${JETTY_BASE}/tmp/*'
+ExecStart=${JAVA_HOME_DIR}/bin/java -Xmx${JETTY_XMX} -Djava.security.egd=file:/dev/urandom -Didp.home=${IDP_HOME} -Djava.io.tmpdir=${JETTY_BASE}/tmp -Djetty.home=${JETTY_HOME_LINK} -Djetty.base=${JETTY_BASE} -jar ${JETTY_HOME_LINK}/start.jar
 Restart=on-failure
 RestartSec=5
-StandardOutput=append:/var/log/jetty/jetty.log
-StandardError=append:/var/log/jetty/jetty-error.log
+SuccessExitStatus=143
+TimeoutStartSec=300
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target
-SVCEOF
+EOF
+  systemctl daemon-reload
+  chown -R jetty:jetty "$JETTY_BASE"
+}
 
-log "STEP 17: Enabling and starting Jetty"
-systemctl daemon-reload
-systemctl enable jetty
-systemctl start jetty
-sleep 10
-systemctl status jetty --no-pager
+# Is a jar (name prefix) inside idp.war?
+WAR_LIST=""
+refresh_war_list() { WAR_LIST="$(mktemp)"; unzip -Z1 "$IDP_HOME/war/idp.war" >"$WAR_LIST"; }
+war_has() { grep -q "WEB-INF/lib/$1" "$WAR_LIST"; }
 
-# ============================================================
-# STEP 18 — Verification
-# ============================================================
-log "STEP 18: Verifying installation"
-echo ""
-echo "--- Port check ---"
-ss -tlnp | grep -E '80|443' || true
+step_plugin_libs() {
+  log "JDBC storage plugin + JDBC libraries"
+  export JAVA_HOME="$JAVA_HOME_DIR"
+  local plugin="net.shibboleth.plugin.storage.jdbc" listing
+  listing="$("$IDP_HOME/bin/plugin.sh" -l 2>&1 || true)"
+  if grep -q "$plugin" <<<"$listing"; then
+    info "Plugin $plugin already installed."
+  else
+    # --noPrompt answers "no" to the signing-key import, so the key must be trusted beforehand:
+    # pre-seed the plugin's truststore with Shibboleth's published release keys.
+    local tsdir="$IDP_HOME/credentials/$plugin"
+    install -d "$tsdir"
+    if [[ ! -s "$tsdir/truststore.asc" ]]; then
+      curl -fsSL -o "$tsdir/truststore.asc" https://shibboleth.net/downloads/PGP_KEYS \
+        || die "Could not download https://shibboleth.net/downloads/PGP_KEYS (needed to verify the plugin signature)."
+      info "Pre-trusted the Shibboleth release keys for $plugin"
+    fi
+    "$IDP_HOME/bin/plugin.sh" -I "$plugin" --noPrompt \
+      || die "Plugin install failed. Run manually (answer 'yes' to the key prompt after checking the fingerprint):  $IDP_HOME/bin/plugin.sh -I $plugin   then re-run this script."
+  fi
 
-echo ""
-echo "--- IdP status ---"
-curl -sk --resolve "${IDP_FQDN}:443:127.0.0.1" \
-  "https://${IDP_FQDN}/idp/status" || \
-  warn "IdP status check failed. Check logs: tail -f ${IDP_HOME}/logs/idp-process.log"
+  local libs="$SRC_DIR/idp-libs" web="$IDP_HOME/edit-webapp/WEB-INF/lib"
+  install -d "$libs" "$web"
+  maven_jar org/mariadb/jdbc/mariadb-java-client "mariadb-java-client" "$MARIADB_JDBC_VERSION" "$libs"
+  cp -f "$libs/mariadb-java-client-${MARIADB_JDBC_VERSION}.jar" "$web/"
 
-echo ""
-echo "--- Shibboleth version in log ---"
-grep -m1 "Shibboleth IdP" "${IDP_HOME}/logs/idp-process.log" 2>/dev/null || true
+  log "Building idp.war"
+  "$IDP_HOME/bin/build.sh"
+  refresh_war_list
 
-echo ""
-echo "============================================================"
-echo " Installation complete!"
-echo " IdP metadata: https://${IDP_FQDN}/idp/shibboleth"
-echo " Test SP:      https://sp-test.liaf.ac.lk"
-echo " Federation:   https://liaf.ac.lk/"
-echo ""
-echo " NEXT: Register at https://liaf.ac.lk/ using your metadata"
-echo "       from https://${IDP_FQDN}/idp/shibboleth"
-echo "============================================================"
+  local rebuild=no
+  if ! war_has "commons-dbcp2-"; then
+    maven_jar org/apache/commons/commons-dbcp2 commons-dbcp2 "$DBCP2_VERSION" "$libs"
+    cp -f "$libs/commons-dbcp2-${DBCP2_VERSION}.jar" "$web/"; rebuild=yes
+  fi
+  if ! war_has "commons-pool2-"; then
+    maven_jar org/apache/commons/commons-pool2 commons-pool2 "$POOL2_VERSION" "$libs"
+    cp -f "$libs/commons-pool2-${POOL2_VERSION}.jar" "$web/"; rebuild=yes
+  fi
+  if ! war_has "spring-jdbc-"; then
+    local sv; sv="$(grep -oE 'WEB-INF/lib/spring-core-[0-9][0-9.]*\.jar' "$WAR_LIST" | head -n1 | sed -E 's/.*spring-core-(.*)\.jar/\1/' || true)"
+    [[ -n "$sv" ]] || die "Cannot determine the Spring version bundled with the IdP."
+    maven_jar org/springframework/spring-jdbc spring-jdbc "$sv" "$libs"
+    cp -f "$libs/spring-jdbc-${sv}.jar" "$web/"; rebuild=yes
+  fi
+  if [[ "$rebuild" == "yes" ]]; then
+    log "Rebuilding idp.war with the missing libraries"
+    "$IDP_HOME/bin/build.sh"
+    refresh_war_list
+  fi
+  for j in mariadb-java-client commons-dbcp2 commons-pool2 spring-jdbc; do
+    war_has "$j-" && info "idp.war contains $j" || die "idp.war is missing $j"
+  done
+  rm -f "$WAR_LIST"
+}
+
+step_idp_config() {
+  log "Configuring the IdP (LDAP, persistent-id, consent, storage)"
+  local conf="$IDP_HOME/conf" cred="$IDP_HOME/credentials"
+  local bak; bak="$IDP_HOME/conf-backup-$(date +%Y%m%d%H%M%S)"
+  cp -a "$conf" "$bak"; info "Backup of conf/: $bak"
+
+  # ---- LDAP ---------------------------------------------------------------
+  local startTLS=false useSSL=false
+  [[ "$LDAP_SECURITY" == "starttls" ]] && startTLS=true
+  [[ "$LDAP_SECURITY" == "ldaps"    ]] && useSSL=true
+  set_prop "$conf/ldap.properties" idp.authn.LDAP.authenticator "bindSearchAuthenticator"
+  set_prop "$conf/ldap.properties" idp.authn.LDAP.ldapURL       "$LDAP_URL"
+  set_prop "$conf/ldap.properties" idp.authn.LDAP.useStartTLS   "$startTLS"
+  set_prop "$conf/ldap.properties" idp.authn.LDAP.useSSL        "$useSSL"
+  if [[ "$LDAP_SECURITY" != "plain" ]]; then
+    if [[ -n "${LDAP_CERT_FILE:-}" ]]; then
+      install -m 0644 -o jetty -g jetty "$LDAP_CERT_FILE" "$cred/ldap_server.crt"
+      set_prop "$conf/ldap.properties" idp.authn.LDAP.sslConfig         "certificateTrust"
+      set_prop "$conf/ldap.properties" idp.authn.LDAP.trustCertificates '%{idp.home}/credentials/ldap_server.crt'
+    else
+      set_prop "$conf/ldap.properties" idp.authn.LDAP.sslConfig "jvmTrust"
+    fi
+  fi
+  set_prop "$conf/ldap.properties" idp.authn.LDAP.baseDN          "$LDAP_BASE_DN"
+  set_prop "$conf/ldap.properties" idp.authn.LDAP.userFilter      "$LDAP_USER_FILTER"
+  set_prop "$conf/ldap.properties" idp.authn.LDAP.bindDN          "$LDAP_BIND_DN"
+  set_prop "$conf/ldap.properties" idp.authn.LDAP.returnAttributes "*"
+  local principal='$resolutionContext.principal'
+  set_prop "$conf/ldap.properties" idp.attribute.resolver.LDAP.searchFilter "${LDAP_USER_FILTER//\{user\}/$principal}"
+  # Properties used by the LEARN attribute resolver's LDAP connector
+  set_prop "$conf/ldap.properties" idp.attribute.resolver.LDAP.returnAttributes   '%{idp.authn.LDAP.returnAttributes}'
+  set_prop "$conf/ldap.properties" idp.attribute.resolver.LDAP.trustCertificates  '%{idp.authn.LDAP.trustCertificates:undefined}'
+  set_prop "$conf/ldap.properties" idp.attribute.resolver.LDAP.exportAttributes   ''
+  # bind password lives in secrets.properties (not in ldap.properties)
+  set_prop "$cred/secrets.properties" idp.authn.LDAP.bindDNCredential "$LDAP_BIND_PASSWORD"
+
+  # ---- Secrets: DB password + persistent-id salt ---------------------------
+  set_prop "$cred/secrets.properties" idp.storage.dbpassword "$DB_PASSWORD"
+  if ! has_prop "$cred/secrets.properties" idp.persistentId.salt; then
+    set_prop "$cred/secrets.properties" idp.persistentId.salt "$(rand_base64 36)"
+  fi
+
+  # ---- Persistent-id (stored mode) ----------------------------------------
+  set_prop "$conf/saml-nameid.properties" idp.persistentId.sourceAttribute "$PERSISTENT_ID_SOURCE"
+  set_prop "$conf/saml-nameid.properties" idp.persistentId.generator       "MyPersistentIdStore"
+  uncomment_ref "$conf/saml-nameid.xml"        "shibboleth.SAML2PersistentGenerator"
+  uncomment_ref "$conf/c14n/subject-c14n.xml"  "c14n/SAML2Persistent"
+
+  # ---- Consent + session tracking -----------------------------------------
+  set_prop "$conf/idp.properties" idp.consent.StorageService        "idp.JDBCConsentStorage"
+  set_prop "$conf/idp.properties" idp.consent.compareValues         "true"
+  set_prop "$conf/idp.properties" idp.consent.maxStoredRecords      "-1"
+  set_prop "$conf/idp.properties" idp.consent.storageRecordLifetime "P1Y"
+  set_prop "$conf/idp.properties" idp.session.trackSPSessions       "true"
+  set_prop "$conf/idp.properties" idp.session.secondaryServiceIndex "true"
+
+  # ---- Beans: data sources, JDBC storage service, persistent-id store ------
+  local jdbc_url="jdbc:mariadb://127.0.0.1:3306/${DB_NAME}?autoReconnect=true&amp;sslMode=disable"
+  insert_xml "$conf/global.xml" "</beans>" "LEARN-IDP5-JDBC" <<EOF
+
+    <!-- LEARN-IDP5-JDBC: JDBC storage (consent) and persistent-id data sources -->
+    <bean id="idp.JDBCConsentStorage"
+          parent="shibboleth.JDBCStorageService"
+          p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
+          p:dataSource-ref="idp.JDBC.DataSource" />
+
+    <!-- Two separate pools so a problem in one component cannot starve the other -->
+    <bean id="idp.JDBC.DataSource"
+          class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close" lazy-init="true"
+          p:driverClassName="org.mariadb.jdbc.Driver"
+          p:url="${jdbc_url}"
+          p:username="${DB_USER}"
+          p:password="%{idp.storage.dbpassword}"
+          p:maxIdle="5"
+          p:maxWaitMillis="15000"
+          p:testOnBorrow="true"
+          p:validationQuery="select 1"
+          p:validationQueryTimeout="5" />
+
+    <bean id="idp.JDBC.PersistentDataSource"
+          class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close" lazy-init="true"
+          p:driverClassName="org.mariadb.jdbc.Driver"
+          p:url="${jdbc_url}"
+          p:username="${DB_USER}"
+          p:password="%{idp.storage.dbpassword}"
+          p:maxIdle="5"
+          p:maxWaitMillis="15000"
+          p:testOnBorrow="true"
+          p:validationQuery="select 1"
+          p:validationQueryTimeout="5" />
+EOF
+  insert_xml "$conf/saml-nameid.xml" "</beans>" "LEARN-IDP5-PERSISTENTID" <<'EOF'
+
+    <!-- LEARN-IDP5-PERSISTENTID: stored persistent-id generator -->
+    <bean id="MyPersistentIdStore" parent="shibboleth.StoredPersistentIdGenerator"
+          p:dataSource-ref="idp.JDBC.PersistentDataSource"
+          p:queryTimeout="PT2S"
+          p:retryableErrors="#{ {'23000'} }" />
+EOF
+
+  # ---- Log authentication errors from LDAP ---------------------------------
+  insert_xml "$conf/logback.xml" "</configuration>" "LEARN-IDP5-LDAPLOG" <<'EOF'
+
+    <!-- LEARN-IDP5-LDAPLOG: log LDAP authentication outcomes -->
+    <logger name="org.ldaptive.auth.Authenticator" level="INFO" />
+EOF
+
+  # ---- Optional branding strings -------------------------------------------
+  if [[ -n "${ORG_NAME:-}" ]]; then
+    local msg="$IDP_HOME/messages/messages.properties"
+    set_prop "$msg" idp.title          "${ORG_NAME} Login Service"
+    set_prop "$msg" idp.logo.alt-text  "${ORG_NAME} logo"
+    set_prop "$msg" idp.footer         "Copyright ${ORG_NAME}"
+    set_prop "$msg" root.footer        "Copyright ${ORG_NAME}"
+  fi
+
+  # ---- idp-metadata.xml: drop the unused :8443 endpoints --------------------
+  local md="$IDP_HOME/metadata/idp-metadata.xml"
+  if [[ -f "$md" ]]; then
+    python3 - "$md" <<'PY'
+import re, sys
+p = sys.argv[1]
+t = open(p, encoding='utf-8').read()
+pat = re.compile(r'[ \t]*<(?:\w+:)?(?:ArtifactResolutionService|AttributeService|SingleLogoutService|SingleSignOnService)\b[^>]*:8443[^>]*/>[ \t]*\n?', re.S)
+n_t, n = pat.subn('', t)
+if n:
+    open(p, 'w', encoding='utf-8').write(n_t)
+print(f"    removed {n} endpoint(s) on port 8443 from idp-metadata.xml")
+PY
+  fi
+
+  if [[ -f "$md" && -n "${ORG_NAME:-}" ]]; then
+    python3 - "$md" "$ORG_NAME" "${INSTITUTE_DESCRIPTION:-${ORG_NAME} Identity Provider}" <<'PY'
+import re, sys
+from xml.sax.saxutils import escape
+p, name, desc = sys.argv[1:4]
+t = open(p, encoding='utf-8').read()
+comments = [m.span() for m in re.finditer(r'<!--.*?-->', t, re.S)]
+inside = lambda pos: any(a <= pos < b for a, b in comments)
+done = 0
+for tag, val in (('DisplayName', name), ('Description', desc)):
+    pat = re.compile(r'(<mdui:%s\s+xml:lang="en"\s*>)[^<]*(</mdui:%s>)' % (tag, tag))
+    m = next((m for m in pat.finditer(t) if not inside(m.start())), None)
+    if m:
+        t = t[:m.start()] + m.group(1) + escape(val) + m.group(2) + t[m.end():]
+        comments = [mm.span() for mm in re.finditer(r'<!--.*?-->', t, re.S)]
+        done += 1
+if done:
+    open(p, 'w', encoding='utf-8').write(t)
+    print(f"    idp-metadata.xml: set mdui DisplayName/Description ({done}/2)")
+else:
+    print("    NOTE: mdui:UIInfo is commented out in idp-metadata.xml - uncomment and edit it manually (guide section 6.5).")
+PY
+  fi
+
+  mkdir -p "$IDP_HOME/tmp/httpClientCache"
+}
+
+step_learn() {
+  [[ "$CONFIGURE_LEARN" == "yes" ]] || return 0
+  log "LEARN / LIAF federation (metadata, attribute resolver + filter)"
+  local conf="$IDP_HOME/conf"
+
+  curl -fsSL -o "$IDP_HOME/metadata/federation-cert.pem" https://fr.ac.lk/signedmetadata/metadata-signer \
+    || die "Could not download the federation signing certificate"
+
+  insert_xml "$conf/metadata-providers.xml" "</MetadataProvider>" "LEARN-IDP5-FEDERATION" <<'EOF'
+
+    <!-- LEARN-IDP5-FEDERATION -->
+    <MetadataProvider id="HTTPMD-LEARN-Federation"
+                      xsi:type="FileBackedHTTPMetadataProvider"
+                      backingFile="%{idp.home}/metadata/test-metadata.xml"
+                      metadataURL="https://fr.ac.lk/signedmetadata/metadata.xml">
+        <MetadataFilter xsi:type="SignatureValidation" requireSignedRoot="true" certificateFile="%{idp.home}/metadata/federation-cert.pem"/>
+        <MetadataFilter xsi:type="RequiredValidUntil" maxValidityInterval="P10D"/>
+        <MetadataFilter xsi:type="EntityRole" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata">
+            <RetainedRole>md:SPSSODescriptor</RetainedRole>
+        </MetadataFilter>
+    </MetadataProvider>
+
+    <MetadataProvider id="HTTPMD-LEARN-interfederation"
+                      xsi:type="FileBackedHTTPMetadataProvider"
+                      backingFile="%{idp.home}/metadata/LEARNmetadata.xml"
+                      metadataURL="https://fr.ac.lk/signedmetadata/LIAF-interfederation-sp-metadata.xml">
+        <MetadataFilter xsi:type="SignatureValidation" requireSignedRoot="true" certificateFile="%{idp.home}/metadata/federation-cert.pem"/>
+        <MetadataFilter xsi:type="RequiredValidUntil" maxValidityInterval="P11D"/>
+        <MetadataFilter xsi:type="EntityRole" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata">
+            <RetainedRole>md:SPSSODescriptor</RetainedRole>
+        </MetadataFilter>
+    </MetadataProvider>
+EOF
+
+  # Attribute resolver (LEARN v5 template) + attribute filter (self-updating remote resource)
+  local resolver="$conf/attribute-resolver-LEARN-v5.xml" filter_name="attribute-filter-LEARN-v5.xml"
+  local filter_url="$LEARN_FILTER_URL"
+  if ! curl -fsSL -o "$resolver" "$LEARN_RESOLVER_URL"; then
+    warn "Could not download $LEARN_RESOLVER_URL - falling back to the LEARN v4 files (verify them on IdP 5)."
+    resolver="$conf/attribute-resolver-LEARN-v4.xml"; filter_name="attribute-filter-LEARN-v4.xml"
+    filter_url="https://fr.ac.lk/signedmetadata/files/attribute-filter-LEARN-v4.xml"
+    curl -fsSL -o "$resolver" https://fr.ac.lk/signedmetadata/files/attribute-resolver-LEARN-v4.xml \
+      || die "Could not download any LEARN attribute resolver"
+  fi
+  # Seed the filter's backing file so the first start does not depend on the network
+  curl -fsSL -o "$conf/$filter_name" "$LEARN_FILTER_SEED_URL" 2>/dev/null \
+    || warn "Could not pre-download the attribute filter; it will be fetched from $filter_url at first start."
+
+  python3 - "$resolver" "$HOME_ORG_TYPE" "$LDAP_ROOT_DN" <<'PY'
+import re, sys
+p, org_type, root_dn = sys.argv[1:4]
+t = open(p, encoding='utf-8').read()
+msgs = []
+# schacHomeOrganizationType: template placeholder or whatever value is currently set
+n_t, n = re.subn(r'(<Attribute\s+id="schacHomeOrganizationType"\s*>\s*<Value>)[^<]*(</Value>)',
+                 lambda m: m.group(1) + org_type + m.group(2), t)
+if n: t = n_t; msgs.append("schacHomeOrganizationType = " + org_type)
+else:
+    n_t = t.replace('urn:schac:homeOrganizationType:lk:others', org_type)
+    if n_t != t: t = n_t; msgs.append("schacHomeOrganizationType = " + org_type)
+    else: print("    WARNING: schacHomeOrganizationType not found in the resolver; set it manually", file=sys.stderr)
+# domain placeholder used by the LEARN template
+if 'dc=YOUR-DOMAIN,dc=ac,dc=lk' in t:
+    t = t.replace('dc=YOUR-DOMAIN,dc=ac,dc=lk', root_dn); msgs.append("base DN placeholder -> " + root_dn)
+open(p, 'w', encoding='utf-8').write(t)
+for m in msgs: print("    resolver: " + m)
+PY
+
+  insert_xml "$conf/services.xml" "</beans>" "LEARN-IDP5-DEFAULTFILTER" <<'EOF'
+
+    <!-- LEARN-IDP5-DEFAULTFILTER: self-updating LEARN attribute filter -->
+    <bean id="Default-Filter" class="net.shibboleth.ext.spring.resource.FileBackedHTTPResource"
+          c:client-ref="shibboleth.FileCachingHttpClient"
+          c:url="@FILTER_URL@"
+          c:backingFile="%{idp.home}/conf/@FILTER_NAME@"/>
+EOF
+  sed -i "s|@FILTER_URL@|${filter_url}|; s|@FILTER_NAME@|${filter_name}|" "$conf/services.xml"
+  python3 - "$conf/services.xml" "$(basename "$resolver")" <<'PY'
+import sys
+p, resolver_name = sys.argv[1:3]
+t = open(p, encoding='utf-8').read()
+r_old = '<value>%{idp.home}/conf/attribute-resolver.xml</value>'
+r_new = '<value>%{idp.home}/conf/' + resolver_name + '</value>'
+f_old = '<value>%{idp.home}/conf/attribute-filter.xml</value>'
+f_new = '<ref bean="Default-Filter"/>'
+changed = []
+if r_old in t: t = t.replace(r_old, r_new); changed.append("resolver")
+if f_old in t: t = t.replace(f_old, f_new); changed.append("filter")
+open(p, 'w', encoding='utf-8').write(t)
+print("    services.xml updated:", ", ".join(changed) or "nothing to change (already done?)")
+PY
+}
+
+# Fail early (before Jetty starts) when the IdP configuration cannot be resolved.
+# This catches the classic "Could not resolve placeholder 'idp.storage.dbpassword'" restart loop.
+validate_idp_config() {
+  log "Validating IdP configuration before start"
+  local cred="$IDP_HOME/credentials/secrets.properties" conf="$IDP_HOME/conf" key bad=0
+  [[ -f "$cred" ]] || die "$cred not found"
+
+  # 1) secrets that the beans/resolver need
+  for key in idp.storage.dbpassword idp.authn.LDAP.bindDNCredential idp.persistentId.salt; do
+    if has_prop "$cred" "$key"; then info "ok   $key is set in secrets.properties"
+    else warn "MISSING $key in $cred"; bad=1; fi
+  done
+
+  # 2) every %{name} placeholder (without a :default) used in our XML beans must be defined somewhere
+  local f name builtin=" idp.home idp.entityID idp.scope idp.hostname idp.host.name idp.version "
+  for f in "$conf/global.xml" "$conf/saml-nameid.xml"; do
+    [[ -f "$f" ]] || continue
+    while IFS= read -r name; do
+      [[ "$builtin" == *" $name "* ]] && continue
+      if ! grep -Eqs "^[[:space:]]*${name//./\\.}[[:space:]]*[=:]" "$conf"/*.properties "$cred"; then
+        warn "Placeholder %{$name} used in $(basename "$f") is not defined in conf/*.properties or secrets.properties"; bad=1
+      fi
+    done < <(grep -oE '%\{[A-Za-z0-9_.-]+\}' "$f" | sed -E 's/^%\{|\}$//g' | sort -u)
+  done
+
+  # 3) the Jetty user must be able to read the secrets
+  if id jetty >/dev/null 2>&1; then
+    if runuser -u jetty -- test -r "$cred"; then info "ok   user jetty can read secrets.properties"
+    else warn "user jetty cannot read $cred (fix: chown root:jetty; chmod 640)"; bad=1; fi
+  fi
+
+  # 4) the database login that global.xml will use really works
+  if MYSQL_PWD="$DB_PASSWORD" mysql -u "$DB_USER" -h 127.0.0.1 "$DB_NAME" -e 'SELECT 1' >/dev/null 2>&1; then
+    info "ok   MariaDB login $DB_USER@127.0.0.1/$DB_NAME works"
+  else warn "cannot log in to MariaDB as $DB_USER on $DB_NAME with the configured password"; bad=1; fi
+
+  [[ "$bad" -eq 0 ]] || die "IdP configuration check failed - fix the items above, then re-run."
+}
+
+step_permissions_start() {
+  log "Permissions and starting Jetty"
+  chown -R jetty:jetty "$IDP_HOME"/{logs,metadata,credentials,conf,war,tmp,messages} 2>/dev/null || true
+  chown -R jetty:jetty "$IDP_HOME/views" 2>/dev/null || true
+  chown -R jetty:jetty "$JETTY_BASE"
+  validate_idp_config
+  systemctl enable jetty-idp
+  systemctl restart jetty-idp
+  info "Waiting for the IdP to start (up to ~3 minutes)..."
+  local code=000
+  for _ in $(seq 1 60); do
+    code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${JETTY_HTTP_PORT}/idp/status" || true)"
+    if [[ "$code" == "200" ]]; then info "IdP is up (HTTP 200 on /idp/status)."; return 0; fi
+    sleep 3
+  done
+  warn "IdP did not answer 200 on /idp/status (last code: $code)."
+  warn "Check:  journalctl -u jetty-idp -n 100   and   $IDP_HOME/logs/idp-process.log"
+  return 0
+}
+
+step_apache() {
+  log "Apache reverse proxy + TLS (${TLS_MODE})"
+  a2enmod proxy proxy_http ssl headers rewrite >/dev/null
+  local avail=/etc/apache2/sites-available
+  local cert key chain_line=""
+
+  # Plain-HTTP vhost first (needed for the ACME challenge). The default site is left untouched
+  # so other sites on this server are not affected.
+  cat >"$avail/idp.conf" <<'EOF'
+<VirtualHost *:80>
+    ServerName @FQDN@
+    ServerAdmin webmaster@@SCOPE@
+    DocumentRoot /var/www/html
+</VirtualHost>
+EOF
+  sed -i "s/@FQDN@/${IDP_FQDN}/g; s/@SCOPE@/${IDP_SCOPE}/g" "$avail/idp.conf"
+  a2ensite idp >/dev/null
+  apache2ctl configtest
+  systemctl reload apache2
+
+  case "$TLS_MODE" in
+    letsencrypt)
+      local le_args=(certonly --apache -d "$IDP_FQDN" --agree-tos --non-interactive)
+      if [[ -n "${LE_EMAIL:-}" ]]; then le_args+=(-m "$LE_EMAIL" --no-eff-email); else le_args+=(--register-unsafely-without-email); fi
+      certbot "${le_args[@]}"
+      cert="/etc/letsencrypt/live/${IDP_FQDN}/fullchain.pem"
+      key="/etc/letsencrypt/live/${IDP_FQDN}/privkey.pem"
+      install -d /etc/letsencrypt/renewal-hooks/deploy
+      printf '#!/bin/sh\nsystemctl reload apache2\n' >/etc/letsencrypt/renewal-hooks/deploy/reload-apache.sh
+      chmod 0755 /etc/letsencrypt/renewal-hooks/deploy/reload-apache.sh ;;
+    selfsigned)
+      cert="/etc/ssl/certs/${IDP_FQDN}.crt"; key="/etc/ssl/private/${IDP_FQDN}.key"
+      if [[ ! -s "$cert" ]]; then
+        openssl req -x509 -newkey rsa:3072 -nodes -days 1095 -subj "/CN=${IDP_FQDN}" \
+          -addext "subjectAltName=DNS:${IDP_FQDN}" -keyout "$key" -out "$cert"
+        chmod 0600 "$key"
+      fi ;;
+    existing)
+      cert="$TLS_CERT_FILE"; key="$TLS_KEY_FILE"
+      [[ -n "${TLS_CHAIN_FILE:-}" ]] && chain_line="SSLCertificateChainFile ${TLS_CHAIN_FILE}" ;;
+  esac
+
+  cat >"$avail/idp-ssl.conf" <<'EOF'
+<VirtualHost *:443>
+    ServerName @FQDN@
+    ServerAdmin webmaster@@SCOPE@
+    DocumentRoot /var/www/html
+
+    SSLEngine on
+    SSLProtocol all -SSLv2 -SSLv3 -TLSv1 -TLSv1.1
+    SSLCipherSuite "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH"
+    SSLHonorCipherOrder on
+    SSLCompression Off
+    SSLCertificateFile @CERT@
+    SSLCertificateKeyFile @KEY@
+    @CHAIN@
+
+    Header always set Strict-Transport-Security "max-age=63072000"
+
+    # Reverse proxy to Jetty - scoped to THIS virtual host only
+    ProxyPreserveHost On
+    RequestHeader set X-Forwarded-Proto "https"
+    RequestHeader set X-Forwarded-Port "443"
+    <Location /idp>
+        Require all granted
+    </Location>
+    ProxyPass        /idp http://127.0.0.1:@PORT@/idp retry=5
+    ProxyPassReverse /idp http://127.0.0.1:@PORT@/idp retry=5
+</VirtualHost>
+EOF
+  sed -i "s|@FQDN@|${IDP_FQDN}|g; s|@SCOPE@|${IDP_SCOPE}|g; s|@CERT@|${cert}|g; s|@KEY@|${key}|g; s|@CHAIN@|${chain_line}|g; s|@PORT@|${JETTY_HTTP_PORT}|g" "$avail/idp-ssl.conf"
+
+  # Port 80: redirect to HTTPS, except ACME challenges
+  cat >"$avail/idp.conf" <<'EOF'
+<VirtualHost *:80>
+    ServerName @FQDN@
+    ServerAdmin webmaster@@SCOPE@
+    DocumentRoot /var/www/html
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+    RewriteRule ^/?(.*)$ https://%{SERVER_NAME}/$1 [R=301,L]
+</VirtualHost>
+EOF
+  sed -i "s/@FQDN@/${IDP_FQDN}/g; s/@SCOPE@/${IDP_SCOPE}/g" "$avail/idp.conf"
+
+  a2ensite idp-ssl >/dev/null
+  apache2ctl configtest
+  systemctl enable apache2
+  systemctl reload apache2
+
+  if command -v ufw >/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
+    ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null; info "ufw: opened 80/443"
+  else
+    info "Make sure your firewall allows inbound TCP 80 and 443."
+  fi
+}
+
+step_final() {
+  log "Final checks"
+  local code
+  code="$(curl -ks -o /dev/null -w '%{http_code}' --resolve "${IDP_FQDN}:443:127.0.0.1" "https://${IDP_FQDN}/idp/shibboleth" || true)"
+  info "https://${IDP_FQDN}/idp/shibboleth (metadata) -> HTTP ${code}"
+  JAVA_HOME="$JAVA_HOME_DIR" "$IDP_HOME/bin/status.sh" 2>&1 | head -n 12 | sed 's/^/    /' || true
+
+  umask 077
+  {
+    echo "Shibboleth IdP 5 install - generated $(date -u +%FT%TZ)"
+    echo "IdP home        : $IDP_HOME"
+    echo "DB name / user  : $DB_NAME / $DB_USER"
+    echo "DB password     : $DB_PASSWORD"
+    echo "Sealer / backchannel passwords are in $IDP_HOME/credentials/secrets.properties"
+    echo "(LDAP bind password is stored only in secrets.properties)"
+  } >"$SECRETS_NOTE"
+  chmod 600 "$SECRETS_NOTE"
+
+  cat <<EOF
+
+================================================================================
+ Installation finished.
+
+ Metadata (register this with LIAF):  https://${IDP_FQDN}/idp/shibboleth
+ Secrets summary                   :  ${SECRETS_NOTE}   (root only; move it somewhere safe)
+
+ Still manual (see the guide):
+   - Edit ${IDP_HOME}/metadata/idp-metadata.xml: mdui DisplayName/Description, SLO endpoints,
+     remove unused SAML1 / commented content.
+   - Branding: logo, css, views (rebuild with ${IDP_HOME}/bin/build.sh, then: systemctl restart jetty-idp).
+   - Per-SP attribute release in attribute-filter (if not using the LEARN filter).
+
+ Test your IdP : https://sp-test.liaf.ac.lk
+ Federation    : https://liaf.ac.lk/
+
+ Useful logs:
+   journalctl -u jetty-idp -f
+   ${IDP_HOME}/logs/idp-process.log   idp-warn.log   idp-audit.log
+   /var/log/apache2/error.log
+================================================================================
+EOF
+}
+
+# ----------------------------------------------------------------------------
+main() {
+  while getopts "e:yh" opt; do
+    case "$opt" in
+      e) ENV_FILE="$OPTARG" ;;
+      y) ASSUME_YES="yes" ;;
+      h) usage 0 ;;
+      *) usage 1 ;;
+    esac
+  done
+
+  if [[ -n "$ENV_FILE" ]]; then
+    [[ -r "$ENV_FILE" ]] || die "Cannot read env file: $ENV_FILE"
+    if [[ "$(stat -c '%a' "$ENV_FILE")" != "600" ]]; then
+      warn "$ENV_FILE contains secrets - consider: chmod 600 $ENV_FILE"
+    fi
+    set -a
+    # shellcheck source=/dev/null
+    . "$ENV_FILE"
+    set +a
+  fi
+  [[ $EUID -eq 0 ]] || die "Run as root (sudo)."
+  mkdir -p "$(dirname "$LOG_FILE")"; touch "$LOG_FILE"; chmod 600 "$LOG_FILE"
+  exec > >(tee -a "$LOG_FILE") 2>&1
+
+  MAVEN="https://repo1.maven.org/maven2"
+  import_legacy_env     # maps old variable names (IDP_VER, MYSQL_*, LDAP_MODE ...) before defaults apply
+  set_defaults
+  resolve_versions
+  collect_settings
+  step_preflight
+  step_packages
+  step_java
+  step_jetty_user
+  step_database
+  step_idp_install
+  step_jetty_install
+  step_plugin_libs
+  step_idp_config
+  step_learn
+  step_permissions_start
+  step_apache
+  step_final
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
