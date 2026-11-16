@@ -823,3 +823,7 @@ Everything is logged to `/var/log/idp5-install.log`. The script is **re-runnable
 * LDAP login, consent storage and stored persistent-id with a real SP (`sp-test.liaf.ac.lk`);
 * the LEARN v5 URLs (`fr.ac.lk/templates/...`) and that the LEARN resolver/filter load on your IdP version (check `idp-process.log`);
 * the commented `<ref bean=…>` lines in `saml-nameid.xml` / `subject-c14n.xml` match what the script uncomments (it prints a warning if not).
+
+### Enabling Multi-factor authentication - MFA for Shibboleth
+
+[Guidance for enabling multi factor authentication in Ubuntu 24](allowing_services_IDP/MFA_ShibbolethIDP_Ubuntu.md)
