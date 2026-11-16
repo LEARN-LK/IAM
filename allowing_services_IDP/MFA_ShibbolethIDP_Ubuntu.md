@@ -365,3 +365,351 @@ For bulk user update, use the script file as follows
 
 Then you will get a csv file with the details for the users already existing in the system(whose who needed to be updated with new schema and tokens)
 
+
+
+------------------------------------------------------------
+
+
+------------------------------------------------------------
+
+1. Install packages
+bash
+sudo apt update
+sudo apt install -y qrencode apache2 libaprutil1-ldap
+2. Create the directories
+bash
+# QR images (outside the web root, never served directly)
+sudo mkdir -p /var/lib/totp-qr
+sudo chown root:www-data /var/lib/totp-qr
+sudo chmod 770 /var/lib/totp-qr
+
+# Empty web root for the 8443 site
+sudo mkdir -p /var/www/totp-empty
+
+# CGI script folder
+sudo mkdir -p /usr/local/lib/totp-qr
+3. Enable the Apache modules
+bash
+sudo a2enmod ssl cgid ldap authnz_ldap
+4. Check that Apache can search your LDAP
+bash
+ldapsearch -x -H ldap://localhost -b "ou=People,dc=learn,dc=ac,dc=lk" "(uid=testme)" uid
+
+This must return the testme entry. If it returns nothing or “insufficient access”, anonymous search is blocked, and you need to uncomment the bind DN lines in step 6.
+
+5. Create the CGI script
+
+It serves the logged-in user’s own image once, then deletes it. REMOTE_USER is set by Apache after the LDAP login.
+
+bash
+sudo tee /usr/local/lib/totp-qr/qr.cgi > /dev/null <<'EOF'
+#!/bin/bash
+# Serves the logged-in user's own QR image once, then deletes it.
+# REMOTE_USER is set by Apache after the LDAP login.
+QR_DIR="/var/lib/totp-qr"
+USER_NAME=$(printf '%s' "$REMOTE_USER" | sed -n 's/^\([A-Za-z0-9._@-]\{1,64\}\)$/\1/p')
+FILE="$QR_DIR/$USER_NAME.png"
+
+if [ "$REQUEST_METHOD" = "GET" ] && [ -n "$USER_NAME" ] && [[ "$USER_NAME" != *..* ]] && [ -f "$FILE" ]; then
+    echo "Content-Type: image/png"
+    echo "Cache-Control: no-store"
+    echo ""
+    cat "$FILE"
+    rm -f "$FILE"
+else
+    echo "Status: 404 Not Found"
+    echo "Content-Type: text/plain"
+    echo ""
+    echo "No QR code is available for your account. It may have been used already or expired. Contact the administrator."
+fi
+EOF
+sudo chmod 755 /usr/local/lib/totp-qr/qr.cgi
+6. Create the Apache site with LDAP login
+
+First check the certificate folder name: ls /etc/letsencrypt/live/. If it isn’t idpv5.learn.ac.lk, change the two SSLCertificate lines.
+
+bash
+sudo tee /etc/apache2/sites-available/totp-qr.conf > /dev/null <<'EOF'
+Listen 8443
+<VirtualHost *:8443>
+    ServerName idpv5.learn.ac.lk
+    DocumentRoot /var/www/totp-empty
+
+    SSLEngine on
+    SSLCertificateFile    /etc/letsencrypt/live/idpv5.learn.ac.lk/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/idpv5.learn.ac.lk/privkey.pem
+
+    ScriptAlias /qr /usr/local/lib/totp-qr/qr.cgi
+
+    <Directory /var/www/totp-empty>
+        Options -Indexes
+        Require all granted
+    </Directory>
+
+    <Directory /usr/local/lib/totp-qr>
+        Options +ExecCGI
+
+        AuthType Basic
+        AuthName "LEARN account login (to get your MFA QR code)"
+        AuthBasicProvider ldap
+        AuthLDAPURL "ldap://localhost:389/ou=People,dc=learn,dc=ac,dc=lk?uid?sub?(objectClass=*)"
+        AuthLDAPRemoteUserAttribute uid
+        # Only if anonymous search is blocked, uncomment and set these two:
+        # AuthLDAPBindDN "cn=admin,dc=learn,dc=ac,dc=lk"
+        # AuthLDAPBindPassword "CHANGE_ME"
+        Require valid-user
+    </Directory>
+</VirtualHost>
+EOF
+
+If you add the bind password, protect the file:
+
+bash
+sudo chmod 640 /etc/apache2/sites-available/totp-qr.conf
+7. Enable the site and start Apache
+bash
+sudo a2ensite totp-qr
+sudo apachectl configtest
+sudo systemctl restart apache2
+sudo ss -tlnp | grep 8443
+
+configtest must print Syntax OK, and the last command must show Apache listening on 8443. If not, stop and check sudo tail -n 50 /var/log/apache2/error.log.
+
+8. Firewall and DNS
+bash
+sudo ufw allow 8443/tcp
+dig +short idpv5.learn.ac.lk @8.8.8.8
+
+dig must return your server’s public IP. Also open TCP 8443 in any upstream or hosting firewall.
+
+9. Reload Apache after certificate renewals
+bash
+sudo tee /etc/letsencrypt/renewal-hooks/deploy/reload-apache.sh > /dev/null <<'EOF'
+#!/bin/bash
+systemctl reload apache2
+EOF
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/reload-apache.sh
+10. Cleanup job for images nobody downloaded
+bash
+sudo tee /etc/cron.d/totp-qr-cleanup > /dev/null <<'EOF'
+*/30 * * * * root find /var/lib/totp-qr -name "*.png" -mmin +1440 -delete
+EOF
+
+Images are deleted after 24 hours. Downloaded images are already deleted by the CGI script.
+
+11. Create the single-user tool (totp-gen)
+bash
+sudo tee /usr/local/bin/totp-gen > /dev/null <<'EOF'
+#!/bin/bash
+# Usage: totp-gen <username> [--png]
+# Generates a TOTP seed for one user and shows a QR code locally.
+# This only generates the seed. Store it in LDAP (totpSecret) to enroll the user.
+IDP_HOME="/opt/shibboleth-idp"
+ISSUER="LEARN IdP"
+QR_DIR="/var/lib/totp-qr"
+QR_BASE_URL="https://idpv5.learn.ac.lk:8443"
+
+USERNAME="$1"
+[ -z "$USERNAME" ] && { echo "Usage: $0 <username> [--png]"; exit 1; }
+command -v qrencode >/dev/null 2>&1 || { echo "ERROR: qrencode not installed"; exit 1; }
+
+OUT=$("$IDP_HOME/bin/totpauth.sh" --home "$IDP_HOME" --issuer "$ISSUER" --account "$USERNAME" 2>/dev/null)
+SEED=$(echo "$OUT" | grep "^Seed:" | awk '{print $2}')
+OTP_URL=$(echo "$OUT" | grep "^URL:" | awk '{print $2}')
+
+[ -z "$SEED" ] && { echo "ERROR: could not generate seed"; exit 1; }
+
+echo "Seed: $SEED"
+echo "URL:  $OTP_URL"
+echo
+
+if [ "$2" = "--png" ]; then
+    qrencode -o "$QR_DIR/$USERNAME.png" -s 8 -m 2 -l M "$OTP_URL"
+    chgrp www-data "$QR_DIR/$USERNAME.png"
+    chmod 640 "$QR_DIR/$USERNAME.png"
+    echo "User can log in at ${QR_BASE_URL}/qr to download the QR code (one time)."
+else
+    qrencode -t ANSIUTF8 "$OTP_URL"
+fi
+EOF
+sudo chmod 700 /usr/local/bin/totp-gen
+12. Create the bulk enrollment script
+bash
+sudo tee /root/bulk-totp-enroll.sh > /dev/null <<'SCRIPT_EOF'
+#!/bin/bash
+#
+# bulk-totp-enroll.sh
+# Generates a TOTP seed for every LDAP user without one, stores it in LDAP
+# (totpSecret), creates the user's QR image, and writes
+# uid, mail, seed and the login URL to a CSV file.
+# Users log in with their LDAP account at QR_BASE_URL/qr to download the image once.
+
+# ---------- Settings ----------
+LDAP_HOST="ldap://localhost"
+LDAP_BIND_DN="cn=admin,dc=learn,dc=ac,dc=lk"
+LDAP_BIND_PW="CHANGE_ME"
+LDAP_BASE="ou=People,dc=learn,dc=ac,dc=lk"
+IDP_HOME="/opt/shibboleth-idp"
+ISSUER="LEARN IdP"
+
+QR_DIR="/var/lib/totp-qr"
+QR_BASE_URL="https://idpv5.learn.ac.lk:8443"
+QR_GROUP="www-data"
+
+# The CSV contains secrets, so make it readable by root only
+umask 077
+OUTPUT_CSV="/root/totp-seeds-$(date +%Y%m%d-%H%M%S).csv"
+
+# ---------- Pre-flight checks ----------
+if [ "$LDAP_BIND_PW" = "CHANGE_ME" ]; then
+    echo "ERROR: set LDAP_BIND_PW in this script first."
+    exit 1
+fi
+
+if ! command -v qrencode >/dev/null 2>&1; then
+    echo "ERROR: qrencode is not installed. Run: sudo apt install -y qrencode"
+    exit 1
+fi
+
+if [ ! -d "$QR_DIR" ]; then
+    echo "ERROR: QR directory $QR_DIR does not exist."
+    exit 1
+fi
+
+echo "uid,mail,seed,qr_login_url" > "$OUTPUT_CSV"
+
+# ---------- Main ----------
+USERNAMES=$(ldapsearch -H "$LDAP_HOST" -x \
+  -D "$LDAP_BIND_DN" -w "$LDAP_BIND_PW" \
+  -b "$LDAP_BASE" "(uid=*)" uid \
+  | grep "^uid:" | awk '{print $2}')
+
+for USERNAME in $USERNAMES; do
+    # The login page only serves usernames made of these characters
+    if ! [[ "$USERNAME" =~ ^[A-Za-z0-9._@-]{1,64}$ ]] || [[ "$USERNAME" == *..* ]]; then
+        echo "SKIP: $USERNAME has characters not supported by the QR login page"
+        continue
+    fi
+
+    # Skip if already has a seed
+    EXISTING=$(ldapsearch -H "$LDAP_HOST" -x \
+      -D "$LDAP_BIND_DN" -w "$LDAP_BIND_PW" \
+      -b "$LDAP_BASE" "(uid=$USERNAME)" totpSecret \
+      | grep "^totpSecret")
+
+    if [ -n "$EXISTING" ]; then
+        echo "SKIP: $USERNAME already has a seed"
+        continue
+    fi
+
+    # Generate seed
+    SEED_OUTPUT=$("$IDP_HOME/bin/totpauth.sh" --home "$IDP_HOME" \
+      --issuer "$ISSUER" --account "$USERNAME" 2>/dev/null)
+    SEED=$(echo "$SEED_OUTPUT" | grep "^Seed:" | awk '{print $2}')
+    OTP_URL=$(echo "$SEED_OUTPUT" | grep "^URL:" | awk '{print $2}')
+
+    if [ -z "$SEED" ] || [ -z "$OTP_URL" ]; then
+        echo "ERROR: Could not generate seed for $USERNAME"
+        continue
+    fi
+
+    # Get user DN and mail in one search
+    LDAP_RESULT=$(ldapsearch -H "$LDAP_HOST" -x \
+      -D "$LDAP_BIND_DN" -w "$LDAP_BIND_PW" \
+      -b "$LDAP_BASE" "(uid=$USERNAME)" dn mail)
+
+    USER_DN=$(echo "$LDAP_RESULT" | grep "^dn:" | sed 's/^dn: //')
+    MAIL=$(echo "$LDAP_RESULT"    | grep "^mail:" | awk '{print $2}')
+
+    if [ -z "$MAIL" ]; then
+        MAIL="no-mail"
+    fi
+
+    # Generate the user's QR PNG (served only to that user after LDAP login)
+    QR_FILE="${USERNAME}.png"
+    if ! qrencode -o "$QR_DIR/$QR_FILE" -s 8 -m 2 -l M "$OTP_URL"; then
+        echo "ERROR: Could not generate QR code for $USERNAME"
+        continue
+    fi
+    chgrp "$QR_GROUP" "$QR_DIR/$QR_FILE"
+    chmod 640 "$QR_DIR/$QR_FILE"
+    QR_URL="${QR_BASE_URL}/qr"
+
+    # Write to LDAP
+    ldapmodify -H "$LDAP_HOST" -x \
+      -D "$LDAP_BIND_DN" -w "$LDAP_BIND_PW" <<LDIF
+dn: $USER_DN
+changetype: modify
+add: objectClass
+objectClass: totpUser
+-
+add: totpSecret
+totpSecret: $SEED
+LDIF
+
+    if [ $? -eq 0 ]; then
+        echo "OK: $USERNAME ($MAIL)"
+        echo "$USERNAME,$MAIL,$SEED,$QR_URL" >> "$OUTPUT_CSV"
+    else
+        echo "ERROR: Failed to write seed for $USERNAME"
+        # Do not leave a QR image for a seed that was never stored
+        rm -f "$QR_DIR/$QR_FILE"
+    fi
+
+done
+
+echo ""
+echo "Done. Seeds saved to $OUTPUT_CSV"
+echo "Users log in with their LDAP account at ${QR_BASE_URL}/qr (one-time download)."
+SCRIPT_EOF
+sudo chmod 700 /root/bulk-totp-enroll.sh
+
+Set the LDAP admin password with an editor, so it doesn’t end up in your shell history:
+
+bash
+sudo vi /root/bulk-totp-enroll.sh
+
+Change LDAP_BIND_PW="CHANGE_ME" to your real password, then save.
+
+13. Test the QR login page
+
+Use testme, which must have a userPassword in LDAP:
+
+bash
+sudo qrencode -o /var/lib/totp-qr/testme.png -s 8 -m 2 "otpauth://totp/test?secret=ABC"
+sudo chgrp www-data /var/lib/totp-qr/testme.png
+sudo chmod 640 /var/lib/totp-qr/testme.png
+
+Open https://idpv5.learn.ac.lk:8443/qr in a browser and log in as testme. The QR image should appear. Reload and log in again, and you should see “No QR code is available for your account.” That confirms the one-time behavior.
+
+You can also test the single-user tool with sudo totp-gen testme, which prints the seed and shows a QR code in the terminal.
+
+14. Run the bulk enrollment
+
+Test with one or two users first, because the script writes seeds into LDAP.
+
+bash
+sudo /root/bulk-totp-enroll.sh
+
+The CSV is saved as /root/totp-seeds-<date>.csv. After you’ve sent the instructions to users, delete it:
+
+bash
+sudo shred -u /root/totp-seeds-*.csv
+15. What to tell users
+
+“Go to https://idpv5.learn.ac.lk:8443/qr, log in with your normal LEARN username and password, and scan the QR code with your authenticator app straight away. It can only be shown once.”
+
+If something fails
+Symptom	Check
+Timeout in browser	Port 8443 blocked in ufw or an upstream firewall
+Certificate warning	Hostname doesn’t match the certificate, or you used the IP address
+Name not found	Public DNS record missing
+Login box keeps reappearing	Wrong password, or Apache can’t search LDAP. sudo tail -n 30 /var/log/apache2/error.log shows the LDAP error. Try the bind DN lines in step 6
+500 error	Run sudo a2enmod cgid and check ls -l /usr/local/lib/totp-qr/qr.cgi shows -rwxr-xr-x
+“No QR code is available” on first login	Image missing, or not group www-data: check ls -l /var/lib/totp-qr
+Apache won’t start	Port conflict: sudo ss -tlnp | grep -E '443|8443'
+Things to know
+Login is the only protection. Anyone who knows a user’s password could open the page before the user does. The user would notice, because their image would already be gone. Tell users to enroll promptly.
+Failed scans. If a user closes the page before scanning, or doesn’t download within 24 hours, the image is gone. To re-enroll, remove that user’s totpSecret from LDAP and run bulk-totp-enroll.sh again (it skips users who already have a seed).
+Brute-force protection. This login page can be used to guess passwords. Consider fail2ban with the apache-auth jail. Tell me if you want that configured.
+Rotate the passwords from your pasted history (LDAP admin and MySQL) if that history was ever shared or committed to GitHub.
