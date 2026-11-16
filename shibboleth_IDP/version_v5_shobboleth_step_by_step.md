@@ -826,4 +826,4 @@ Everything is logged to `/var/log/idp5-install.log`. The script is **re-runnable
 
 ### Enabling Multi-factor authentication - MFA for Shibboleth
 
-[Guidance for enabling multi factor authentication in Ubuntu 24](allowing_services_IDP/MFA_ShibbolethIDP_Ubuntu.md)
+[Guidance for enabling multi factor authentication in Ubuntu 24](https://github.com/LEARN-LK/IAM/blob/master/allowing_services_IDP/MFA_ShibbolethIDP_Ubuntu.md)
