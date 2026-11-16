@@ -181,7 +181,7 @@ Remove temp files if needed: TIP : `bin/build.sh && rm -rf jetty-tmp/* && system
 
 Step 1 — Create the Custom Schema File
 
-`vi /tmp/totp-schema.ldif`
+`vi /root/totp-schema.ldif`
 
 Paste the following content:
 
@@ -293,8 +293,8 @@ Listen 8443
     DocumentRoot /var/www/html
 
     SSLEngine on
-    SSLCertificateFile    /etc/letsencrypt/live/idpv5.learn.ac.lk/fullchain.pem
-    SSLCertificateKeyFile /etc/letsencrypt/live/idpv5.learn.ac.lk/privkey.pem
+    SSLCertificateFile    /etc/letsencrypt/live/idpv5.<YOUR-DOMAIN>.ac.lk/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/idpv5.<YOUR-DOMAIN>.ac.lk/privkey.pem
 
     ScriptAlias /qr /usr/local/lib/totp-qr/qr.cgi
     <Directory /usr/local/lib/totp-qr>
@@ -320,7 +320,7 @@ Change the url of the QR server : IDP is used to install QR server in the test s
 #!/bin/bash
 # Usage: totp-gen <username> [--png]
 IDP_HOME="/opt/shibboleth-idp"
-ISSUER="LEARN IdP"
+ISSUER="UNIVERSITY - IdP"
 QR_DIR="/var/www/totp-qr"
 QR_BASE_URL="https://<URL-IDP>:8443"
 
@@ -350,8 +350,6 @@ fi
 ```
 Change the permission
 `chmod 700 /usr/local/bin/totp-gen`
-
-
 
 ### now let's create the totp tokens for the users
 
