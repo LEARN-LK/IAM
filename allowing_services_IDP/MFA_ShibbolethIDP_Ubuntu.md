@@ -119,11 +119,11 @@ OTP codes are time-based. If the server clock drifts, codes will fail.
 Check current NTP sync status
 `timedatectl status`
 
-If not synced, ensure NTP is running
-`systemctl enable --now ntp`
+If it is not in Asia/Colombo timezone, use
+`sudo timedatectl set-timezone Asia/Colombo`
+`timedatectl status`
 
-or on systemd-timesyncd systems:
-`timedatectl set-ntp true`
+#### Configure authentication properties
 
  Edit conf/authn/authn.properties
 
