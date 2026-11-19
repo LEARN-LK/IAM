@@ -573,6 +573,20 @@ mysql -u idp_admin -p -h 127.0.0.1 storageservice -e 'SELECT 1;'
 grep -o 'ee[0-9]*' /opt/jetty/webapps/idp.xml | sort -u
 ls /opt/jetty/start.d | grep -E '^ee[0-9]+-deploy'
 ```
+### Fixing an EE mismatch on an existing Jetty base
+
+```bash
+cd /opt/jetty
+EE=ee11
+runuser -u jetty -- /usr/lib/jvm/java-17-amazon-corretto/bin/java \
+  -Djetty.home=/usr/local/src/jetty-src -Djetty.base=/opt/jetty \
+  -jar /usr/local/src/jetty-src/start.jar --approve-all-licenses \
+  --add-modules=forwarded,${EE}-deploy,${EE}-annotations,${EE}-plus,${EE}-jsp,${EE}-jstl,${EE}-servlets
+rm -f /opt/jetty/start.d/ee9-*.ini /opt/jetty/start.d/ee10-*.ini /opt/jetty/start.d/http-forwarded.ini
+ls /opt/jetty/start.d
+grep -o 'ee[0-9]*' /opt/jetty/webapps/idp.xml | sort -u        # must match $EE
+systemctl restart jetty-idp && journalctl -u jetty-idp -n 50 --no-pager
+```
 
 For step 2, each placeholder printed (other than ones with a `:default`, e.g. `%{idp.storage.cleanupInterval:PT10M}`, and `%{idp.home}`) must exist as a key in `conf/*.properties` or `credentials/secrets.properties`. `install-idp5.sh` performs checks 1–4 automatically and refuses to start Jetty if one fails.
 
@@ -714,21 +728,6 @@ For quick iteration you can let Apache serve `/idp/images` and `/idp/css` straig
 | `/idp/status` reachable from the internet | `X-Forwarded-For` not reaching Jetty; check §8. |
 | Metadata still lists `:8443` endpoints | Finish §6.5 and restart. |
 | Let's Encrypt challenge fails | DNS not pointing here, port 80 blocked, or the `RewriteCond` for `/.well-known/acme-challenge/` was removed. |
-
-### Fixing an EE mismatch on an existing Jetty base
-
-```bash
-cd /opt/jetty
-EE=ee11
-runuser -u jetty -- /usr/lib/jvm/java-17-amazon-corretto/bin/java \
-  -Djetty.home=/usr/local/src/jetty-src -Djetty.base=/opt/jetty \
-  -jar /usr/local/src/jetty-src/start.jar --approve-all-licenses \
-  --add-modules=forwarded,${EE}-deploy,${EE}-annotations,${EE}-plus,${EE}-jsp,${EE}-jstl,${EE}-servlets
-rm -f /opt/jetty/start.d/ee9-*.ini /opt/jetty/start.d/ee10-*.ini /opt/jetty/start.d/http-forwarded.ini
-ls /opt/jetty/start.d
-grep -o 'ee[0-9]*' /opt/jetty/webapps/idp.xml | sort -u        # must match $EE
-systemctl restart jetty-idp && journalctl -u jetty-idp -n 50 --no-pager
-```
 
 # Automated installation
 
