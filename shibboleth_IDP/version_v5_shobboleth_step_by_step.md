@@ -630,10 +630,8 @@ Add before the final `</MetadataProvider>`:
 ### 9.2 LEARN attribute resolver and filter
 
 ```bash
-wget https://fr.ac.lk/templates/attribute-resolver-LEARN-v5.xml \
-     -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml
-wget https://fr.ac.lk/templates/attribute-filter-LEARN-v5.xml \
-     -O /opt/shibboleth-idp/conf/attribute-filter-LEARN-v5.xml      # seeds the filter's backing file
+wget https://fr.ac.lk/templates/attribute-resolver-LEARN-v5.xml -O /opt/shibboleth-idp/conf/attribute-resolver-LEARN-v5.xml
+wget https://fr.ac.lk/templates/attribute-filter-LEARN-v5.xml -O /opt/shibboleth-idp/conf/attribute-filter-LEARN-v5.xml    
 ```
 
 In that resolver file replace the placeholder `dc=YOUR-DOMAIN,dc=ac,dc=lk` (if present) with your LDAP root DN, and set `schacHomeOrganizationType` to one of `urn:schac:homeOrganizationType:int:university`, `…:int:library`, `…:int:public-research-institution`, `…:int:private-research-institution`.
