@@ -244,7 +244,7 @@ ldapsearch -H ldap://localhost -x \
 ```
 ### when we are going to create QR code for user profile adding to TOTP app
 
-default is api.qrserver.com is used by the plugin, but let's install a local qr server for a safer approach
+Default QR generation uses api.qrserver.com by the plugin and since it is a third party for the system, let's install a local qr server for a safer approach
 
 1. Install packages
 
