@@ -359,13 +359,13 @@ First check the certificate folder name with ls `/etc/letsencrypt/live/`. If it 
 sudo tee /etc/apache2/sites-available/totp-qr.conf > /dev/null <<'EOF'
 Listen 8443
 <VirtualHost *:8443>
-    ServerName idpv5.learn.ac.lk
+    ServerName idpv5.<YOUR-DOMAIN>.ac.lk
     DocumentRoot /var/www/totp-empty
 
     SSLEngine on
     SSLProtocol -all +TLSv1.2 +TLSv1.3
-    SSLCertificateFile    /etc/letsencrypt/live/idpv5.learn.ac.lk/fullchain.pem
-    SSLCertificateKeyFile /etc/letsencrypt/live/idpv5.learn.ac.lk/privkey.pem
+    SSLCertificateFile    /etc/letsencrypt/live/idpv5.<YOUR-DOMAIN>.ac.lk/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/idpv5.<YOUR-DOMAIN>.ac.lk/privkey.pem
 
     ScriptAlias /qr /usr/local/lib/totp-qr/qr.cgi
 
@@ -380,10 +380,10 @@ Listen 8443
         AuthType Basic
         AuthName "LEARN account login (to get your MFA QR code)"
         AuthBasicProvider ldap
-        AuthLDAPURL "ldap://localhost:389/ou=People,dc=learn,dc=ac,dc=lk?uid?sub?(objectClass=*)"
+        AuthLDAPURL "ldap://localhost:389/ou=people,dc=<YOUR-DOMAIN>,dc=ac,dc=lk?uid?sub?(objectClass=*)"
         AuthLDAPRemoteUserAttribute uid
         # Only if anonymous search is blocked, uncomment and set these two:
-        # AuthLDAPBindDN "cn=admin,dc=learn,dc=ac,dc=lk"
+        # AuthLDAPBindDN "cn=admin,dc=<YOUR-DOMAIN>,dc=ac,dc=lk"
         # AuthLDAPBindPassword "CHANGE_ME"
         Require valid-user
     </Directory>
@@ -407,7 +407,7 @@ sudo ss -tlnp | grep 8443
    
 ```
 sudo ufw allow 8443/tcp
-dig +short idpv5.learn.ac.lk @8.8.8.8
+dig +short idpv5.<YOUR-DOMAIN>.ac.lk @8.8.8.8
 ```
 dig must return your server’s public IP. Also open TCP 8443 in any upstream or hosting firewall.
 
@@ -437,14 +437,14 @@ The password goes in a root-only file, so it never appears in shell history or i
 ```
 sudo tee /etc/totp-enroll.conf > /dev/null <<'EOF'
 LDAP_HOST="ldap://localhost"
-LDAP_BIND_DN="cn=admin,dc=learn,dc=ac,dc=lk"
+LDAP_BIND_DN="cn=admin,dc=<YOUR-DOMAIN>,dc=ac,dc=lk"
 LDAP_PW_FILE="/root/.ldap-admin-pw"
-LDAP_BASE="ou=People,dc=learn,dc=ac,dc=lk"
+LDAP_BASE="ou=People,dc=<YOUR-DOMAIN>,dc=ac,dc=lk"
 IDP_HOME="/opt/shibboleth-idp"
 ISSUER="LEARN IdP"
 QR_DIR="/var/lib/totp-qr"
 QR_GROUP="www-data"
-QR_BASE_URL="https://idpv5.learn.ac.lk:8443"
+QR_BASE_URL="https://idpv5.YOUR-DOMAIN.ac.lk:8443"
 EOF
 sudo chmod 600 /etc/totp-enroll.conf
 
@@ -454,7 +454,7 @@ sudo bash -c 'umask 077; read -rsp "LDAP admin password: " p; echo; printf "%s" 
 13. Check what totpauth.sh prints (required)
 
 ```
-sudo /opt/shibboleth-idp/bin/totpauth.sh --home /opt/shibboleth-idp --issuer "LEARN IdP" --account testme
+sudo /opt/shibboleth-idp/bin/totpauth.sh --home /opt/shibboleth-idp --issuer "IDP NAME" --account testme | grep -v '^QR Code:'
 
 ```
 Look at the URL: line:
