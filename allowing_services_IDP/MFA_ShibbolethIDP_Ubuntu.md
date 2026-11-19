@@ -210,38 +210,6 @@ Expected output:
 
 `adding new entry "cn=totp,cn=schema,cn=config"`
 
-Step 3 — Now Add the Attribute to the User
-first you will have to execute following command in idp server and then copy the Zeed for the user
-
-`bin/totpauth.sh --home /opt/shibboleth-idp --issuer "<NAME OF THE IDP>" --account <UID>`
-
-Then inn the file `add-totp-user.ldif` paste the following, and update the zeed value in the file
-
-```
-dn: uid=<UID>,ou=people,dc=<YOUR-DOMAIN>,dc=ac,dc=lk
-changetype: modify
-add: objectClass
-objectClass: totpUser
--
-add: totpSecret
-totpSecret: <ZEED>
-```
-
-Apply it:
-```
-ldapmodify -H ldap://localhost -x \
-  -D "cn=admin,dc=<YOUR-DOMAIN>,dc=ac,dc=lk" \
-  -W -f add-totp-user.ldif
-```
-
-Step 4 — Verify
-
-```
-ldapsearch -H ldap://localhost -x \
-  -D "cn=admin,dc=<YOUR-DOMAIN>,dc=ac,dc=lk" \
-  -W -b "uid=testme,ou=people,dc=<YOUR-DOMAIN>,dc=ac,dc=lk" \
-  totpSecret
-```
 ### when we are going to create QR code for user profile adding to TOTP app
 
 Default QR generation uses api.qrserver.com by the plugin and since it is a third party for the system, let's install a local qr server for a safer approach
@@ -595,6 +563,10 @@ echo "Users load ${QR_BASE_URL}/qr (LDAP login), twice at most, within 24 hours.
 SCRIPT_EOF
 sudo chmod 700 /root/bulk-totp-enroll.sh
 ```
+To generate the seed and QR code for the user, execute;
+```
+sudo totp-gen <UID>
+```
 
 15. Test the QR login page
 
@@ -639,7 +611,13 @@ sudo rm /root/totp-enrolled-*.csv
 
 Optional: fail2ban for the login page
 
-The page accepts passwords, so it can be used for guessing. Create /etc/fail2ban/jail.d/totp-qr.local:
+The page accepts passwords, so it can be used for guessing.
+
+```
+sudo apt install -y fail2ban
+```
+
+Create /etc/fail2ban/jail.d/totp-qr.local:
 
 ```
 [apache-auth]
@@ -650,7 +628,12 @@ maxretry = 5
 bantime  = 1h
 ```
 
-Then run sudo apt install -y fail2ban. Check that the filter really matches your LDAP failure lines with sudo fail2ban-regex /var/log/apache2/error.log apache-auth. If it matches nothing, the filter needs adjusting for authnz_ldap messages.
+Check that the filter really matches your LDAP failure lines with 
+
+```
+sudo fail2ban-regex /var/log/apache2/error.log apache-auth
+```
+ If it matches nothing, the filter needs adjusting for authnz_ldap messages.
 
 Things to know
        i.  Login is the only protection. Someone who knows a user’s password could fetch the QR before the user does. The user would notice, because the page would stop working. Enroll in small batches and tell users to act promptly.
