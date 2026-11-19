@@ -20,6 +20,7 @@ Run as root (or sudo). The plugin.sh script downloads, verifies, and installs th
 cd /opt/shibboleth-idp
 bin/plugin.sh -I net.shibboleth.idp.plugin.authn.totp
 ```
+
 When prompted to accept the `license/trust, type y.`
 
 Verify installation:
@@ -110,24 +111,31 @@ Then in your attribute resolver (attribute-resolver-LEARN-v5.xml file), add:
 
 The TOTP plugin will automatically call the attribute resolver to fetch the attribute named tokenSeeds (this is the default; no extra config needed unless you renamed it).
 
-ℹ️ The LDAP attribute must contain the plain Base32-encoded seed (not encrypted). For encrypted seeds, see the DataSealer section in the official plugin docs.
+The LDAP attribute must contain the plain Base32-encoded seed (not encrypted). For encrypted seeds, see the DataSealer section in the official plugin docs.
 
 #### Clock Sync Check (Important for TOTP)
-T
-OTP codes are time-based. If the server clock drifts, codes will fail.
+
+TOTP codes are time-based. If the server clock drifts, codes will fail.
 
 Check current NTP sync status
-`timedatectl status`
+
+```
+timedatectl status
+```
 
 If it is not in Asia/Colombo timezone, use
-`sudo timedatectl set-timezone Asia/Colombo`
-`timedatectl status`
+```
+sudo timedatectl set-timezone Asia/Colombo
+timedatectl status
+```
 
 #### Configure authentication properties
 
  Edit conf/authn/authn.properties
 
- `vi /opt/shibboleth-idp/conf/authn/authn.properties`
+ ```
+ vi /opt/shibboleth-idp/conf/authn/authn.properties
+```
 
  Add these lines (append to the end of the file, or find any existing idp.authn.MFA.supportedPrincipals line and replace it):
 
@@ -143,7 +151,10 @@ idp.authn.TOTP.supportedPrincipals = \
     saml2/urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken, \
     saml1/urn:oasis:names:tc:SAML:1.0:am:HardwareToken
 ```
-Edit `vi /opt/shibboleth-idp/conf/relying-party.xml`
+Edit 
+```
+vi /opt/shibboleth-idp/conf/relying-party.xml
+```
 
 Find the shibboleth.DefaultRelyingParty bean and add defaultAuthenticationMethods to the SAML2.SSO profile configuration. It will look something like this — find your existing SAML2.SSO bean and add the property:
 
@@ -177,11 +188,13 @@ systemctl status jetty
 ```
 Remove temp files if needed: TIP : `bin/build.sh && rm -rf jetty-tmp/* && systemctl restart jetty`
  
-### Do this on your LDAP server:
+### Do following modification on your LDAP server:
 
 Step 1 — Create the Custom Schema File
 
-`vi /root/totp-schema.ldif`
+```
+vi /root/totp-schema.ldif
+```
 
 Paste the following content:
 
@@ -250,7 +263,9 @@ This must return the testme entry. If it returns nothing or “insufficient acce
 
 5. Check that port 8443 is free
 
-`sudo ss -tlnp | grep 8443`
+```
+sudo ss -tlnp | grep 8443
+```
 
 This must print nothing. The IdP’s Jetty sometimes uses 8443. If it is taken, pick another port and use it everywhere below (Listen, <VirtualHost>, QR_BASE_URL, ufw)
 
@@ -378,7 +393,6 @@ sudo ufw allow 8443/tcp
 dig +short idpv5.<YOUR-DOMAIN>.ac.lk @8.8.8.8
 ```
 dig must return your server’s public IP. Also open TCP 8443 in any upstream or hosting firewall.
-
 
 10. Reload Apache after certificate renewals
 
@@ -563,7 +577,7 @@ echo "Users load ${QR_BASE_URL}/qr (LDAP login), twice at most, within 24 hours.
 SCRIPT_EOF
 sudo chmod 700 /root/bulk-totp-enroll.sh
 ```
-To generate the seed and QR code for the user, execute;
+To generate the seed and QR code for the user, execute in IDP server;
 ```
 sudo totp-gen <UID>
 ```
