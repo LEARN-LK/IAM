@@ -13,7 +13,8 @@ Identity Provider is the party who provides authentication and authorization for
 
 ### Install Federated Identity System
 
-* [Shibboleth IdP v5.1.6 on Ubuntu Linux LTS 24.04 - Script ](https://github.com/LEARN-LK/shibboleth-idp5-installer)
+* [Shibboleth IdP v5.2.3 on Ubuntu Linux LTS 24.04 - Recommended ](https://github.com/LEARN-LK/IAM/blob/master/shibboleth_IDP/version_v5_shobboleth_step_by_step.md)
+* [Shibboleth IdP v5.1.6 on Ubuntu Linux LTS 24.04 - AAF Script ](https://github.com/LEARN-LK/shibboleth-idp5-installer)
 * [Shibboleth IdP v4+ on Ubuntu Linux LTS 22.04](shibboleth_IDP/installing-idp-v4.md)
 * [Shibboleth IdP v3.4.6 on Ubuntu Linux LTS 18.04](shibboleth_IDP/Shibboleth3.4.6-Ubuntu18.04.md)
 * [Shibboleth IdP v3.3.2 on Ubuntu Linux LTS 18.04](shibboleth_IDP/IDPonUbuntu.md)
