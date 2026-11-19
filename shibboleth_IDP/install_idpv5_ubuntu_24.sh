@@ -686,32 +686,22 @@ step_idp_config() {
     <bean id="idp.JDBCConsentStorage"
           parent="shibboleth.JDBCStorageService"
           p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
-          p:dataSource-ref="idp.JDBC.DataSource" />
+          p:dataSource-ref="MyDataSource" />
 
     <!-- Two separate pools so a problem in one component cannot starve the other -->
-    <bean id="idp.JDBC.DataSource"
+    <bean id="MyDataSource"
           class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close" lazy-init="true"
           p:driverClassName="org.mariadb.jdbc.Driver"
           p:url="${jdbc_url}"
           p:username="${DB_USER}"
           p:password="%{idp.storage.dbpassword}"
+          p:maxTotal="20"
           p:maxIdle="5"
           p:maxWaitMillis="15000"
           p:testOnBorrow="true"
           p:validationQuery="select 1"
           p:validationQueryTimeout="5" />
 
-    <bean id="idp.JDBC.PersistentDataSource"
-          class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close" lazy-init="true"
-          p:driverClassName="org.mariadb.jdbc.Driver"
-          p:url="${jdbc_url}"
-          p:username="${DB_USER}"
-          p:password="%{idp.storage.dbpassword}"
-          p:maxIdle="5"
-          p:maxWaitMillis="15000"
-          p:testOnBorrow="true"
-          p:validationQuery="select 1"
-          p:validationQueryTimeout="5" />
 EOF
   insert_xml "$conf/saml-nameid.xml" "</beans>" "LEARN-IDP5-PERSISTENTID" <<'EOF'
 
