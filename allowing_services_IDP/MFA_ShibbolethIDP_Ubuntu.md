@@ -211,8 +211,11 @@ Expected output:
 `adding new entry "cn=totp,cn=schema,cn=config"`
 
 Step 3 — Now Add the Attribute to the User
+first you will have to execute following command in idp server and then copy the Zeed for the user
 
-in the file `add-totp-user.ldif` paste the following
+`bin/totpauth.sh --home /opt/shibboleth-idp --issuer "<NAME OF THE IDP>" --account <UID>`
+
+Then inn the file `add-totp-user.ldif` paste the following, and update the zeed value in the file
 
 ```
 dn: uid=<UID>,ou=people,dc=<YOUR-DOMAIN>,dc=ac,dc=lk
@@ -221,7 +224,7 @@ add: objectClass
 objectClass: totpUser
 -
 add: totpSecret
-totpSecret: 7ZODY4DQQ76DHYL3JK66DJIR3TE3QPW5
+totpSecret: <ZEED>
 ```
 
 Apply it:
