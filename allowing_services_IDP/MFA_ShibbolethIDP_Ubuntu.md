@@ -609,34 +609,9 @@ sudo rm /root/totp-enrolled-*.csv
 
 `Within 24 hours, open https://idpv5.<YOUR-DOMAIN>.ac.lk:8443/qr on a computer, log in with your normal institutional username and password, and scan the QR code with your authenticator app(Tested on Google Authenticator/Microsoft authenticatot) on your phone straight away. The page can be opened only twice, so don’t refresh it unnecessarily and don’t take a screenshot.`
 
-Optional: fail2ban for the login page
-
-The page accepts passwords, so it can be used for guessing.
-
-```
-sudo apt install -y fail2ban
-```
-
-Create /etc/fail2ban/jail.d/totp-qr.local:
-
-```
-[apache-auth]
-enabled  = true
-port     = 8443
-logpath  = /var/log/apache2/error.log
-maxretry = 5
-bantime  = 1h
-```
-
-Check that the filter really matches your LDAP failure lines with 
-
-```
-sudo fail2ban-regex /var/log/apache2/error.log apache-auth
-```
- If it matches nothing, the filter needs adjusting for authnz_ldap messages.
 
 Things to know
        i.  Login is the only protection. Someone who knows a user’s password could fetch the QR before the user does. The user would notice, because the page would stop working. Enroll in small batches and tell users to act promptly.
        ii. Missed or failed scan: run sudo totp-gen <uid> --force. This replaces the seed and creates a fresh image with a new 24-hour window and a reset view counter.
        iii. Plugin’s own QR page: make sure it is disabled or unreachable, otherwise the api.qrserver.com path still exists. Verify this in your plugin’s configuration.
-       iv. Rotate the passwords from your earlier pasted shell history (LDAP admin and MySQL) if that history was ever shared or committed to GitHub.
+    
