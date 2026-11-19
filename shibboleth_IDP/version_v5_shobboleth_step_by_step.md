@@ -732,13 +732,6 @@ grep -o 'ee[0-9]*' /opt/jetty/webapps/idp.xml | sort -u        # must match $EE
 systemctl restart jetty-idp && journalctl -u jetty-idp -n 50 --no-pager
 ```
 
-## Appendix C — Upgrading Jetty or the IdP later
-
-* **Jetty:** unpack the new `jetty-home-12.x.y`, repoint `/usr/local/src/jetty-src`, `systemctl restart jetty-idp`. Your configuration lives in `/opt/jetty` and is untouched.
-* **IdP:** follow the Shibboleth upgrade procedure (re-run `install.sh` from the new distribution against `/opt/shibboleth-idp`, rebuild the WAR, restart). Keep your `edit-webapp` jars.
-
----
-
 # Automated installation
 
 `install_idpv5_ubuntu_24.sh` performs sections 1–8 (and optionally 9.1–9.2) in one run, prompting for what it needs.
