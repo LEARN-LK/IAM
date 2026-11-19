@@ -16,7 +16,6 @@ All commands are run as **root** (`sudo -i`). Replace `idp.YOUR-DOMAIN.ac.lk` / 
 | JDBC libraries | apt packages symlinked into `edit-webapp` | **Jars from Maven Central** (checksum-verified) |
 | Consent / session storage | `JPAStorageService` in `global.xml` | **JDBC Storage plugin** + `shibboleth.JDBCStorageService` |
 | JDBC driver URL | `jdbc:mysql://` | **`jdbc:mariadb://`** (MariaDB driver 3.x) |
-| SAML1 / port 8443 | removed by hand | not generated for SAML1; leftover `:8443` endpoints are removed |
 | Apache proxy rules | global (`idp-proxy.conf`) | **inside the IdP's own VirtualHost** (safe for multi-site servers) |
 | Service control | `init.d` symlink | **systemd** unit `jetty-idp.service` |
 
