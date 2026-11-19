@@ -412,35 +412,23 @@ Add the persistent-id store bean **before the closing `</beans>`** of `conf/saml
 Add the storage service and data sources **before the closing `</beans>`** of `conf/global.xml`:
 
 ```xml
+<bean id="MyDataSource"
+  class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close" lazy-init="true"
+  p:driverClassName="org.mariadb.jdbc.Driver"
+  p:url="jdbc:mariadb://127.0.0.1:3306/storageservice?autoReconnect=true&amp;sslMode=disable"
+  p:username="idp_admin"
+  p:password="%{idp.storage.dbpassword}"
+  p:maxTotal="20"
+  p:maxIdle="5"
+  p:maxWaitMillis="15000"
+  p:testOnBorrow="true"
+  p:validationQuery="select 1"
+  p:validationQueryTimeout="5" />
+
 <bean id="idp.JDBCConsentStorage"
-      parent="shibboleth.JDBCStorageService"
-      p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
-      p:dataSource-ref="idp.JDBC.DataSource" />
-
-<!-- Two separate pools so a problem in one component cannot starve the other -->
-<bean id="idp.JDBC.DataSource"
-      class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close" lazy-init="true"
-      p:driverClassName="org.mariadb.jdbc.Driver"
-      p:url="jdbc:mariadb://127.0.0.1:3306/storageservice?autoReconnect=true&amp;sslMode=disable"
-      p:username="idp_admin"
-      p:password="%{idp.storage.dbpassword}"
-      p:maxIdle="5"
-      p:maxWaitMillis="15000"
-      p:testOnBorrow="true"
-      p:validationQuery="select 1"
-      p:validationQueryTimeout="5" />
-
-<bean id="idp.JDBC.PersistentDataSource"
-      class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close" lazy-init="true"
-      p:driverClassName="org.mariadb.jdbc.Driver"
-      p:url="jdbc:mariadb://127.0.0.1:3306/storageservice?autoReconnect=true&amp;sslMode=disable"
-      p:username="idp_admin"
-      p:password="%{idp.storage.dbpassword}"
-      p:maxIdle="5"
-      p:maxWaitMillis="15000"
-      p:testOnBorrow="true"
-      p:validationQuery="select 1"
-      p:validationQueryTimeout="5" />
+  parent="shibboleth.JDBCStorageService"
+  p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
+  p:dataSource-ref="MyDataSource" />
 ```
 
 > With the MariaDB 3.x driver the URL must start with `jdbc:mariadb://` (a `jdbc:mysql://` URL is rejected unless you add `permitMysqlScheme`). `useSSL=false` from the v4 guide is replaced by `sslMode=disable` (localhost connection).
