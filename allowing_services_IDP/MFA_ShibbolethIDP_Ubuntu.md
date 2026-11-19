@@ -451,20 +451,7 @@ sudo chmod 600 /etc/totp-enroll.conf
 sudo bash -c 'umask 077; read -rsp "LDAP admin password: " p; echo; printf "%s" "$p" > /root/.ldap-admin-pw'
 ```
 
-13. Check what totpauth.sh prints (required)
-
-```
-sudo /opt/shibboleth-idp/bin/totpauth.sh --home /opt/shibboleth-idp --issuer "IDP NAME" --account testme | grep -v '^QR Code:'
-
-```
-Look at the URL: line:
-
-If it starts with `otpauth://`, you are fine.
-If it starts with `https://` (a QR web service link), don’t open it. The script below detects this and builds the otpauth:// URI itself from the seed, so no third party is involved.
-
-Scratch codes: if the tool prints them, this manual ignores them.
-
-14. Create the enrollment tool (totp-gen)
+13. Create the enrollment tool (totp-gen)
 
 For one user, this does everything in order:
        i.   Generates the seed.
@@ -566,7 +553,7 @@ exit 0
 SCRIPT_EOF
 sudo chmod 700 /usr/local/bin/totp-gen
 ```
-15. Create the bulk enrollment script
+14. Create the bulk enrollment script
 
 It calls totp-gen for every LDAP user without a seed. The CSV contains only uid, mail and the expiry time. There are no seeds in it.
 
@@ -609,7 +596,7 @@ SCRIPT_EOF
 sudo chmod 700 /root/bulk-totp-enroll.sh
 ```
 
-16. Test the QR login page
+15. Test the QR login page
 
 Use `testme`, which must have a `userPassword` in LDAP. This test needs no real seed:
 
@@ -632,7 +619,7 @@ sudo totp-gen testme --force
 ```
 Scan the terminal QR with a test authenticator app and confirm the code validates at the IdP.
 
-17. Run the bulk enrollment
+16. Run the bulk enrollment
 
 Test with one or two users first, because the script writes seeds into LDAP.
 
@@ -646,7 +633,7 @@ Check that the “Users found” count matches what you expect. If it is lower, 
 sudo rm /root/totp-enrolled-*.csv
 ```
 
-15. What to tell users
+17. What to tell users
 
 `Within 24 hours, open https://idpv5.<YOUR-DOMAIN>.ac.lk:8443/qr on a computer, log in with your normal institutional username and password, and scan the QR code with your authenticator app(Tested on Google Authenticator/Microsoft authenticatot) on your phone straight away. The page can be opened only twice, so don’t refresh it unnecessarily and don’t take a screenshot.`
 
