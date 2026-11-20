@@ -188,41 +188,6 @@ systemctl status jetty
 ```
 Remove temp files if needed: TIP : `bin/build.sh && rm -rf jetty-tmp/* && systemctl restart jetty`
  
-### Do following modification on your LDAP server:
-
-Step 1 — Create the Custom Schema File
-
-```
-vi /root/totp-schema.ldif
-```
-
-Paste the following content:
-
-```
-dn: cn=totp,cn=schema,cn=config
-objectClass: olcSchemaConfig
-cn: totp
-olcAttributeTypes: ( 1.3.6.1.4.1.55053.1.1
-  NAME 'totpSecret'
-  DESC 'TOTP seed for MFA authentication'
-  EQUALITY caseExactMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
-  SINGLE-VALUE )
-olcObjectClasses: ( 1.3.6.1.4.1.55053.2.1
-  NAME 'totpUser'
-  DESC 'User with TOTP MFA'
-  AUXILIARY
-  MAY ( totpSecret ) )
-```
-
-Step 2 — Load the Schema
-
-`ldapadd -Y EXTERNAL -H ldapi:/// -f /root/totp-schema.ldif`
-
-Expected output:
-
-`adding new entry "cn=totp,cn=schema,cn=config"`
-
 ### when we are going to create QR code for user profile adding to TOTP app
 
 Default QR generation uses api.qrserver.com by the plugin and since it is a third party for the system, let's install a local qr server for a safer approach
