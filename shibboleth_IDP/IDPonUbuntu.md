@@ -792,7 +792,7 @@ All done!
       <MetadataProvider
             id="HTTPMD-LEARN-Federation"
             xsi:type="FileBackedHTTPMetadataProvider"
-            backingFile="%{idp.home}/metadata/test-metadata.xml"
+            backingFile="%{idp.home}/metadata/LIAF-metadata.xml"
             metadataURL="https://fr.ac.lk/signedmetadata/metadata.xml">
             <!--
                 Verify the signature on the root element of the metadata aggregate
