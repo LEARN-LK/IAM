@@ -877,7 +877,7 @@ And
       <MetadataProvider
             id="HTTPMD-LEARN-Federation"
             xsi:type="FileBackedHTTPMetadataProvider"
-            backingFile="%{idp.home}/metadata/test-metadata.xml"
+            backingFile="%{idp.home}/metadata/LIAF-metadata.xml"
             metadataURL="https://fr.ac.lk/signedmetadata/metadata.xml">
             <!--
                 Verify the signature on the root element of the metadata aggregate
@@ -898,7 +898,7 @@ And
       </MetadataProvider>
       <MetadataProvider id="HTTPMD-LEARN-interfederation"
                       xsi:type="FileBackedHTTPMetadataProvider"
-                      backingFile="%{idp.home}/metadata/LEARNmetadata.xml"
+                      backingFile="%{idp.home}/metadata/EDUGAIN-metadata.xml"
                       metadataURL="https://fr.ac.lk/signedmetadata/LIAF-interfederation-sp-metadata.xml">
 
         <MetadataFilter xsi:type="SignatureValidation" requireSignedRoot="true" certificateFile="${idp.home}/metadata/federation-cert.pem"/>
