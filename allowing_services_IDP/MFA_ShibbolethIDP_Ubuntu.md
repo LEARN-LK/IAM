@@ -251,7 +251,7 @@ sudo mkdir -p /usr/local/lib/totp-qr
 3. Enable the Apache2 modules
 
 ```
-sudo a2enmod ssl cgid ldap authnz_ldap
+sudo a2enmod ssl cgid ldap authnz_ldap session_cookie session_crypto auth_form request
 sudo a2dissite 000-default   # not needed unless you use port 80 for something else
 ```
 
@@ -343,32 +343,58 @@ First check the certificate folder name with ls `/etc/letsencrypt/live/`. If it 
 sudo tee /etc/apache2/sites-available/totp-qr.conf > /dev/null <<'EOF'
 Listen 8443
 <VirtualHost *:8443>
-    ServerName idpv5.<YOUR-DOMAIN>.ac.lk
+    ServerName idpv5.YOUR-DOMAIN.ac.lk
     DocumentRoot /var/www/totp-empty
 
     SSLEngine on
     SSLProtocol -all +TLSv1.2 +TLSv1.3
-    SSLCertificateFile    /etc/letsencrypt/live/idpv5.<YOUR-DOMAIN>.ac.lk/fullchain.pem
-    SSLCertificateKeyFile /etc/letsencrypt/live/idpv5.<YOUR-DOMAIN>.ac.lk/privkey.pem
+    SSLCertificateFile    /etc/letsencrypt/live/idpv5.YOUR-DOMAIN.ac.lk/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/idpv5.YOUR-DOMAIN.ac.lk/privkey.pem
 
     ScriptAlias /qr /usr/local/lib/totp-qr/qr.cgi
 
+    # ---- Session settings (shared by the login handler and the QR page) ----
+    Session On
+    SessionCookieName session path=/;httponly;secure;samesite=strict
+    # Generate with: openssl rand -base64 32
+    SessionCryptoPassphrase "CHANGE-ME-LONG-RANDOM-STRING"
+    SessionMaxAge 600
+
+    # ---- Public area: the login page itself ----
     <Directory /var/www/totp-empty>
         Options -Indexes
         Require all granted
     </Directory>
 
+    # ---- Login form target (the form on login.html posts here) ----
+    <Location "/dologin">
+        SetHandler form-login-handler
+        AuthType form
+        AuthName "LEARN account login (to get your MFA QR code)"
+        AuthFormProvider ldap
+        AuthLDAPURL "ldap://localhost:389/ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk?uid?sub?(objectClass=*)"
+        AuthLDAPRemoteUserAttribute uid
+        AuthLDAPBindDN "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk"
+        AuthLDAPBindPassword "LDAP_PASSWORD"
+        # Wrong password -> back to the login page with an error message
+        AuthFormLoginRequiredLocation "/login.html?error=1"
+        # Fallback if the form does not supply httpd_location
+        AuthFormLoginSuccessLocation "/qr"
+    </Location>
+
+    # ---- Protected QR code script ----
     <Directory /usr/local/lib/totp-qr>
         Options +ExecCGI
 
-        AuthType Basic
+        AuthType form
         AuthName "LEARN account login (to get your MFA QR code)"
-        AuthBasicProvider ldap
-        AuthLDAPURL "ldap://localhost:389/ou=people,dc=<YOUR-DOMAIN>,dc=ac,dc=lk?uid?sub?(objectClass=*)"
+        AuthFormProvider ldap
+        AuthLDAPURL "ldap://localhost:389/ou=people,dc=YOUR-DOMAIN,dc=ac,dc=lk?uid?sub?(objectClass=*)"
         AuthLDAPRemoteUserAttribute uid
-        # Only if anonymous search is blocked, uncomment and set these two:
-        # AuthLDAPBindDN "cn=admin,dc=<YOUR-DOMAIN>,dc=ac,dc=lk"
-        # AuthLDAPBindPassword "CHANGE_ME"
+        AuthLDAPBindDN "cn=admin,dc=YOUR-DOMAIN,dc=ac,dc=lk"
+        AuthLDAPBindPassword "LDAP_PASSWORD"
+        # Not logged in (or session expired) -> show the login page
+        AuthFormLoginRequiredLocation "/login.html"
         Require valid-user
     </Directory>
 </VirtualHost>
@@ -378,7 +404,165 @@ If you add the bind password, protect the file:
 ```
 sudo chmod 640 /etc/apache2/sites-available/totp-qr.conf
 ```
+Then create login.html file for user to login
+```
+vi /var/www/totp-empty/login.html
+```
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set up two-step verification</title>
+<style>
+  :root {
+    --bg: #f3f6f9;
+    --panel: #ffffff;
+    --ink: #14263a;
+    --muted: #5b6b7c;
+    --line: #d5dde6;
+    --brand: #0d4f8b;
+    --brand-dark: #093a68;
+    --side: #0d2a47;
+    --side-ink: #e8eef5;
+    --err: #a4262c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c1622;
+      --panel: #132233;
+      --ink: #e8eef5;
+      --muted: #9fb0c2;
+      --line: #27394d;
+      --brand: #4b9ae0;
+      --brand-dark: #6cb0ee;
+      --side: #091420;
+      --side-ink: #e8eef5;
+      --err: #ff8a8f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 880px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
 
+  .side {
+    background: var(--side);
+    color: var(--side-ink);
+    padding: 40px 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 32px;
+  }
+  .org { font-size: 15px; font-weight: 600; letter-spacing: .01em; }
+  .side h1 { font-size: 26px; line-height: 1.25; margin: 0 0 14px; font-weight: 600; }
+  .side p { margin: 0 0 22px; line-height: 1.55; font-size: 15px; opacity: .88; }
+  .steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; font-size: 14px; }
+  .steps li { display: flex; gap: 12px; align-items: baseline; }
+  .steps b {
+    flex: none; width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(255,255,255,.16); display: grid; place-items: center;
+    font-size: 12px; font-weight: 600;
+  }
+  .form { padding: 40px 36px; display: flex; flex-direction: column; justify-content: center; }
+  .form h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
+  .form .sub { margin: 0 0 24px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  input[type=text], input[type=password] {
+    width: 100%; font: inherit; font-size: 15px; padding: 11px 12px;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: var(--panel); color: var(--ink); margin-bottom: 18px;
+  }
+  input:focus-visible, button:focus-visible {
+    outline: 3px solid var(--brand); outline-offset: 1px; border-color: var(--brand);
+  }
+  button {
+    width: 100%; font: inherit; font-size: 15px; font-weight: 600;
+    padding: 12px; border: 0; border-radius: 6px; cursor: pointer;
+    background: var(--brand); color: #fff;
+  }
+  button:hover { background: var(--brand-dark); }
+  .error {
+    display: none; margin: 0 0 18px; padding: 10px 12px; font-size: 14px;
+    border: 1px solid var(--err); color: var(--err); border-radius: 6px;
+  }
+  .error.show { display: block; }
+  .note { margin: 20px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+  @media (max-width: 720px) {
+    .card { grid-template-columns: 1fr; }
+    .side { padding: 28px 24px; }
+    .form { padding: 28px 24px; }
+  }
+</style>
+</head>
+<body>
+  <main class="card">
+    <section class="side">
+      <div class="org">Lanka Education And Research Network - Sri Lanka</div>
+      <div>
+        <h1>Set up two-step verification</h1>
+        <p>Two-step verification protects your account even if your password is stolen. Setup takes about two minutes.</p>
+        <ol class="steps">
+          <li><b>1</b><span>Sign in with your usual university username and password</span></li>
+          <li><b>2</b><span>Scan the QR code with an authenticator app</span></li>
+          <li><b>3</b><span>Enter the 6-digit code to confirm</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="form">
+      <h2>Sign in to continue</h2>
+      <p class="sub">Use the same account you use for email and Wi-Fi. This page is only used to show your setup QR code.</p>
+
+      <p class="error" id="err" role="alert">The username or password was not correct. Please try again.</p>
+
+      <form method="post" action="/dologin">
+        <label for="u">Username</label>
+        <input id="u" name="httpd_username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+
+        <label for="p">Password</label>
+        <input id="p" name="httpd_password" type="password" autocomplete="current-password" required>
+
+        <input type="hidden" name="httpd_location" value="/qr">
+        <button type="submit">Sign in</button>
+      </form>
+
+      <p class="note">Your password is sent securely to your institution only. We never ask for it by email. Need help? Contact TAC - LEARN : tac@learn.ac.lk.</p>
+    </section>
+  </main>
+
+  <script>
+    if (location.search.indexOf("error=1") !== -1) {
+      document.getElementById("err").classList.add("show");
+    }
+  </script>
+</body>
+</html>
+
+```
+
+
+```
+ chmod 644 /var/www/totp-empty/login.html
+```
 8. Enable the site and start Apache
 ```
 sudo a2ensite totp-qr
